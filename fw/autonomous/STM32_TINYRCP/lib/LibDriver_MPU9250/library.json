@@ -1,0 +1,12 @@
+{
+  "name": "LibDriver_MPU9250",
+  "version": "1.0.0",
+  "description": "Pinned libdriver/mpu9250 core; see UPSTREAM.md for the exact source revision.",
+  "license": "MIT",
+  "frameworks": "arduino",
+  "platforms": "ststm32",
+  "build": {
+    "srcDir": "src",
+    "includeDir": "src"
+  }
+}

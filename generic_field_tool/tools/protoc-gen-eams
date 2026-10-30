@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+environment=${EMBEDDEDPROTO_VENV:-"${TMPDIR:-/tmp}/cprobot-embeddedproto-tools"}
+export PYTHONPATH="$environment/generator${PYTHONPATH:+:$PYTHONPATH}"
+exec "$environment/bin/python" -c 'from EmbeddedProto.main import main_plugin; main_plugin()'

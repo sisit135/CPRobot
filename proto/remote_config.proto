@@ -1,0 +1,75 @@
+syntax = "proto3";
+package axi.remote.v1;
+
+import "telemetry.proto";
+
+// Stable bootstrap contract; business schemas are fetched as FileDescriptorSet.
+enum Operation {
+  UNSPECIFIED = 0;
+  GET_SCHEMA = 1;
+  LIST_FIELDS = 2;
+  READ = 3;
+  WRITE = 4;
+  CALIBRATE_GYRO = 5;
+  GET_SOURCE = 6;
+}
+enum Status {
+  OK = 0;
+  INVALID = 1;
+  CONFLICT = 2;
+  BUSY = 3;
+  IO_ERROR = 4;
+  NOT_FOUND = 5;
+  NOT_READY = 6;
+}
+enum ValueType { FLOAT = 0; INTEGER = 1; BOOLEAN = 2; }
+
+message RemoteRequest {
+  uint32 request_id = 1;
+  Operation operation = 2;
+  uint32 key = 3;
+  float value = 4;
+  uint32 expected_revision = 5;
+  uint32 offset = 6;
+}
+message FieldSpec {
+  uint32 key = 1;
+  string name = 2;
+  string group = 3;
+  ValueType type = 4;
+  float minimum = 5;
+  float maximum = 6;
+  string source = 7;
+}
+message RemoteReply {
+  uint32 request_id = 1;
+  Status status = 2;
+  uint32 revision = 3;
+  bool provisioned = 4;
+  FieldSpec field = 5;
+  float value = 6;
+  bytes schema_chunk = 7;
+  uint32 total = 8;
+  uint32 offset = 9;
+}
+
+// The request samples the live color sensor and writes the corresponding
+// normalized reference (slot 0..3) to the STM32 LittleFS configuration store.
+// It is transported as kind 8 and acknowledged as axi.telemetry.v1.ControlAck
+// (kind 3), using operation=3 and the request_id for correlation.
+message CalibrateColorRequest {
+  uint32 request_id = 1;
+  uint32 color_id_mapped = 2;
+}
+
+service RemoteConfig {
+  rpc GetSchema(RemoteRequest) returns (RemoteReply);
+  rpc ListFields(RemoteRequest) returns (RemoteReply);
+  rpc GetSource(RemoteRequest) returns (RemoteReply);
+  rpc Read(RemoteRequest) returns (RemoteReply);
+  rpc WriteIfChanged(RemoteRequest) returns (RemoteReply);
+  rpc CalibrateGyro(RemoteRequest) returns (RemoteReply);
+}
+service PlatformService {
+  rpc CalibrateColor(CalibrateColorRequest) returns (axi.telemetry.v1.ControlAck);
+}
