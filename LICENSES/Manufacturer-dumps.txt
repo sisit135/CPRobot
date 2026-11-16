@@ -1,0 +1,11 @@
+Manufacturer firmware dumps and extracted contents — excluded material
+
+No public-use or redistribution license is granted by this project for
+manufacturer firmware dumps, binary images or extracted contents, including
+flash.bin and extracted certificates in
+fw/static_analysis_adr/fw_dump_cyberpi_head/.
+
+Under the manufacturer terms identified by the repository owner, use is limited
+to the manufacturer's devices. Those terms govern; this notice grants no
+additional permission. These materials are not covered by GPL-3.0-only or
+CERN-OHL-S-2.0 and must not be included in public releases.
