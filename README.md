@@ -83,8 +83,8 @@ successful replay does not qualify the campaign.
 
 | Material | License / terms |
 | --- | --- |
-| Project-owned firmware, tests, host tools and `generic_field_tool` software | [GNU GPL version 3](LICENSE) (`GPL-3.0-only`) |
-| Original hardware designs, including electrical and mounting drawings | [CERN-OHL-S-2.0](LICENSES/CERN-OHL-S-2.0.txt) (strongly reciprocal) |
+| Project-owned firmware, tests, host tools and `generic_field_tool` software | [GNU GPL version 3](LICENSE.software) (`GPL-3.0-only`) |
+| Original hardware designs, including electrical and mounting drawings | [CERN-OHL-S-2.0](LICENSE.hardware) (strongly reciprocal) |
 | Manufacturer firmware dumps and extracted contents | **Excluded from public licensing and distribution**; manufacturer terms restrict use to their devices |
 | Third-party code and assets | Their respective licenses and notices |
 

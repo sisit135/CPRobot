@@ -8,7 +8,7 @@ manufacturer firmware dumps.
 
 Project-owned firmware, tests, host software and generic field-tool software are
 licensed under **GNU General Public License version 3 only**
-(`SPDX-License-Identifier: GPL-3.0-only`). The full text is in [LICENSE](LICENSE).
+(`SPDX-License-Identifier: GPL-3.0-only`). The full text is in [LICENSE.software](LICENSE.software).
 
 This covers original software in `fw/`, `host/`, and `generic_field_tool/`,
 including their tests, scripts, firmware-owned providers and generators, together
@@ -22,7 +22,7 @@ notices; this policy does not remove those notices.
 Original hardware design sources and their rendered exports are licensed under
 **CERN Open Hardware Licence version 2 — Strongly Reciprocal**
 (`SPDX-License-Identifier: CERN-OHL-S-2.0`). See the
-[full license text](LICENSES/CERN-OHL-S-2.0.txt) and
+[full license text](LICENSE.hardware) and
 [CERN license overview](https://cern-ohl.web.cern.ch/).
 
 The current hardware-design scope is:
@@ -56,7 +56,7 @@ ignored by Git and must be excluded from public source bundles, release assets
 and distributed binaries. Ignore rules do not remove copies already tracked or
 included by a filesystem-based archive tool.
 
-See [the manufacturer-material notice](LICENSES/Manufacturer-dumps.txt).
+See [the manufacturer-material notice](LICENSE.dumps).
 
 ## Third-party materials and other documentation
 

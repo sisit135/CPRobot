@@ -15,6 +15,6 @@ BLE and WLAN/TLS. Historical validation reports live in [docs/validation](../doc
 
 ## Licensing
 
-Project-owned firmware and tests use [GPLv3](../LICENSE). Manufacturer dumps
+Project-owned firmware and tests use [GPLv3](../LICENSE.software). Manufacturer dumps
 are excluded from public licensing and distribution; third-party code retains
 its own notices. See [licensing scope](../LICENSING.md).
