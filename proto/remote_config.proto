@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 syntax = "proto3";
 package axi.remote.v1;
 
@@ -40,6 +42,8 @@ message FieldSpec {
   float minimum = 5;
   float maximum = 6;
   string source = 7;
+  float default_value = 8;
+  uint32 source_id = 9;
 }
 message RemoteReply {
   uint32 request_id = 1;
