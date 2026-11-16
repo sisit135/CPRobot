@@ -1,0 +1,12 @@
+{
+  "package": "adl.v1",
+  "commands": [
+    {"id":1,"name":"Arm","fields":[]},
+    {"id":2,"name":"Drive","fields":[["left_rpm","sint32",-60,60],["right_rpm","sint32",-60,60],["deadman","bool",0,1]]},
+    {"id":3,"name":"Stop","fields":[]},
+    {"id":4,"name":"Grip","fields":[["port","uint32",1,2],["angle","uint32",0,180]]},
+    {"id":5,"name":"Crank","fields":[["active","bool",0,1]]},
+    {"id":6,"name":"Status","fields":[]},
+    {"id":7,"name":"Gamepad","fields":[]}
+  ]
+}

@@ -1,0 +1,45 @@
+
+º
+	adl.protoadl.v1"
+
+ArmRequest">
+ArmResponse
+accepted (
+armed (
+detail (	"D
+DriveRequest
+left_rpm (
+	right_rpm (
+deadman ("@
+DriveResponse
+accepted (
+armed (
+detail (	"
+StopRequest"?
+StopResponse
+accepted (
+armed (
+detail (	"*
+GripRequest
+port (
+angle ("?
+GripResponse
+accepted (
+armed (
+detail (	"
+CrankRequest
+active ("@
+CrankResponse
+accepted (
+armed (
+detail (	"
+StatusRequest"A
+StatusResponse
+accepted (
+armed (
+detail (	"
+GamepadRequest"B
+GamepadResponse
+accepted (
+armed (
+detail (	bproto3
