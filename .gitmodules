@@ -1,3 +1,6 @@
+[submodule "third_party/PID-CPP"]
+	path = third_party/PID-CPP
+	url = https://github.com/PatrickBaus/PID-CPP
 [submodule "third_party/EmbeddedProto"]
 	path = third_party/EmbeddedProto
 	url = https://github.com/Embedded-AMS/EmbeddedProto
