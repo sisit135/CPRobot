@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "fw/autonomous/STM32_TINYRCP"
+		}
+	],
+	"settings": {}
+}

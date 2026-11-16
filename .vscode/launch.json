@@ -1,0 +1,47 @@
+// Maintained ST-Link attach profile, separate from generated PlatformIO files.
+// No automatic build, firmware download or reset. The selected ELF must match the device.
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "STM32: Attach ST-Link (current trace firmware)",
+            "type": "cortex-debug",
+            "request": "attach",
+            "servertype": "openocd",
+            "cwd": "${workspaceFolder}/fw/autonomous/STM32_TINYRCP",
+            "device": "STM32F411CE",
+            "interface": "swd",
+            "serverpath": "${env:HOME}/.platformio/packages/tool-openocd/bin/openocd",
+            "armToolchainPath": "${env:HOME}/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+            "searchDir": [
+                "${env:HOME}/.platformio/packages/tool-openocd/openocd/scripts"
+            ],
+            "configFiles": [
+                "interface/stlink.cfg",
+                "target/stm32f4x.cfg"
+            ],
+            "openOCDLaunchCommands": [
+                "adapter speed 1000"
+            ],
+            "svdFile": "${env:HOME}/.platformio/platforms/ststm32/misc/svd/STM32F411xx.svd",
+            "postAttachCommands": [
+                "set print pretty on"
+            ],
+            "executable": "${workspaceFolder}/fw/autonomous/STM32_TINYRCP/.pio/build/blackpill_f411ce_trace/firmware.elf",
+            "rttConfig": {
+                "enabled": true,
+                "address": "auto",
+                "clearSearch": false,
+                "polling_interval": 20,
+                "decoders": [
+                    {
+                        "port": 0,
+                        "type": "console",
+                        "label": "THS logs",
+                        "encoding": "utf8"
+                    }
+                ]
+            }
+        }
+    ]
+}

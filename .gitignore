@@ -9,3 +9,13 @@ build/
 
 # Manufacturer device dumps: excluded from public distribution.
 /fw/static_analysis_adr/fw_dump_cyberpi_head/
+
+# Local caches, editor state and backup files.
+__pycache__/
+*.py[cod]
+.kdev4/
+*.kdev4
+*.old
+/docs/assets/.xdp-*
+/test_output.txt
+/generic_field_tool/esp32_multiboard/sdkconfig.esp32c6

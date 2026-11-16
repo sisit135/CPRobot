@@ -1,0 +1,21 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "STM32: Build trace with symbols (no flash)",
+            "type": "process",
+            "command": "${env:HOME}/.platformio/penv/bin/pio",
+            "args": [
+                "run",
+                "-d",
+                "${workspaceFolder}/fw/autonomous/STM32_TINYRCP",
+                "-e",
+                "blackpill_f411ce_trace"
+            ],
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        }
+    ]
+}
