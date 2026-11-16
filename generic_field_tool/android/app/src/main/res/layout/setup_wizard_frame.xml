@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2015 The Android Open Source Project. Apache-2.0.
+ Adapted from sud_glif_header / content and suc_footer_button_bar.
+ Only the used views remain; partner resources, progress/profile mixins and services removed. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+    <ScrollView
+        android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" android:fillViewport="true">
+        <LinearLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:paddingTop="32dp"
+            android:paddingStart="@dimen/setup_content_padding_start"
+            android:paddingEnd="@dimen/setup_content_padding_end" android:paddingBottom="24dp">
+            <LinearLayout android:id="@+id/setup_header"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:filterTouchesWhenObscured="true">
+                <ImageView android:id="@+id/setup_icon"
+                    android:layout_width="48dp" android:layout_height="48dp"
+                    android:importantForAccessibility="no" android:tint="@color/setup_accent" />
+                <TextView android:id="@+id/setup_title" style="@style/Setup.Title"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp" android:accessibilityHeading="true" />
+                <TextView android:id="@+id/setup_description" style="@style/Setup.Body"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp" android:layout_marginBottom="24dp" />
+            </LinearLayout>
+            <FrameLayout android:id="@+id/setup_content"
+                android:layout_width="match_parent" android:layout_height="0dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+    </ScrollView>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:paddingStart="@dimen/setup_footer_padding_start"
+        android:paddingEnd="@dimen/setup_footer_padding_end"
+        android:paddingTop="8dp" android:paddingBottom="16dp">
+        <Button android:id="@+id/setup_back_button" style="@style/Setup.SecondaryButton"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="@string/setup_back" />
+        <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+        <Button android:id="@+id/setup_next_button" style="@style/Setup.PrimaryButton"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="@string/setup_next" />
+    </LinearLayout>
+</merge>

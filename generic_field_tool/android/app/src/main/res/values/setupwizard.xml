@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adapted from GrapheneOS SetupWizard2, Copyright 2023-2025 GrapheneOS, MIT. -->
+<resources>
+    <style name="Theme.FieldTool.SetupWizard" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:colorBackground">@color/setup_background</item>
+        <item name="android:textColorPrimary">@color/setup_text</item>
+        <item name="android:textColorSecondary">@color/setup_secondary_text</item>
+        <item name="android:colorAccent">@color/setup_accent</item>
+        <item name="android:fontFamily">sans</item>
+    </style>
+    <style name="Setup.Title" parent="android:style/TextAppearance.Material.Headline">
+        <item name="android:textSize">32sp</item>
+        <item name="android:textColor">@color/setup_text</item>
+    </style>
+    <style name="Setup.WelcomeTitle" parent="Setup.Title">
+        <item name="android:textSize">40sp</item>
+    </style>
+    <style name="Setup.Body" parent="android:style/TextAppearance.Material.Body1">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/setup_secondary_text</item>
+    </style>
+    <style name="Setup.PrimaryButton" parent="android:style/Widget.Material.Button.Colored">
+        <item name="android:backgroundTint">@color/setup_primary_tint</item>
+        <item name="android:textColor">@color/setup_on_accent</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:minHeight">48dp</item>
+    </style>
+    <style name="Setup.SecondaryButton" parent="android:style/Widget.Material.Button.Borderless">
+        <item name="android:textColor">@color/setup_accent</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:minHeight">48dp</item>
+    </style>
+    <dimen name="setup_content_padding_start">40dp</dimen>
+    <dimen name="setup_content_padding_end">24dp</dimen>
+    <dimen name="setup_footer_padding_start">24dp</dimen>
+    <dimen name="setup_footer_padding_end">24dp</dimen>
+    <string name="setup_welcome">Welcome to\nField Tool</string>
+    <string name="setup_welcome_description">Your projects, schemas and connected targets in one place.</string>
+    <string name="setup_welcome_prompt">Let’s set up your toolkit.</string>
+    <string name="setup_connection_title">Connect a target</string>
+    <string name="setup_connection_description">Choose BLE or WLAN from the top bar. Your project keeps its connection settings ready for next time.</string>
+    <string name="setup_connection_body">View sensor samples, edit remote configuration and follow command responses in Events.</string>
+    <string name="setup_project_title">Create your first project</string>
+    <string name="setup_project_description">Give your project a name to get started. Add its protobuf schema later using the pencil in the project menu.</string>
+    <string name="setup_project_name">Project name</string>
+    <string name="setup_next">Next</string>
+    <string name="setup_back">Back</string>
+    <string name="setup_start">Create project</string>
+</resources>
