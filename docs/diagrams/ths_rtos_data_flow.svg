@@ -1,0 +1,216 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1880" height="1780" viewBox="0 0 1880 1780" role="img" aria-labelledby="title description">
+<title id="title">THS RTOS task ownership and I/O data flow</title>
+<desc id="description">STM32F411CE FreeRTOS data flow. Sensor HAL to loc_sensor, then BootstrapFrame one-slot mailbox to feature_nav and path_exec. feature_nav publishes FeatureSnapshot to path_exec; path_exec sends a one-slot stop-target back. SensorEvent FIFO holds 64 events after fusion starts; loc_fusion publishes PoseSnapshot to loc_logger and, only in explicit EKF mode, path_exec. path_exec publishes WheelCommand to motor_pwm; MotorSnapshot feeds back to path_exec. motor_pwm writes DRV8833 through the motor HAL. loc_key and ekf_spi issue control requests to navigation. bup_task and path_exec submit deferred logs to a bounded ring drained by ekf_spi. ekf_spi exchanges SPI data with an external ESP32-C6 bridge. Queue compartment drawings are symbolic; printed capacities are authoritative. Source: docs/fw_ths_architecture.md, RTOS task ownership and data flow, and linked task implementations.</desc>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#36566d"/></marker>
+<marker id="control" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#9a6031"/></marker>
+<marker id="back" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 10 0 L 0 5 L 10 10 Z" fill="#36566d"/></marker>
+</defs>
+<rect width="1880" height="1780" fill="white"/>
+
+<text x="60" y="62" font-family="Arial, Helvetica, sans-serif" font-size="34" fill="#20374b" text-anchor="start" font-weight="700">THS / RTOS task ownership &amp; I/O data flow</text>
+<text x="60" y="97" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#506879" text-anchor="start" font-weight="400">STM32F411CE · FreeRTOS · FEATURE is the default navigation engine</text>
+<rect x="60" y="132" width="460" height="38" rx="4" fill="#eef3f7"/>
+<text x="290.0" y="157" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#20374b" text-anchor="middle" font-weight="700">CONTROL &amp; FEEDBACK</text>
+<rect x="550" y="132" width="440" height="38" rx="4" fill="#eef3f7"/>
+<text x="770.0" y="157" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#20374b" text-anchor="middle" font-weight="700">FEATURE → MOTION</text>
+<rect x="1020" y="132" width="350" height="38" rx="4" fill="#eef3f7"/>
+<text x="1195.0" y="157" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#20374b" text-anchor="middle" font-weight="700">EKF OBSERVER</text>
+<rect x="1410" y="132" width="410" height="38" rx="4" fill="#eef3f7"/>
+<text x="1615.0" y="157" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#20374b" text-anchor="middle" font-weight="700">TELEMETRY &amp; BRIDGE</text>
+<path d="M 770 270 V 340" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 770 270 V 340" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 770 440 V 485" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 770 440 V 485" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 770 460 H 1190 V 485" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 770 460 H 1190 V 485" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 770 569 V 655" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 770 569 V 655" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 770 600 H 560 V 1025 H 580" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 770 600 H 560 V 1025 H 580" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 1190 569 V 655" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 1190 569 V 655" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 770 755 V 810" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 770 755 V 810" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 770 894 V 1000" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 770 894 V 1000" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 1190 755 V 810" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 1190 755 V 810" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 1190 894 V 975 H 1010 V 1045 H 960" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 1190 894 V 975 H 1010 V 1045 H 960" fill="none" stroke="#9a6031" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)" stroke-dasharray="8 6"/>
+<path d="M 1218 850 H 1430" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 1218 850 H 1430" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 1610 900 V 1190" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 1610 900 V 1190" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 1610 440 V 500" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 1610 440 V 500" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 1610 584 V 620 H 1835 V 1240 H 1790" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 1610 584 V 620 H 1835 V 1240 H 1790" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 960 1015 H 1390 V 545 H 1582" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 960 1015 H 1390 V 545 H 1582" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 1430 1260 H 1360 V 1080 H 960" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 1430 1260 H 1360 V 1080 H 960" fill="none" stroke="#9a6031" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)" stroke-dasharray="8 6"/>
+<path d="M 770 1100 V 1155" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 770 1100 V 1155" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 770 1239 V 1315" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 770 1239 V 1315" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 770 1415 V 1495" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 770 1415 V 1495" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 580 1070 H 275 V 884" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 580 1070 H 275 V 884" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 275 800 V 710 H 580" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 275 800 V 710 H 580" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 580 1365 H 275 V 1344" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 580 1365 H 275 V 1344" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 275 1260 V 1095 H 580" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 275 1260 V 1095 H 580" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 150 440 V 950 H 630 V 1000" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 150 440 V 950 H 630 V 1000" fill="none" stroke="#9a6031" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)" stroke-dasharray="8 6"/>
+<path d="M 1610 1290 V 1495" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 1610 1290 V 1495" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)" marker-start="url(#back)"/>
+<circle cx="770" cy="460" r="4.5" fill="#36566d"/>
+<circle cx="770" cy="600" r="4.5" fill="#36566d"/>
+<rect x="580" y="190" width="380" height="80" fill="#e3f3ec" stroke="#39745d" stroke-width="2"/>
+<text x="770.0" y="221" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#20374b" text-anchor="middle" font-weight="700">Sensor HAL</text>
+<text x="770.0" y="248" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#20374b" text-anchor="middle" font-weight="400">MPU9250 + MAG · VL53L0X ×3 · TCS34725</text>
+<g aria-label="loc_sensor"><rect x="580" y="340" width="380" height="100" rx="9" fill="#dcecf8" stroke="#36566d" stroke-width="2"/>
+<text x="770.0" y="371" font-family="monospace" font-size="23" fill="#20374b" text-anchor="middle" font-weight="700">loc_sensor</text>
+<text x="770.0" y="398" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#20374b" text-anchor="middle" font-weight="400">Sole runtime sensor bus owner</text>
+<text x="770.0" y="422" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#506879" text-anchor="middle" font-weight="400">P2 · 10 ms loop / 50 ms ToF polling</text>
+</g>
+<g aria-label="loc_key  (optional)"><rect x="90" y="340" width="340" height="100" rx="9" fill="#fff0df" stroke="#36566d" stroke-width="2"/>
+<text x="260.0" y="371" font-family="monospace" font-size="23" fill="#20374b" text-anchor="middle" font-weight="700">loc_key  (optional)</text>
+<text x="260.0" y="398" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#20374b" text-anchor="middle" font-weight="400">Debounced local start request</text>
+<text x="260.0" y="422" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#506879" text-anchor="middle" font-weight="400">P2 · 20 ms key sampling</text>
+</g>
+<g aria-label="bup_task"><rect x="1430" y="340" width="360" height="100" rx="9" fill="#dcecf8" stroke="#36566d" stroke-width="2"/>
+<text x="1610.0" y="371" font-family="monospace" font-size="23" fill="#20374b" text-anchor="middle" font-weight="700">bup_task</text>
+<text x="1610.0" y="398" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#20374b" text-anchor="middle" font-weight="400">One-shot bring-up status</text>
+<text x="1610.0" y="422" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#506879" text-anchor="middle" font-weight="400">P1 · self-deletes after reporting</text>
+</g>
+<g aria-label="BootstrapFrame: Mailbox · 1 slot">
+<path d="M 742 485 V 569 H 798 V 485" fill="none" stroke="#36566d" stroke-width="2"/>
+<rect x="742" y="539" width="56" height="30" fill="#c3d4df" stroke="#36566d" stroke-width="1.5"/>
+<text x="818" y="524" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#20374b" text-anchor="start" font-weight="700">BootstrapFrame</text>
+<text x="818" y="550" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#506879" text-anchor="start" font-weight="400">Mailbox · 1 slot</text>
+</g>
+<g aria-label="SensorEvent: FIFO · 64 entries">
+<path d="M 1162 485 V 569 H 1218 V 485" fill="none" stroke="#36566d" stroke-width="2"/>
+<rect x="1162" y="509" width="56" height="20" fill="#c3d4df" stroke="#36566d" stroke-width="1.4"/>
+<rect x="1162" y="529" width="56" height="20" fill="#c3d4df" stroke="#36566d" stroke-width="1.4"/>
+<rect x="1162" y="549" width="56" height="20" fill="#c3d4df" stroke="#36566d" stroke-width="1.4"/>
+<text x="1238" y="524" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#20374b" text-anchor="start" font-weight="700">SensorEvent</text>
+<text x="1238" y="550" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#506879" text-anchor="start" font-weight="400">FIFO · 64 entries</text>
+</g>
+<g aria-label="Deferred logs: Ring · 32 records">
+<path d="M 1582 500 V 584 H 1638 V 500" fill="none" stroke="#36566d" stroke-width="2"/>
+<rect x="1582" y="524" width="56" height="20" fill="#c3d4df" stroke="#36566d" stroke-width="1.4"/>
+<rect x="1582" y="544" width="56" height="20" fill="#c3d4df" stroke="#36566d" stroke-width="1.4"/>
+<rect x="1582" y="564" width="56" height="20" fill="#c3d4df" stroke="#36566d" stroke-width="1.4"/>
+<text x="1562" y="539" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#20374b" text-anchor="end" font-weight="700">Deferred logs</text>
+<text x="1562" y="565" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#506879" text-anchor="end" font-weight="400">Ring · 32 records</text>
+</g>
+<g aria-label="feature_nav"><rect x="580" y="655" width="380" height="100" rx="9" fill="#dcecf8" stroke="#36566d" stroke-width="2"/>
+<text x="770.0" y="686" font-family="monospace" font-size="23" fill="#20374b" text-anchor="middle" font-weight="700">feature_nav</text>
+<text x="770.0" y="713" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#20374b" text-anchor="middle" font-weight="400">Feature hypotheses &amp; heading</text>
+<text x="770.0" y="737" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#506879" text-anchor="middle" font-weight="400">P1 · 50 ms</text>
+</g>
+<g aria-label="loc_fusion"><rect x="1040" y="655" width="300" height="100" rx="9" fill="#dcecf8" stroke="#36566d" stroke-width="2"/>
+<text x="1190.0" y="686" font-family="monospace" font-size="23" fill="#20374b" text-anchor="middle" font-weight="700">loc_fusion</text>
+<text x="1190.0" y="713" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#20374b" text-anchor="middle" font-weight="400">Sole EKF owner</text>
+<text x="1190.0" y="737" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#506879" text-anchor="middle" font-weight="400">P3 · event-driven / ~20 ms pose</text>
+</g>
+<g aria-label="FeatureSnapshot: Mailbox · 1 slot">
+<path d="M 742 810 V 894 H 798 V 810" fill="none" stroke="#36566d" stroke-width="2"/>
+<rect x="742" y="864" width="56" height="30" fill="#c3d4df" stroke="#36566d" stroke-width="1.5"/>
+<text x="818" y="849" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#20374b" text-anchor="start" font-weight="700">FeatureSnapshot</text>
+<text x="818" y="875" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#506879" text-anchor="start" font-weight="400">Mailbox · 1 slot</text>
+</g>
+<g aria-label="PoseSnapshot: Mailbox · 1 slot">
+<path d="M 1162 810 V 894 H 1218 V 810" fill="none" stroke="#36566d" stroke-width="2"/>
+<rect x="1162" y="864" width="56" height="30" fill="#c3d4df" stroke="#36566d" stroke-width="1.5"/>
+<text x="1142" y="849" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#20374b" text-anchor="end" font-weight="700">PoseSnapshot</text>
+<text x="1142" y="875" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#506879" text-anchor="end" font-weight="400">Mailbox · 1 slot</text>
+</g>
+<g aria-label="Stop target: Mailbox · 1 slot">
+<path d="M 247 800 V 884 H 303 V 800" fill="none" stroke="#36566d" stroke-width="2"/>
+<rect x="247" y="854" width="56" height="30" fill="#c3d4df" stroke="#36566d" stroke-width="1.5"/>
+<text x="323" y="839" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#20374b" text-anchor="start" font-weight="700">Stop target</text>
+<text x="323" y="865" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#506879" text-anchor="start" font-weight="400">Mailbox · 1 slot</text>
+</g>
+<g aria-label="loc_logger"><rect x="1430" y="800" width="360" height="100" rx="9" fill="#dcecf8" stroke="#36566d" stroke-width="2"/>
+<text x="1610.0" y="831" font-family="monospace" font-size="23" fill="#20374b" text-anchor="middle" font-weight="700">loc_logger</text>
+<text x="1610.0" y="858" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#20374b" text-anchor="middle" font-weight="400">Low-rate EKF pose submission</text>
+<text x="1610.0" y="882" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#506879" text-anchor="middle" font-weight="400">P1 · 200 ms</text>
+</g>
+<g aria-label="path_exec"><rect x="580" y="1000" width="380" height="100" rx="9" fill="#dcecf8" stroke="#36566d" stroke-width="2"/>
+<text x="770.0" y="1031" font-family="monospace" font-size="23" fill="#20374b" text-anchor="middle" font-weight="700">path_exec</text>
+<text x="770.0" y="1058" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#20374b" text-anchor="middle" font-weight="400">Route, goal &amp; end-tape state</text>
+<text x="770.0" y="1082" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#506879" text-anchor="middle" font-weight="400">P2 · 20 ms</text>
+</g>
+<g aria-label="WheelCommand: Mailbox · 1 slot">
+<path d="M 742 1155 V 1239 H 798 V 1155" fill="none" stroke="#36566d" stroke-width="2"/>
+<rect x="742" y="1209" width="56" height="30" fill="#c3d4df" stroke="#36566d" stroke-width="1.5"/>
+<text x="818" y="1194" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#20374b" text-anchor="start" font-weight="700">WheelCommand</text>
+<text x="818" y="1220" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#506879" text-anchor="start" font-weight="400">Mailbox · 1 slot</text>
+</g>
+<g aria-label="MotorSnapshot: Mailbox · 1 slot">
+<path d="M 247 1260 V 1344 H 303 V 1260" fill="none" stroke="#36566d" stroke-width="2"/>
+<rect x="247" y="1314" width="56" height="30" fill="#c3d4df" stroke="#36566d" stroke-width="1.5"/>
+<text x="323" y="1299" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#20374b" text-anchor="start" font-weight="700">MotorSnapshot</text>
+<text x="323" y="1325" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#506879" text-anchor="start" font-weight="400">Mailbox · 1 slot</text>
+</g>
+<g aria-label="motor_pwm"><rect x="580" y="1315" width="380" height="100" rx="9" fill="#dcefe6" stroke="#36566d" stroke-width="2"/>
+<text x="770.0" y="1346" font-family="monospace" font-size="23" fill="#20374b" text-anchor="middle" font-weight="700">motor_pwm</text>
+<text x="770.0" y="1373" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#20374b" text-anchor="middle" font-weight="400">Rate ramp, PWM &amp; terminal guard</text>
+<text x="770.0" y="1397" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#506879" text-anchor="middle" font-weight="400">P4 · 10 ms</text>
+</g>
+<g aria-label="ekf_spi"><rect x="1430" y="1190" width="360" height="100" rx="9" fill="#dcecf8" stroke="#36566d" stroke-width="2"/>
+<text x="1610.0" y="1221" font-family="monospace" font-size="23" fill="#20374b" text-anchor="middle" font-weight="700">ekf_spi</text>
+<text x="1610.0" y="1248" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#20374b" text-anchor="middle" font-weight="400">SPI owner &amp; deferred log drain</text>
+<text x="1610.0" y="1272" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#506879" text-anchor="middle" font-weight="400">P1 · 50 ms SPI transactions</text>
+</g>
+<rect x="580" y="1495" width="380" height="80" fill="#e3f3ec" stroke="#39745d" stroke-width="2"/>
+<text x="770.0" y="1526" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#20374b" text-anchor="middle" font-weight="700">DRV8833</text>
+<text x="770.0" y="1553" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#20374b" text-anchor="middle" font-weight="400">Motor HAL → duty writes → wheels</text>
+<rect x="1430" y="1495" width="360" height="80" fill="#e3f3ec" stroke="#39745d" stroke-width="2"/>
+<text x="1610.0" y="1526" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#20374b" text-anchor="middle" font-weight="700">External ESP32-C6</text>
+<text x="1610.0" y="1553" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#20374b" text-anchor="middle" font-weight="400">Field-tool bridge · SPI transport</text>
+<rect x="984" y="431" width="173.12" height="23" fill="white"/>
+<text x="989" y="447" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#20374b" text-anchor="start" font-weight="400">After fusion starts</text>
+<rect x="340" y="600" width="173.12" height="23" fill="white"/>
+<text x="345" y="616" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#20374b" text-anchor="start" font-weight="400">Latest sensor frame</text>
+<rect x="289" y="960" width="164.64000000000001" height="23" fill="white"/>
+<text x="294" y="976" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#20374b" text-anchor="start" font-weight="400">navigation_start()</text>
+<rect x="1025" y="945" width="156.16" height="23" fill="white"/>
+<text x="1030" y="961" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#20374b" text-anchor="start" font-weight="400">Explicit EKF mode</text>
+<rect x="1215" y="815" width="105.28" height="23" fill="white"/>
+<text x="1220" y="831" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#20374b" text-anchor="start" font-weight="400">Latest pose</text>
+<rect x="1399" y="985" width="131.25" height="22" fill="white"/>
+<text x="1404" y="1000" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#20374b" text-anchor="start" font-weight="400">Navigation logs</text>
+<rect x="1045" y="1100" width="226.65" height="22" fill="white"/>
+<text x="1050" y="1115" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#20374b" text-anchor="start" font-weight="400">Start / halt / gated config</text>
+<rect x="1635" y="1108" width="164.64000000000001" height="23" fill="white"/>
+<text x="1640" y="1124" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#20374b" text-anchor="start" font-weight="400">Deferred log drain</text>
+<rect x="1625" y="1385" width="40.620000000000005" height="25" fill="white"/>
+<text x="1630" y="1403" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#20374b" text-anchor="start" font-weight="400">SPI</text>
+<rect x="785" y="1444" width="139.2" height="23" fill="white"/>
+<text x="790" y="1460" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#20374b" text-anchor="start" font-weight="400">HAL duty writes</text>
+<text x="1050" y="1420" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#20374b" text-anchor="start" font-weight="700">Ownership exception</text>
+<text x="1050" y="1447" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#506879" text-anchor="start" font-weight="400">Terminal stop helpers may write zero</text>
+<text x="1050" y="1471" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#506879" text-anchor="start" font-weight="400">through HAL from caller tasks.</text>
+<path d="M 60 1615 H 1820" stroke="#cbd6df" stroke-width="1.5"/>
+<rect x="65" y="1642" width="36" height="26" rx="4" fill="#dcecf8" stroke="#36566d" stroke-width="1.5"/>
+<text x="114" y="1662" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#20374b" text-anchor="start" font-weight="400">RTOS task · P = priority</text>
+<path d="M 435 1636 V 1674 H 463 V 1636 M 435 1659 H 463" fill="none" stroke="#36566d" stroke-width="1.8"/>
+<text x="477" y="1662" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#20374b" text-anchor="start" font-weight="400">Queue / mailbox (slot symbol)</text>
+<path d="M 855 1655 H 925" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 855 1655 H 925" fill="none" stroke="#36566d" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="940" y="1662" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#20374b" text-anchor="start" font-weight="400">Data / HAL I/O</text>
+<path d="M 1180 1655 H 1250" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round"/>
+<path d="M 1180 1655 H 1250" fill="none" stroke="#9a6031" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)" stroke-dasharray="8 6"/>
+<text x="1265" y="1662" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#20374b" text-anchor="start" font-weight="400">API request / conditional path</text>
+<text x="65" y="1705" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#506879" text-anchor="start" font-weight="400">One-slot state mailboxes retain the latest value for readers; stop targets are consumed. FIFO events preserve order; full-queue drops are counted.</text>
+<text x="65" y="1735" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#506879" text-anchor="start" font-weight="400">Queue slots are symbolic; labels give capacity. Dots join flows; line crossings without dots do not. This is data flow, not a scheduler timeline.</text>
+<text x="65" y="1763" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#647b8c" text-anchor="start" font-weight="400">Source: docs/fw_ths_architecture.md · “RTOS task ownership and data flow” and linked STM32 task implementations.</text>
+</svg>
