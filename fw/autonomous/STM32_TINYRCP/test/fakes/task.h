@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 // Test declarations only; never add this include path to firmware.
 #pragma once
 #include "FreeRTOS.h"

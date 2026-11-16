@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 // Test bus surface; not a STM32 SDK.
 #pragma once
 #include "stm32f4xx_hal.h"

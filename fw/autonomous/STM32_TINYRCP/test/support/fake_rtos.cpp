@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "fake_rtos.hpp"
 #include <cassert>
 #include <cstring>
@@ -6,6 +8,9 @@
 #include <string>
 #include <vector>
 namespace {
+struct EventGroup {
+  EventBits_t bits = 0;
+};
 struct Queue {
   unsigned capacity, size;
   std::deque<std::vector<unsigned char>> data;
@@ -17,6 +22,7 @@ struct Task {
 };
 std::vector<Task> tasks;
 std::vector<std::unique_ptr<Queue>> queues;
+std::vector<std::unique_ptr<EventGroup>> event_groups;
 std::function<void()> on_delay;
 struct Finished {};
 } // namespace
@@ -88,3 +94,17 @@ void vTaskDelay(TickType_t) {
 }
 void vTaskDelete(TaskHandle_t) { fake::finish(); }
 void vTaskStartScheduler() {}
+EventGroupHandle_t xEventGroupCreate() {
+  event_groups.push_back(std::make_unique<EventGroup>());
+  return event_groups.back().get();
+}
+EventBits_t xEventGroupWaitBits(EventGroupHandle_t handle, EventBits_t bits,
+                                BaseType_t, BaseType_t, TickType_t) {
+  return static_cast<EventGroup *>(handle)->bits & bits;
+}
+EventBits_t xEventGroupSetBits(EventGroupHandle_t handle, EventBits_t bits) {
+  auto &group = *static_cast<EventGroup *>(handle);
+  group.bits |= bits;
+  return group.bits;
+}
+void vEventGroupDelete(EventGroupHandle_t) {}

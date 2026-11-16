@@ -1,5 +1,8 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "Wire.h"
 #include "localization/hal_sensors.hpp"
+#include "logging/log.hpp"
 #include "platform/hal_platform.hpp"
 #include <cassert>
 #include <cstdio>
@@ -7,6 +10,9 @@ FakeWire Wire;
 uint32_t fake_us = 0;
 unsigned long micros() { return fake_us; }
 bool hal_board_sensors_init() { return true; }
+namespace robot_log {
+bool write(Level, const char *, const char *, ...) { return true; }
+} // namespace robot_log
 const loc::ColorReference *hal_color_references(std::size_t *count) {
   static const loc::ColorReference refs[] = {
       {0.8f, 0.1f, 0.1f, loc::MarkerGeometry::CELL, 1, 2}};
@@ -70,7 +76,10 @@ int main() {
   assert(!optical(100));
   assert(optical(100));
   assert(tape.id == 1 && tape.first_us < tape.confirmed_us);
-  assert(!optical(100));
+  const auto first = tape.first_us, confirmed = tape.confirmed_us;
+  assert(optical(100)); // Same continuously observed entry, fresh acquisition.
+  assert(tape.id == 1 && tape.first_us == first &&
+         tape.confirmed_us > confirmed);
   Wire.fail = true;
   fake_us += 3000;
   int64_t stamp = 0;

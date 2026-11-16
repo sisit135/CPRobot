@@ -1,5 +1,8 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "localization/config.hpp"
 #include "localization/localization.hpp"
+#include "logging/log.hpp"
 #include "motor_control/motor_control.hpp"
 #include "navigation/feature_tasks.hpp"
 #include "navigation/map_resolver.hpp"
@@ -7,13 +10,27 @@
 #include <cassert>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 namespace {
 nav::ResolverConfig config;
 nav::RunDeadline deadline;
 float position = .1f;
 bool stale = false;
+unsigned pose_trace_records = 0;
+bool pose_trace_fields = false;
 } // namespace
 int64_t hal_time_us() { return fake::now; }
+namespace robot_log {
+bool write(Level level, const char *source, const char *format, ...) {
+  if (level == Level::TRACE && std::strcmp(source, "pose") == 0) {
+    ++pose_trace_records;
+    pose_trace_fields =
+        std::strstr(format, "x=%.3f y=%.3f yaw=%.3f") != nullptr &&
+        std::strstr(format, "track=%u cell=%d,%d") != nullptr;
+  }
+  return true;
+}
+} // namespace robot_log
 namespace motor {
 nav::RunSnapshot motor_run_state() { return deadline.poll(fake::now); }
 } // namespace motor
@@ -35,6 +52,9 @@ bool localization_get_bootstrap(nav::BootstrapFrame *f) {
 } // namespace loc
 int main() {
   config = nav::default_resolver_config();
+  // Explicit open-arena fixture; production POIs belong to the supplied maze.
+  config.start_count = 1;
+  config.starts[0].cell = {0, 0};
   auto &m = config.variants[0];
   for (int r = 0; r < 5; ++r)
     for (int c = 0; c < 5; ++c)
@@ -69,6 +89,9 @@ int main() {
   nav::FeatureSnapshot s{};
   assert(nav::feature_task_snapshot(&s));
   assert(observed_stop && observed_stale && !s.pose.tracking && !s.stop.valid);
-  std::puts("PASS actual feature task: HAL snapshot input, target mailbox, "
-            "measured stop, stale, terminal quiescence");
+  assert(iterations == 47 && pose_trace_records == iterations / 10 &&
+         pose_trace_fields);
+  std::puts(
+      "PASS actual feature task: HAL snapshot input, target mailbox, "
+      "measured stop, stale, terminal quiescence, 1/10 TRACE pose sampling");
 }

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "localization/color_tracker.hpp"
 #include "localization/config.hpp"
 #include "localization/fusion_engine.hpp"
@@ -52,10 +54,10 @@ void check_covariance(const loc::RobotEKF &f) {
  */
 void test_measurements() {
   using namespace loc;
-  near(RobotEKF::expected_range(0.5f, 0.5f, 0, cfg::lidar_mounts[1]), 0.23f,
-       1e-6f);
-  near(RobotEKF::expected_range(0.5f, 0.5f, 0, cfg::lidar_mounts[0]), 0.04f,
-       1e-6f);
+  near(RobotEKF::expected_range(0.5f, 0.5f, 0, cfg::lidar_mounts[1]),
+       .3f - cfg::lidar_mounts[1].x_body_m, 1e-6f);
+  near(RobotEKF::expected_range(0.5f, 0.5f, 0, cfg::lidar_mounts[0]),
+       .1f - cfg::platform_half_side_m, 1e-6f);
   assert(std::isnan(
       RobotEKF::expected_range(-0.2f, 0.5f, 0, cfg::lidar_mounts[1])));
   RobotEKF f;
@@ -321,11 +323,16 @@ void test_motor() {
     now += 10000;
     p = c.update({6, -4, now}, now);
   }
-  near(p.duty_left, .30f, 1e-6f);
-  near(p.duty_right, -.20f, 1e-6f);
+  near(p.duty_left,
+       cfg::left_pwm.forward_offset + 6 * cfg::left_pwm.forward_duty_per_rad_s,
+       1e-6f);
+  near(p.duty_right,
+       -(cfg::right_pwm.reverse_offset +
+         4 * cfg::right_pwm.reverse_duty_per_rad_s),
+       1e-6f);
   for (int i = 0; i < 200; ++i) {
     now += 10000;
-    p = c.update({30, -30, now}, now);
+    p = c.update({cfg::max_wheel_rad_s, -cfg::max_wheel_rad_s, now}, now);
   }
   near(p.duty_left, cfg::max_duty, 1e-6f);
   near(p.duty_right, -cfg::max_duty, 1e-6f);
@@ -352,7 +359,7 @@ void test_motor() {
   assert(p.status == ControlStatus::COMMAND_TIMEOUT && p.duty_left == 0 &&
          p.duty_right == 0);
   for (const WheelCommand bad :
-       {WheelCommand{31, 0, now + 10000},
+       {WheelCommand{cfg::max_wheel_rad_s + 1, 0, now + 10000},
         WheelCommand{0, std::numeric_limits<float>::quiet_NaN(),
                      now + 10000}}) {
     now += 10000;

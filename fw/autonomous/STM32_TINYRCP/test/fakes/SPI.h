@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #pragma once
 #include <cstdint>
 constexpr int MSBFIRST = 1, SPI_MODE0 = 0;

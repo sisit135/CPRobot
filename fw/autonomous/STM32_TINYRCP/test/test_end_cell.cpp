@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "localization/config.hpp"
 #include "navigation/end_cell.hpp"
 #include "navigation/feature_navigation.hpp"
@@ -27,8 +29,11 @@ void detector() {
   assert(sample(100));
   assert(e.id == 1 && e.first_us < e.confirmed_us);
   assert(!detector.process(raw, t, &e));
-  for (int i = 0; i < 4; ++i)
-    assert(!sample(100));
+  const auto origin = e.first_us;
+  for (int i = 0; i < 4; ++i) {
+    assert(sample(100));
+    assert(e.id == 1 && e.first_us == origin && e.confirmed_us == t);
+  }
   for (int i = 0; i < 3; ++i)
     assert(!sample(1200));
   assert(!sample(100));
@@ -106,7 +111,62 @@ void gate() {
   nav::EndCellGate future;
   future.begin({0, 1}, 1000000);
   assert(!future.observe(m, f, p, 1100000));
+  nav::EndCellGate pending;
+  pending.begin({0, 1}, 1000000);
+  auto unavailable = pose(.1f, .18f, loc::kPi / 2, 1180000);
+  unavailable.tracking = false;
+  assert(!pending.observe(m, f, unavailable, 1180000));
+  assert(
+      pending.observe(m, f, pose(.1f, .18f, loc::kPi / 2, 1230000), 1230000));
+  nav::EndCellGate expired;
+  expired.begin({0, 1}, 1000000);
+  assert(!expired.observe(m, f, unavailable, 1180000));
+  assert(
+      !expired.observe(m, f, pose(.1f, .18f, loc::kPi / 2, 1340000), 1340000));
+  // A valid pose with the wrong geometry consumes the cue immediately.
+  assert(!far.observe(m, f, pose(.1f, .18f, loc::kPi / 2, 1230000), 1230000));
 }
+void continuous_tape_pose_recovery() {
+  nav::EndTapeDetector detector({150, 800});
+  nav::EndCellGate gate;
+  gate.begin({0, 1}, 1000000);
+  nav::BootstrapFrame frame{};
+  loc::RgbcSample raw{};
+  auto sample = [&](unsigned clear, int64_t stamp) {
+    raw.clear = clear;
+    ++raw.sequence;
+    return detector.process(raw, stamp, &frame.end_tape);
+  };
+  for (int i = 0; i < 3; ++i)
+    assert(!sample(1200, 1040000 + i * 40000));
+  for (int i = 0; i < 2; ++i)
+    assert(!sample(100, 1160000 + i * 40000));
+  assert(sample(100, 1240000));
+  auto p = pose(.1f, .18f, loc::kPi / 2, 1240000);
+  p.tracking = false;
+  assert(!gate.observe(loc::MazeMap::q1(), frame, p, 1240000));
+  for (int i = 1; i <= 10; ++i) {
+    const int64_t now = 1240000 + i * 40000;
+    assert(sample(100, now));
+    assert(frame.end_tape.id == 1 && frame.end_tape.first_us == 1160000);
+    if (i < 10)
+      assert(!gate.observe(loc::MazeMap::q1(), frame, p, now));
+    else {
+      p.timestamp_us = now;
+      p.tracking = true;
+      assert(gate.observe(loc::MazeMap::q1(), frame, p, now));
+    }
+  }
+  // An interruption cannot refresh an old event after reacquisition on black.
+  raw.saturated = true;
+  assert(!sample(100, 1680000));
+  raw.saturated = false;
+  assert(!sample(100, 1720000));
+  assert(!sample(100, 1760000));
+  // Existing gate tests separately require a fresh pose, the mapped entrance
+  // geometry, and reject expired or previously consumed cue identities.
+}
+
 void headings() {
   auto c = nav::default_resolver_config();
   unsigned counts[4]{};
@@ -114,9 +174,11 @@ void headings() {
     for (float degrees : {17.f, 37.f, 123.f, -41.f, -137.f})
       for (int y = 0; y < 5; ++y)
         for (int x = 0; x < 5; ++x) {
-          nav::FeatureConfig
-              cfg; // All four variants compete; no color/POI constraints.
-          nav::FeatureNavigation e(c, cfg);
+          nav::FeatureConfig cfg; // All four variants compete, no color input.
+          auto fixture = c;
+          fixture.start_count = 1;
+          fixture.starts[0].cell = loc::rotate_cell({x, y}, (4 - v) % 4);
+          nav::FeatureNavigation e(fixture, cfg);
           nav::FeatureSnapshot s;
           const float yaw = loc::deg2rad(degrees), px = (x + .5f) * .2f,
                       py = (y + .5f) * .2f;
@@ -151,6 +213,7 @@ void headings() {
 int main() {
   detector();
   gate();
+  continuous_tape_pose_recovery();
   headings();
   std::puts("PASS end tape debounce, mapped entrance, center-only completion, "
             "arbitrary startup bearing");

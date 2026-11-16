@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+
 """Compare complete EKF traces from scalar and CMSIS host executables."""
 import subprocess
 import sys

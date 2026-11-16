@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 // Host declarations only. Never use this directory in firmware include paths.
 #pragma once
 #include <cstdint>

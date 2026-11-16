@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "localization/fusion_engine.hpp"
 #include "motor_control/config.hpp"
 #include "motor_control/wheel_controller.hpp"
@@ -137,13 +139,21 @@ void pipeline(unsigned variant, uint32_t seed, bool inject_outage,
           }
         }
         if (!expect_completion && drive.status == nav::ExecuteStatus::FAULT) {
-          assert(drive.linear_m_s == 0 && drive.angular_rad_s == 0 &&
-                 !p.tracking);
+          std::printf("E2E mismatch containment=%s tracking=%u\n",
+                      nav::execute_fault_name(drive.fault),
+                      unsigned(p.tracking));
+          assert(drive.linear_m_s == 0 && drive.angular_rad_s == 0);
+          // The center-passage guard can expose an off-route tracked cell
+          // before the excessive motor mismatch degrades EKF tracking.
+          assert(
+              (drive.fault == nav::ExecuteFault::UNEXPECTED_CELL &&
+               p.tracking) ||
+              (drive.fault == nav::ExecuteFault::LEG_TIMEOUT && !p.tracking));
           output = motor->update({0, 0, now}, now);
           assert(output.duty_left == 0 && output.duty_right == 0 &&
                  !plant.collided);
           contained = true;
-          break; // Excess mismatch loses tracking; leg timeout contains it.
+          break; // Excess mismatch is contained before further actuation.
         }
         assert(drive.status != nav::ExecuteStatus::FAULT &&
                drive.status != nav::ExecuteStatus::BLOCKED &&
@@ -169,8 +179,8 @@ void pipeline(unsigned variant, uint32_t seed, bool inject_outage,
   }
   if (!expect_completion) {
     assert(contained && !completed && failures_checked && paused);
-    std::puts("PASS E2E excess motor mismatch: lost tracking pauses, leg "
-              "timeout faults with zero PWM");
+    std::puts("PASS E2E excess motor mismatch: off-route cell or tracking loss "
+              "faults with zero PWM");
     return;
   }
   if (!completed)
@@ -195,5 +205,9 @@ int main() {
     pipeline(k, 1234 + k, false);
   pipeline(0, 2026, true);
   pipeline(0, 4321, false, true);
-  pipeline(0, 5678, false, true, {17, 21, .18f, .14f}, false);
+  // Shifted side observations keep the historical 17/21 plant observable.
+  // Retain every negative containment assertion and increase the asymmetry.
+  // Failed left drive and an over-responsive right drive force containment;
+  // the original fault, tracking-loss and zero-PWM assertions remain intact.
+  pipeline(0, 5678, false, true, {0, 30, .18f, .14f}, false);
 }

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "hal/vl53l0x_hal.hpp"
 #include "localization/hal_sensors.hpp"
 #include "logging/log.hpp"
@@ -55,7 +57,7 @@ void sample_all(nav::BootstrapFrame *frame = nullptr) {
   for (unsigned i = 0; i < 3; ++i) {
     float value = -1;
     int64_t stamp = -1;
-    if (hal_tof_reddistancecorrected(static_cast<loc::TofId>(i), &value,
+    if (hal_tof_red_distance_corrected(static_cast<loc::TofId>(i), &value,
                                      &stamp) &&
         frame) {
       frame->range_m[i] = value;
@@ -122,7 +124,7 @@ void polling() {
     assert(pins[pin] == HIGH && modes[pin] == OUTPUT_OPEN_DRAIN);
   float value = -1;
   int64_t stamp = -1;
-  assert(!hal_tof_reddistancecorrected(loc::TofId::LEFT, &value, &stamp));
+  assert(!hal_tof_red_distance_corrected(loc::TofId::LEFT, &value, &stamp));
   assert(starts == 1 && active == 0);
   assert(!tof::read(loc::TofId::LEFT, &value, &stamp) && polls == 0 &&
          value == -1 && stamp == -1);
@@ -225,8 +227,11 @@ void fallback_pipeline() {
     frame.imu_us = clock_us;
     motor::MotorSnapshot m{};
     m.timestamp_us = clock_us;
-    if (k % 2 == 0)
-      drive = rule.update(frame, m, clock_us); // Production 20 ms path cadence.
+    if (k % 2 == 0) {
+      // Fresh independent heading projects wall ranges for cell centering.
+      const nav::HeadingObservation heading{0, clock_us, true};
+      drive = rule.update(frame, m, clock_us, nullptr, &heading);
+    } // Production 20 ms path cadence.
     moved = moved || drive.linear_m_s != 0 || drive.angular_rad_s != 0;
   }
   assert(moved);

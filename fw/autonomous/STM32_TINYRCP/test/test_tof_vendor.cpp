@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 // Links the real HAL + C facade + supplied ST C++ algorithms + STM32 port.
 #include "hal/vl53l0x_hal.hpp"
 #include "logging/log.hpp"

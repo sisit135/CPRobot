@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+
 """Validate the PlatformIO source graph without downloading its target SDK."""
 import importlib.util
 from pathlib import Path
@@ -36,7 +38,7 @@ class SourceGraph(unittest.TestCase):
     def test_base(self):
         env = Env()
         sources.configure(env)
-        self.assertEqual(len(env.builds), 1)
+        self.assertEqual(len(env.builds), 4)
         target, root, filters = env.builds[0]
         self.assertEqual(target, "$BUILD_DIR/robot_sf")
         self.assertEqual(len(filters), len(set(filters)))
@@ -51,11 +53,11 @@ class SourceGraph(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "custom_cmsis_dsp_root"):
             sources.configure(Env("-DLOC_USE_CMSIS_DSP"))
 
-    def test_incomplete_remote_profile_is_explicit(self):
-        real_is_dir=Path.is_dir
-        with patch.object(Path,"is_dir",lambda p: False if p.name=="remote" else real_is_dir(p)):
-            with self.assertRaisesRegex(RuntimeError, "Remote profile requires"):
-                sources.configure(Env("-DAXI_REMOTE_CONFIG_ENABLE"))
+    def test_required_remote_sources_are_checked_in_every_profile(self):
+        real_is_file=Path.is_file
+        with patch.object(Path,"is_file",lambda p: False if p.name=="codec.cpp" else real_is_file(p)):
+            with self.assertRaisesRegex(RuntimeError, "Required remote configuration"):
+                sources.configure(Env())
 
 
 if __name__ == "__main__":

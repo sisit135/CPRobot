@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "board_motor_pins.hpp"
 #include "motor_control/hal_motor.hpp"
 #include <cassert>

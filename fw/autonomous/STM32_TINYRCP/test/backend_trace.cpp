@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "localization/config.hpp"
 #include "localization/robot_ekf.hpp"
 #include <cassert>

@@ -1,4 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "localization/localization.hpp"
+#include "logging/log.hpp"
 #include "motor_control/hal_motor.hpp"
 #include "motor_control/motor_control.hpp"
 #include "support/fake_rtos.hpp"
@@ -26,6 +29,9 @@ void hal_motor_stop() { left = right = 0; }
 namespace loc {
 void localization_halt() { loc_halted = true; }
 } // namespace loc
+namespace robot_log {
+bool write(Level, const char *, const char *, ...) { return true; }
+} // namespace robot_log
 int main(int argc, char **argv) {
   assert(argc == 2);
   const std::string scenario = argv[1];

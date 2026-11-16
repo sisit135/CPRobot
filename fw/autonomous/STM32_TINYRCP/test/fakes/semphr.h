@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #pragma once
 #include "FreeRTOS.h"
 using SemaphoreHandle_t = void *;
