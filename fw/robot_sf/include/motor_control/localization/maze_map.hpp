@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #pragma once
 #include "localization/types.hpp"
 #include <cstdint>
@@ -18,7 +20,8 @@ inline constexpr uint8_t maze_q1_orig[kMazeN][kMazeN] = {
     {0b1110, 0b1011, 0b1100, 0b0001, 0b0011},
     {0b1000, 0b0010, 0b1001, 0b0110, 0b0010},
     {0b1010, 0b1010, 0b0100, 0b0011, 0b0010},
-    {0b1110, 0b1101, 0b0100, 0b0110, 0b1110}};
+    // World (1,1) SOUTH / (1,0) NORTH is an open shared passage.
+    {0b1110, 0b1100, 0b0100, 0b0110, 0b1110}};
 struct MazeMap {
   uint8_t walls[kMazeN][kMazeN]{}; // row 0 = NORTH, row 4 = SOUTH.
   uint8_t known[kMazeN]
@@ -40,7 +43,7 @@ struct MazeMap {
    */
   bool valid() const;
   /** @brief Count contradictory known shared edges once each.
-   * @returns Number of E/W or N/S disagreements; Q1 returns six.
+   * @returns Number of E/W or N/S disagreements; Q1 returns five.
    */
   unsigned contradictions() const;
   /** @brief Resolve one physical cell edge using both adjacent masks.

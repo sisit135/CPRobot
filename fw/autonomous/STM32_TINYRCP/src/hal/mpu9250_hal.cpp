@@ -1,6 +1,9 @@
+ // SPDX-License-Identifier: GPL-3.0-only
+
 #include "hal/mpu9250_hal.hpp"
 #include "hal/sensors_config.hpp"
 #include "platform/hal_platform.hpp"
+#include "remote/settings.hpp"
 #include <Arduino.h>
 #include <STM32FreeRTOS.h>
 #include <cmath>
@@ -389,6 +392,7 @@ bool read(loc::ImuSample *out, int64_t *timestamp_us) {
     accel[i] -= cfg::kAccelBiasMps2[i];
     gyro[i] -= cfg::kGyroBiasRps[i];
   }
+  gyro[2] -= remote::gyro_zero();
   if (!finite3(accel) || !finite3(gyro)) {
     ++stats.rejected;
     return false;

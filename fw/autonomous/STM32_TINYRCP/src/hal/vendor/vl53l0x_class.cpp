@@ -58,8 +58,9 @@
 #define TEMP_BUF_SIZE 64
 
 /** Maximum buffer size to be used in i2c */
-#define VL53L0X_MAX_I2C_XFER_SIZE 64 /* Maximum buffer size to be used in i2c  \
-                                      */
+#define VL53L0X_MAX_I2C_XFER_SIZE                                              \
+  64                         /* Maximum buffer size to be used in i2c          \
+                              */
 #define VL53L0X_I2C_USER_VAR /* none but could be for a flag var to get/pass   \
                                 to mutex interruptible  return flags and try   \
                                 again */

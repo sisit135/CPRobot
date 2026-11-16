@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "navigation/map_resolver.hpp"
 #include "localization/config.hpp"
 #include <cmath>
@@ -9,14 +11,12 @@ ResolverConfig default_resolver_config() {
   const auto q1 = loc::MazeMap::q1();
   for (unsigned i = 0; i < 4; ++i)
     c.variants[i] = q1.rotated(i, static_cast<loc::MapKind>(i));
-  // Tile PoIs BEGINS
-  // were 5,0 and 0,0 by offsetting errors.
-  c.starts[0] = {{5, 1}, TileClass::BLUE_START, 4};
-  c.starts[1] = {{1, 1},
-                 TileClass::BLUE_START,
-                 15}; // Has heading ambiguity in real-world cases.
-  // TODO: check tileclass rw behavior & contradiction logic to match this.
-  c.start_count = 2;
+  // Entrance definitions use zero-based world cells, like every map API.
+  // Q1 (TopRight) POI IDs follow the configured order; other Qs rotate them.
+  c.starts[0] = {{0, 4}, TileClass::BLUE_START, 15};
+  c.starts[1] = {{4, 4}, TileClass::BLUE_START, 15};
+  c.starts[2] = {{4, 0}, TileClass::BLUE_START, 4};
+  c.start_count = 3;
   return c;
 }
 MapResolver::MapResolver(const ResolverConfig &c) : cfg_(c) {

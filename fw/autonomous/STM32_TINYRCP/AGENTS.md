@@ -1,0 +1,2 @@
+- ESP32 SDK: located at "/mnt/10570F2D10570F2D/GH/esp-idf/"
+- [ESP32 API Ref](https://docs.espressif.com/projects/esp-idf/en/v6.1/esp32c3/)

@@ -1,22 +1,23 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "telemetry/adapter.hpp"
 #ifdef AXI_TELEMETRY_SPI_ENABLE
 #include "../../../../../generic_field_tool/common/telemetry_codec.h"
 #include "../../../../telemetry_bridge/common/wire.h"
+#include "localization/localization.hpp"
 #include "logging/log.hpp"
 #include "motor_control/motor_control.hpp"
 #include "navigation/navigation.hpp"
 #include "platform/hal_platform.hpp"
 #include "platform/rtos.hpp"
+#include "remote/board_store.hpp"
+#include "remote/schema_blob.hpp"
+#include "remote/settings.hpp"
 #include <Arduino.h>
 #include <SPI.h>
 #include <cmath>
 #include <cstring>
 #include <semphr.h>
-#ifdef AXI_REMOTE_CONFIG_ENABLE
-#include "localization/localization.hpp"
-#include "remote/board_store.hpp"
-#include "remote/schema_blob.hpp"
-#endif
 #ifndef AXI_SPI_CS_PIN
 #define AXI_SPI_CS_PIN -1
 #endif
@@ -39,7 +40,6 @@ uint8_t rx[AXI_SPI_SIZE], tx[AXI_SPI_SIZE];
 uint32_t ack_id = 0;
 uint8_t ack_op = 0, ack_status = 0;
 uint32_t last_command_id = 0;
-#ifdef AXI_REMOTE_CONFIG_ENABLE
 uint8_t remote_reply[238];
 size_t remote_reply_size = 0;
 bool calibrate_gyro(float *out) {
@@ -60,9 +60,9 @@ bool calibrate_gyro(float *out) {
           !std::isfinite(frame.imu.ax_mps2) ||
           !std::isfinite(frame.imu.ay_mps2) ||
           !std::isfinite(frame.imu.az_mps2) ||
-          std::fabs(frame.imu.ax_mps2) > .3f ||
-          std::fabs(frame.imu.ay_mps2) > .3f ||
-          std::fabs(frame.imu.az_mps2) > .3f)
+          std::fabs(std::hypot(std::hypot(frame.imu.ax_mps2, frame.imu.ay_mps2),
+                               frame.imu.az_mps2) -
+                    9.80665f) > .3f)
         return false;
       sum += frame.imu.gz_rps;
       squares += frame.imu.gz_rps * frame.imu.gz_rps;
@@ -98,7 +98,6 @@ uint8_t calibrate_color(uint8_t color_id) {
   remote::apply(*store);
   return 0;
 }
-#endif
 bool send_log(const robot_log::Record &record, void *) {
   axi_log_record wire_record{};
   wire_record.timestamp_ms = record.timestamp_ms;
@@ -115,7 +114,11 @@ bool send_log(const robot_log::Record &record, void *) {
 bool begin_localization() {
   xSemaphoreTake(start_mutex, portMAX_DELAY);
   const bool ok =
-      !stop_latched && (navigation_started || nav::navigation_start(settings));
+      !stop_latched && remote::board_store() &&
+      (navigation_started ||
+       nav::navigation_start(settings, nav::NavigationEngine::FEATURE,
+                             remote::feature_settings(),
+                             remote::fallback_settings()));
   if (ok)
     navigation_started = true;
   xSemaphoreGive(start_mutex);
@@ -164,12 +167,9 @@ void worker(void *) {
     memset(tx, 0, sizeof tx);
     // Logs are drained here, so neither a sensor driver nor a producer touches
     // SPI.
-#ifdef AXI_REMOTE_CONFIG_ENABLE
     if (remote_reply_size)
       (void)axi_spi_typed_pack(5, remote_reply, remote_reply_size, tx);
-    else
-#endif
-        if (robot_log::drain(1) == 0) {
+    else if (robot_log::drain(1) == 0) {
       loc::PoseSnapshot pose{};
       if (xQueueReceive(snapshots, &pose, 0) == pdTRUE) {
         axi_ekf_log log{};
@@ -216,14 +216,12 @@ void worker(void *) {
           } else if (op == 2) {
             stop_navigation();
             ack_status = 0;
-#ifdef AXI_REMOTE_CONFIG_ENABLE
           } else if (op == 3) {
             xSemaphoreTake(start_mutex, portMAX_DELAY);
             ack_status = (!navigation_started && !stop_latched)
                              ? calibrate_color(status)
                              : 1;
             xSemaphoreGive(start_mutex);
-#endif
           } else {
             ack_status = 2;
           }
@@ -233,7 +231,6 @@ void worker(void *) {
         ack_op = op;
       } else if (ack_id)
         ack_id = 0; // ESP has had one opportunity to see the ACK.
-#ifdef AXI_REMOTE_CONFIG_ENABLE
       remote_reply_size = 0;
       const uint8_t *proto = nullptr;
       size_t proto_size = 0;
@@ -253,7 +250,6 @@ void worker(void *) {
           xSemaphoreGive(start_mutex);
         }
       }
-#endif
     }
     vTaskDelayUntil(&wake, pdMS_TO_TICKS(50));
   }
@@ -263,7 +259,6 @@ bool start(const nav::ResolverConfig &config) {
   if (snapshots || AXI_SPI_CS_PIN < 0 || AXI_SPI_READY_PIN < 0)
     return false;
   settings = config;
-  (void)robot_log::set_sink(robot_log::TELEMETRY, send_log);
   snapshots = xQueueCreate(1, sizeof(loc::PoseSnapshot));
   start_mutex = xSemaphoreCreateMutex();
   if (!snapshots || !start_mutex) {
@@ -289,6 +284,7 @@ bool start(const nav::ResolverConfig &config) {
     snapshots = nullptr;
     return false;
   }
+  (void)robot_log::set_sink(robot_log::TELEMETRY, send_log);
   return true;
 }
 void submit(const loc::PoseSnapshot &pose) {

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #pragma once
 #include "localization/types.hpp"
 #include "stm32f4xx_hal.h"
@@ -43,7 +45,7 @@
  * freshness gates for the full three-sensor scan plus sensor-task poll latency.
  * Do not assume a 33 ms per-sensor update period from a 33 ms timing budget.
  *
- * Host validation is documented in docs/RA_TIMEOUT_FALLBACK_VALIDATION.md.
+ * Host validation is documented in docs/RA_TIMEOUT_FALLBACK_validation.md.
  * Physical sensor/STM32 timing still requires target validation.
  */
 namespace tof {
@@ -163,5 +165,5 @@ Statistics statistics(loc::TofId id);
  * @param[out] timestamp_us Read-completion time in the shared monotonic domain.
  * @returns true for one fresh sample; false while waiting, expired or faulted.
  */
-bool hal_tof_reddistancecorrected(loc::TofId id, float *distance_m,
+bool hal_tof_red_distance_corrected(loc::TofId id, float *distance_m,
                                   int64_t *timestamp_us);

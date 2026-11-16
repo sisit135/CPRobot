@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #pragma once
 #ifdef LOC_USE_CMSIS_DSP
 #include <dsp/matrix_functions.h>

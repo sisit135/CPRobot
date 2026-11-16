@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "vl53l0x_platform.h"
 #include "platform/hal_platform.hpp"
 #include <Arduino.h>

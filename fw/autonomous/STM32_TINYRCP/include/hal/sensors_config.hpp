@@ -1,9 +1,11 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #pragma once
 #include <Arduino.h>
 #include <cstdint>
 
 // Board-level sensor wiring. All addresses here are SEVEN-bit addresses.
-// PB7/PB6 preserve the previous Black Pill Wire defaults; verify actual wiring.
+// THS v2 Black Pill assignment; see docs/hardware_wiring.md.
 // Override macros with build flags or edit this header before deployment.
 #ifndef SENSORS_MAIN_SDA_PIN
 #define SENSORS_MAIN_SDA_PIN PB7
@@ -14,20 +16,21 @@
 #ifndef SENSORS_MPU9250_ADDRESS_7BIT
 #define SENSORS_MPU9250_ADDRESS_7BIT 0x68
 #endif
+// I2C2: PB3 AF9 SDA / PB10 AF4 SCL (PB3 cannot also provide SWO).
 #ifndef SENSORS_TOF_SDA_PIN
-#define SENSORS_TOF_SDA_PIN -1
+#define SENSORS_TOF_SDA_PIN PB3
 #endif
 #ifndef SENSORS_TOF_SCL_PIN
-#define SENSORS_TOF_SCL_PIN -1
+#define SENSORS_TOF_SCL_PIN PB10
 #endif
 #ifndef SENSORS_TOF_LEFT_XSHUT_PIN
-#define SENSORS_TOF_LEFT_XSHUT_PIN -1
+#define SENSORS_TOF_LEFT_XSHUT_PIN PA1
 #endif
 #ifndef SENSORS_TOF_FRONT_XSHUT_PIN
-#define SENSORS_TOF_FRONT_XSHUT_PIN -1
+#define SENSORS_TOF_FRONT_XSHUT_PIN PA2
 #endif
 #ifndef SENSORS_TOF_RIGHT_XSHUT_PIN
-#define SENSORS_TOF_RIGHT_XSHUT_PIN -1
+#define SENSORS_TOF_RIGHT_XSHUT_PIN PA3
 #endif
 
 #ifndef SENSORS_TAPE_BLACK_MAX_CLEAR

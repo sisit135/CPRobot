@@ -1,0 +1,7 @@
+PROJECT_NAME = AXI_navigation
+OUTPUT_DIRECTORY = docs
+INPUT = ../robot_sf/include ../robot_sf/src ../autonomous/STM32_TINYRCP/include ../autonomous/STM32_TINYRCP/src
+RECURSIVE = YES
+EXTRACT_ALL = YES
+GENERATE_HTML = YES
+GENERATE_LATEX = NO

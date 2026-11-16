@@ -1,5 +1,8 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #pragma once
 #include "localization/types.hpp"
+#include "platform_geometry.hpp"
 
 namespace loc::cfg {
 constexpr int grid_n = 5;
@@ -7,8 +10,19 @@ constexpr float cell_m = 0.20f;
 constexpr float map_w_m = grid_n * cell_m, map_h_m = grid_n * cell_m;
 constexpr float initial_x_m = 0.50f, initial_y_m = 0.50f;
 constexpr float initial_yaw_rad = 0;
+// Mounting coordinates use X right, Y forward. Convert to the navigation
+// body frame (+x forward, +y left) for ray tracing; all beams face outward.
+constexpr float platform_diagonal_m = robot::geometry::platform_diagonal_m;
+constexpr float platform_half_side_m = robot::geometry::platform_half_side_m;
+constexpr LidarMount body_tof_mount(robot::geometry::MountPoint mount,
+                                    float yaw_body_rad) {
+  const auto p = robot::geometry::to_body(mount);
+  return {p.x_body_m, p.y_body_m, yaw_body_rad};
+}
 constexpr LidarMount lidar_mounts[3] = {
-    {0, +0.06f, +kPi / 2}, {+0.07f, 0, 0}, {0, -0.06f, -kPi / 2}};
+    body_tof_mount(robot::geometry::tof_mounts[0], +kPi / 2),
+    body_tof_mount(robot::geometry::tof_mounts[1], 0),
+    body_tof_mount(robot::geometry::tof_mounts[2], -kPi / 2)};
 constexpr float color_x_body_m = 0.0f, color_y_body_m = 0.0f;
 
 // These are starting values, not sensor specifications.

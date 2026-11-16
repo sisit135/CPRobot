@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "localization/robot_ekf.hpp"
 #include "localization/config.hpp"
 #include "localization/matrix_backend.hpp"

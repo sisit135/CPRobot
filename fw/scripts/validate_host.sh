@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
+
 set -euo pipefail
 # May be invoked from any working directory. Keep generated files out of src/.
 fw_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"

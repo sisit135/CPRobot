@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "motor_control/wheel_controller.hpp"
 #include "motor_control/config.hpp"
 #include <algorithm>
@@ -76,6 +78,10 @@ MotorSnapshot WheelController::update(const WheelCommand &cmd, int64_t now) {
   const float step = cfg::max_accel_rad_s2 * dt;
   target_left_ = ramp(target_left_, cmd.left_rad_s, step);
   target_right_ = ramp(target_right_, cmd.right_rad_s, step);
+#if ROBOT_MAX_SPEED_ROLLING_TEST
+  target_left_ = cmd.left_rad_s;
+  target_right_ = cmd.right_rad_s;
+#endif
   p.target_left_rad_s = target_left_;
   p.target_right_rad_s = target_right_;
   p.duty_left = duty(target_left_, cfg::left_pwm);

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #ifndef AXI_VL53L0X_PLATFORM_H
 #define AXI_VL53L0X_PLATFORM_H
 /* Platform replacement for STSW-IMG005. Keep the ST core and its notices.

@@ -2,6 +2,7 @@
 #pragma once
 #include "lfs.h"
 #include "localization/color_tracker.hpp"
+#include "remote/catalog.hpp"
 #include "remote/codec.h"
 #include <array>
 #include <cstddef>
@@ -16,14 +17,6 @@ enum Status : uint32_t {
   NOT_FOUND,
   NOT_READY
 };
-struct Spec {
-  uint32_t key;
-  const char *name, *group;
-  uint32_t type;
-  float min, max, initial;
-  const char *source;
-};
-constexpr std::size_t kFields = 41;
 const std::array<Spec, kFields> &catalog();
 struct Snapshot {
   uint32_t flags = 1, revision = 1;

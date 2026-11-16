@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+
 from pathlib import Path
 Import("env")
 root = Path(env.subst("$PROJECT_DIR")).resolve().parents[1] / "robot_sf"

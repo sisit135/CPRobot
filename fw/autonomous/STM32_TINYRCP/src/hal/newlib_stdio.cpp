@@ -1,8 +1,27 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "logging/log.hpp"
 #include <cerrno>
 #include <cstddef>
 #if defined(__arm__) || defined(__thumb__)
+#include "platform/hal_platform.hpp"
 #include <Arduino.h>
+#include <ctime>
+#include <sys/times.h>
+
+// ST's enabled trace macros call clock(). Bare-metal newlib needs this hook;
+// use the same monotonic HAL clock as the rest of the firmware.
+extern "C" clock_t _times(struct tms *usage) {
+  const uint64_t now = static_cast<uint64_t>(hal_time_us());
+  const clock_t ticks =
+      static_cast<clock_t>((now / 1000000) * CLOCKS_PER_SEC +
+                           (now % 1000000) * CLOCKS_PER_SEC / 1000000);
+  if (usage) {
+    usage->tms_utime = ticks;
+    usage->tms_stime = usage->tms_cutime = usage->tms_cstime = 0;
+  }
+  return ticks;
+}
 #endif
 extern "C" int _write(int fd, char *data, int length) {
   if (fd != 1 && fd != 2) {

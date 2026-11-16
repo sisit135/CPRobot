@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 // Narrow C API facade over the bundled ST VL53L0X C++ vendor driver.
 #pragma once
 #include "vl53l0x_platform.h"

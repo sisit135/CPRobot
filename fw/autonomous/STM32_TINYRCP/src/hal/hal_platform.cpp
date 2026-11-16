@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "platform/hal_platform.hpp"
 #include <Arduino.h>
 int64_t hal_time_us() {

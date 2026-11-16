@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+
 """Build the portable core and bundled ST vendor once, independent of shell cwd."""
 from pathlib import Path
 
@@ -29,11 +31,21 @@ def configure(env):
     # Project src/ is compiled by PlatformIO, including vl53l0x_class.cpp,
     # the narrow facade and the polling port. Never add an external ST C core.
     flags = str(env.get("BUILD_FLAGS", ""))
-    if "AXI_TELEMETRY_SPI_ENABLE" in flags:
-        embedded = fw.parent / "third_party/EmbeddedProto/src"
-        env.Append(CPPPATH=[str(embedded), str(fw.parent / "generic_field_tool/esp32c6/generated")])
-        env.BuildSources("$BUILD_DIR/embedded_proto", str(embedded),
-                         src_filter=["+<Fields.cpp>", "+<MessageInterface.cpp>", "+<ReadBufferSection.cpp>"])
+    embedded = fw.parent / "third_party/EmbeddedProto/src"
+    remote = core / "src/remote"
+    littlefs = fw.parent / "third_party/littlefs"
+    required_remote = [remote / name for name in ("config.cpp", "codec.cpp", "service.cpp")]
+    required_remote += [littlefs / "lfs.c", littlefs / "lfs_util.c"]
+    required_remote += [core / "include/remote/catalog.hpp", core / "include/remote/schema_blob.hpp"]
+    if any(not path.is_file() for path in required_remote):
+        raise RuntimeError("Required remote configuration sources/assets are missing; regenerate schemas and restore littlefs")
+    env.Append(CPPPATH=[str(embedded), str(littlefs),
+                        str(fw.parent / "generic_field_tool/common"),
+                        str(fw.parent / "generic_field_tool/esp32_multiboard/generated")])
+    env.BuildSources("$BUILD_DIR/embedded_proto", str(embedded),
+                     src_filter=["+<Fields.cpp>", "+<MessageInterface.cpp>", "+<ReadBufferSection.cpp>"])
+    env.BuildSources("$BUILD_DIR/remote", str(remote), src_filter=["+<*.cpp>"])
+    env.BuildSources("$BUILD_DIR/littlefs", str(littlefs), src_filter=["+<lfs.c>", "+<lfs_util.c>"])
     if "LOC_USE_CMSIS_DSP" in flags:
         root = Path(env.GetProjectOption("custom_cmsis_dsp_root",
                                         str(fw.parent / "third_party/CMSIS-DSP")))
@@ -46,16 +58,6 @@ def configure(env):
         env.Append(CPPPATH=[str(root / "Include"), str(root / "PrivateInclude")])
         env.BuildSources("$BUILD_DIR/cmsis_matrix", str(matrix),
                          src_filter=["+<" + n + ">" for n in names])
-    if "AXI_REMOTE_CONFIG_ENABLE" in flags:
-        remote = core / "src/remote"
-        if not remote.is_dir() or not any(remote.glob("*.cpp")) or not (remote / "codec.c").is_file():
-            raise RuntimeError("Remote profile requires robot_sf/src/remote implementations (missing from source-only archive)")
-        littlefs = fw.parent / "third_party/littlefs"
-        if not (littlefs / "lfs.c").is_file():
-            raise RuntimeError("Remote profile requires third_party/littlefs/lfs.c")
-        env.Append(CPPPATH=[str(littlefs)])
-        env.BuildSources("$BUILD_DIR/remote", str(remote), src_filter=["+<*.cpp>", "+<*.c>"])
-        env.BuildSources("$BUILD_DIR/littlefs", str(littlefs), src_filter=["+<lfs.c>", "+<lfs_util.c>"])
 
 
 if "Import" in globals():

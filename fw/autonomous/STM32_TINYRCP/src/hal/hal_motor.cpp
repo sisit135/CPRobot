@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "motor_control/hal_motor.hpp"
 #include "Arduino.h"
 #include "board_motor_pins.hpp"

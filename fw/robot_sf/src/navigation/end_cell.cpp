@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "navigation/end_cell.hpp"
 #include "localization/config.hpp"
 #include <cmath>
@@ -17,10 +19,11 @@ bool EndTapeDetector::process(const loc::RgbcSample &r, int64_t t,
   last_ = t;
   if (bad) {
     white_ = black_ = 0;
-    armed_ = false;
+    armed_ = on_tape_ = false;
     return false;
   }
   if (r.clear >= cfg_.white_min) {
+    on_tape_ = false;
     black_ = 0;
     if (white_ < cfg_.confirmations)
       ++white_;
@@ -30,11 +33,20 @@ bool EndTapeDetector::process(const loc::RgbcSample &r, int64_t t,
   }
   white_ = 0;
   if (r.clear > cfg_.black_max) {
+    on_tape_ = false;
     black_ = 0;
     return false;
   }
-  if (!armed_)
-    return false; // Starting on black is not a white→tape entry.
+  if (!armed_) {
+    if (!on_tape_)
+      return false; // Starting on black is not a white-to-tape entry.
+    // A new acquisition on the same continuously observed tape is fresh
+    // evidence, not a new entry. Keep its identity/origin while allowing a
+    // brief pose-confirmation gap to recover under the unchanged age gate.
+    // White/gray, saturation and acquisition gaps revoke this continuity.
+    *out = {event_, first_black_, t};
+    return true;
+  }
   if (!black_)
     first_black_ = t;
   if (black_ < cfg_.confirmations)
@@ -43,6 +55,7 @@ bool EndTapeDetector::process(const loc::RgbcSample &r, int64_t t,
       event_ == std::numeric_limits<uint32_t>::max())
     return false;
   armed_ = false;
+  on_tape_ = true;
   black_ = 0;
   *out = {++event_, first_black_, t};
   return true;
@@ -61,12 +74,18 @@ bool EndCellGate::observe(const loc::MazeMap &map, const BootstrapFrame &f,
   const auto &e = f.end_tape;
   if (!e.id || e.id <= consumed_)
     return false;
-  consumed_ = e.id; // A rejected event cannot be replayed at a later location.
   if (!loc::valid_cell(goal_) || !map.valid() || e.first_us < since_ ||
       e.first_us <= 0 || e.confirmed_us < e.first_us || e.confirmed_us > now ||
-      now - e.confirmed_us > 150000 || !fresh_pose(p, now) ||
+      now - e.confirmed_us > 150000) {
+    consumed_ = e.id;
+    return false;
+  }
+  // A brief resolver confirmation gap is not a geometric rejection. Keep
+  // the robot stopped while waiting within the original cue/pose age bounds.
+  if (!fresh_pose(p, now) ||
       std::llabs(p.timestamp_us - e.confirmed_us) > 100000)
     return false;
+  consumed_ = e.id; // A geometrically rejected event cannot be replayed later.
   const int h = (int(std::lround(p.yaw_rad / (loc::kPi / 2))) % 4 + 4) % 4;
   const float yaw = h * loc::kPi / 2;
   if (std::fabs(loc::wrap_pi(p.yaw_rad - yaw)) > loc::deg2rad(20))

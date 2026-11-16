@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+
 cmake_minimum_required(VERSION 3.16)
 project(AXI_navigation_host LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)

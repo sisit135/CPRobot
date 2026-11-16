@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "localization/fusion_engine.hpp"
 #include "localization/config.hpp"
 #include <algorithm>

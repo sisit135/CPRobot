@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #pragma once
 #include "localization/color_tracker.hpp"
 #include "localization/types.hpp"
@@ -43,7 +45,7 @@ bool hal_magnetic_clean();
  * @param[out] timestamp_us Acquisition time, or zero for read completion.
  * @returns true for fresh valid data; default false. Spelling is preserved.
  */
-bool hal_tof_reddistancecorrected(loc::TofId id, float *distance_m,
+bool hal_tof_red_distance_corrected(loc::TofId id, float *distance_m,
                                   int64_t *timestamp_us);
 /** @brief Legacy compatibility hook: returns no references on the all-white
  * field.

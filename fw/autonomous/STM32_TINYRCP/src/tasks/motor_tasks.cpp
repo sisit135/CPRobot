@@ -1,4 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "localization/localization.hpp"
+#include "logging/log.hpp"
 #include "motor_control/config.hpp"
 #include "motor_control/hal_motor.hpp"
 #include "motor_control/motor_control.hpp"
@@ -29,9 +32,8 @@ void stop_terminal() {
  */
 void motor_task(void *context) {
   (void)context;
-  bool driver_ok = hal_motor_init();
-  if (!driver_ok)
-    hal_motor_stop();
+  // Bring-up owns initialization; duty writes still check latched HAL faults.
+  bool driver_ok = true;
   WheelController controller;
   TickType_t wake = xTaskGetTickCount();
   const TickType_t period =
@@ -128,6 +130,11 @@ bool motor_set_wheel_speeds(float left, float right) {
     ok = xQueueOverwrite(s_command, &cmd) == pdTRUE;
   }
   taskEXIT_CRITICAL();
+  if (ok)
+    robot_log::write(robot_log::Level::TRACE, "motor",
+                     "enqueue L=%.3f R=%.3f rad/s t_us=%lld",
+                     static_cast<double>(left), static_cast<double>(right),
+                     static_cast<long long>(now));
   return ok;
 }
 bool motor_set_twist(float linear, float angular) {

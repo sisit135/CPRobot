@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #pragma once
 #include "motor_control/types.hpp"
 #include "navigation/run_deadline.hpp"

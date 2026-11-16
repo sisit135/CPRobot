@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 // CPRobot bridge to the bundled ST C++ implementation. No second ST core.
 #include "vendor/vl53l0x_class.h"
 #include "vl53l0x_api.h"

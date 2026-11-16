@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #pragma once
 #include "navigation/types.hpp"
 namespace nav {
@@ -18,7 +20,7 @@ private:
   uint32_t sequence_ = 0, event_ = 0;
   int64_t last_ = 0, first_black_ = 0;
   unsigned white_ = 0, black_ = 0;
-  bool armed_ = false;
+  bool armed_ = false, on_tape_ = false;
 };
 struct EndCellConfig {
   // Association window around the entry edge; not distance-driven odometry.

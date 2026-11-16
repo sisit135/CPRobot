@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "hal/vl53l0x_hal.hpp"
 #include "logging/log.hpp"
 #include "platform/hal_platform.hpp"
@@ -18,7 +20,7 @@ extern "C" void axi_vl53l0x_log_error(const char *function, const char *format,
 
 #ifdef VL53L0X_LOG_ENABLE
 extern "C" {
-uint32_t _trace_level = TRACE_LEVEL_ERRORS;
+uint32_t _trace_level = TRACE_LEVEL_ALL;
 }
 extern "C" void trace_print_module_function(uint32_t, uint32_t level, uint32_t,
                                             const char *format, ...) {
@@ -26,7 +28,8 @@ extern "C" void trace_print_module_function(uint32_t, uint32_t level, uint32_t,
       level <= TRACE_LEVEL_ERRORS    ? robot_log::Level::ERROR
       : level == TRACE_LEVEL_WARNING ? robot_log::Level::WARN
       : level == TRACE_LEVEL_INFO    ? robot_log::Level::INFO
-                                     : robot_log::Level::DEBUG;
+      : level == TRACE_LEVEL_DEBUG   ? robot_log::Level::DEBUG
+                                     : robot_log::Level::TRACE;
   va_list arguments;
   va_start(arguments, format);
   (void)robot_log::writev(mapped, "vl53l0x", format, arguments);
@@ -69,6 +72,38 @@ const char *name(Event event) {
     return "config";
   }
 }
+const char *stage_name(Stage stage) {
+  switch (stage) {
+  case Stage::BOOT:
+    return "boot";
+  case Stage::ADDRESS:
+    return "address";
+  case Stage::DATA_INIT:
+    return "data init";
+  case Stage::STATIC_INIT:
+    return "static init";
+  case Stage::SPADS:
+    return "reference SPADs";
+  case Stage::REF_CAL:
+    return "reference calibration";
+  case Stage::OFFSET:
+    return "offset calibration";
+  case Stage::XTALK_RATE:
+    return "crosstalk rate";
+  case Stage::XTALK_ENABLE:
+    return "crosstalk mode";
+  case Stage::MODE:
+    return "ranging mode";
+  case Stage::BUDGET:
+    return "timing budget";
+  case Stage::GPIO_OFF:
+    return "polling GPIO";
+  case Stage::CLEAR:
+    return "interrupt clear";
+  default:
+    return "runtime";
+  }
+}
 void emit(unsigned id, Event event, Stage stage = Stage::NONE, int error = 0,
           uint8_t status = 255, uint16_t mm = 0) {
   const LogRecord r{hal_time_us(),
@@ -109,8 +144,12 @@ void fault(unsigned id, VL53L0X_Error error, Stage stage) {
     active = -1;
 }
 bool step(unsigned id, VL53L0X_Error error, Stage stage) {
-  if (error == VL53L0X_ERROR_NONE)
+  if (error == VL53L0X_ERROR_NONE) {
+    if (!channels[id].stats.online)
+      robot_log::write(robot_log::Level::INFO, "tof", "id=%u %s ready", id,
+                       stage_name(stage));
     return true;
+  }
   fault(id, error, stage);
   return false;
 }
@@ -166,6 +205,7 @@ bool setup_one(unsigned i) {
     fault(i, VL53L0X_ERROR_TIME_OUT, Stage::BOOT);
     return false;
   }
+  robot_log::write(robot_log::Level::INFO, "tof", "id=%u boot ready", i);
   if (!step(i,
             VL53L0X_SetDeviceAddress(&d,
                                      uint8_t(cfg.sensors[i].address_7bit << 1)),
@@ -365,7 +405,7 @@ Statistics statistics(loc::TofId id) {
   return i < 3 ? channels[i].stats : Statistics{};
 }
 } // namespace tof
-bool hal_tof_reddistancecorrected(loc::TofId id, float *distance_m,
+bool hal_tof_red_distance_corrected(loc::TofId id, float *distance_m,
                                   int64_t *timestamp_us) {
   return tof::read(id, distance_m, timestamp_us);
 }

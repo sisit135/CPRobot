@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "motor_control/pid.hpp"
 #include "motor_control/config.hpp"
 #include <algorithm>

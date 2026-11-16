@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #pragma once
 #include "navigation/feature_navigation.hpp"
 #include "navigation/right_hand_rule.hpp"
@@ -5,6 +7,14 @@
 #include "navigation/types.hpp"
 namespace nav {
 enum class NavigationEngine : uint8_t { FEATURE, EKF };
+enum class FallbackReason : uint8_t {
+  NONE,
+  FEATURE_CONTRADICTION,
+  EKF_FAILED,
+  EKF_CONTRADICTION,
+  FORCED_TEST, // Native lifecycle diagnostic; no firmware command enables it.
+  STARTUP_WALL // Unanimous entrance/dead-end evidence permits a bounded U-turn.
+};
 enum class StartupStatus : uint8_t {
   RESOLVING,
   INITIALIZING_EKF,
@@ -24,21 +34,25 @@ struct NavigationSnapshot {
   ResolveStatus resolver = ResolveStatus::WAIT_SENSORS;
   loc::MapKind kind = loc::MapKind::UNKNOWN;
   uint8_t execution = 0;
+  uint8_t execution_fault = 0; // ExecuteFault; retained until cancel/new goal.
   RunSnapshot run{};
   loc::FusionHealth ekf = loc::FusionHealth::INITIALIZING;
   bool fallback = false, terminal_reported = false;
   FallbackPhase fallback_phase = FallbackPhase::IDLE;
+  FallbackReason fallback_reason = FallbackReason::NONE; // Latched until reset.
 };
 /** @brief Create the path task after HAL and the bus-owner task are ready.
  * @param[in] config Firmware maps; both modes bootstrap from wall features and
  * magnetic heading.
  * @param[in] engine Runtime selection, FEATURE by default; fixed for this run.
  * @param[in] features Ray-fit thresholds and measured stop allowances.
+ * @param[in] fallback Reactive-controller settings captured before motion.
  * @returns true on creation; false on invalid allocation or repeated startup.
  */
 bool navigation_start(const ResolverConfig &config,
                       NavigationEngine engine = NavigationEngine::FEATURE,
-                      const FeatureConfig &features = FeatureConfig{});
+                      const FeatureConfig &features = FeatureConfig{},
+                      const RightHandConfig &fallback = RightHandConfig{});
 /** @brief Submit a resolved-world goal; there is no automatic goal at boot.
  * @param[in] goal Valid cell index (0..4 on each axis).
  * @returns true if queued after startup reaches READY, false otherwise.

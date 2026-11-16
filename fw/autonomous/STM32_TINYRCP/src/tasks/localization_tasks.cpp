@@ -1,7 +1,10 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "localization/config.hpp"
 #include "localization/fusion_engine.hpp"
 #include "localization/hal_sensors.hpp"
 #include "localization/localization.hpp"
+#include "logging/log.hpp"
 #include "platform/hal_platform.hpp"
 #include "platform/rtos.hpp"
 #include <algorithm>
@@ -45,6 +48,7 @@ void sensor_task(void *context) {
   nav::BootstrapFrame frame{};
   TickType_t wake = xTaskGetTickCount();
   int64_t next_tof = 0, next_marker = 0;
+  unsigned sensor_updates = 0;
   for (;;) {
     if (s_halted.load(std::memory_order_acquire)) {
       vTaskDelayUntil(&wake, ticks(cfg::sensor_period_ms));
@@ -79,7 +83,7 @@ void sensor_task(void *context) {
         e = {};
         e.kind = SensorKind::TOF;
         e.tof_id = static_cast<TofId>(i);
-        if (hal_tof_reddistancecorrected(e.tof_id, &e.range_m,
+        if (hal_tof_red_distance_corrected(e.tof_id, &e.range_m,
                                          &e.timestamp_us)) {
           if (e.timestamp_us == 0)
             e.timestamp_us = hal_time_us();
@@ -97,6 +101,19 @@ void sensor_task(void *context) {
         // Black tape is an end-entry cue, never a color-based EKF fix.
         hal_end_tape_classify(frame.color, frame.color_us, &frame.end_tape);
       }
+    }
+    // Sensor acquisition runs at 100 Hz. Keep a compact snapshot at TRACE
+    // once per five updates (20 Hz), including the latest held ToF readings.
+    if (++sensor_updates == 5) {
+      robot_log::write(
+          robot_log::Level::TRACE, "sensors",
+          "imu=%.1f,%.1f,%.1f gz=%.3f mag=%.0f,%.0f,%.0f tof=%.3f,%.3f,%.3f",
+          double(frame.imu.ax_mps2), double(frame.imu.ay_mps2),
+          double(frame.imu.az_mps2), double(frame.imu.gz_rps),
+          double(frame.mag.mx_uT), double(frame.mag.my_uT),
+          double(frame.mag.mz_uT), double(frame.range_m[0]),
+          double(frame.range_m[1]), double(frame.range_m[2]));
+      sensor_updates = 0;
     }
     // Small stable insertion sort; no heap. True acquisition timestamps
     // can differ across sensors. Older than an earlier batch is rejected.

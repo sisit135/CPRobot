@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "localization/color_tracker.hpp"
 #include <cmath>
 #include <limits>

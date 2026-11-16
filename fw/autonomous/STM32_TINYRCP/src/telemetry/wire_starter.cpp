@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #ifdef AXI_TELEMETRY_SPI_ENABLE
 #include "../../../../../generic_field_tool/common/telemetry_codec.cpp"
 extern "C" {

@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "localization/hal_sensors.hpp"
 #include "Arduino.h"
 #include "Wire.h"
 #include "hal/sensors_config.hpp"
+#include "logging/log.hpp"
 #include "platform/hal_platform.hpp"
+#include "remote/settings.hpp"
 #include <algorithm>
 
 namespace {
@@ -55,13 +59,21 @@ bool hal_sensors_init() {
   Wire.setSCL(board::sensors::kMainSclPin);
   Wire.begin();
   Wire.setClock(board::sensors::kMainI2cHz);
+  robot_log::write(robot_log::Level::INFO, "i2c", "main bus ready");
+  if (!hal_board_sensors_init())
+    return false;
+  robot_log::write(robot_log::Level::INFO, "tcs", "init started");
   uint8_t id = 0;
-  if (!hal_board_sensors_init() || !read_regs(0x12, &id, 1) || id != 0x44 ||
-      !write_reg(0x00, 0) || !write_reg(0x01, atime) || !write_reg(0x0F, 1) ||
-      !write_reg(0x00, 1))
+  if (!read_regs(0x12, &id, 1) || id != 0x44 || !write_reg(0x00, 0) ||
+      !write_reg(0x01, atime) || !write_reg(0x0F, 1) || !write_reg(0x00, 1)) {
+    robot_log::write(robot_log::Level::ERROR, "tcs",
+                     "health check/init failed id=0x%02x", id);
     return false; // Gain 4x, PON.
+  }
   phase = Phase::POWER_WAIT;
   ready_us = hal_time_us() + 3000;
+  robot_log::write(robot_log::Level::INFO, "tcs",
+                   "hw configured; power settling");
   return true;
 }
 bool hal_tcs34725_read(loc::RgbcSample *out, int64_t *stamp) {
@@ -125,5 +137,14 @@ bool hal_color_marker_read(loc::MarkerSample *out, int64_t *stamp) {
 
 bool hal_end_tape_classify(const loc::RgbcSample &raw, int64_t stamp,
                            nav::EndTapeEvent *out) {
+  static uint16_t black = board::sensors::kTapeBlackMaxClear,
+                  white = board::sensors::kTapeWhiteMinClear;
+  uint16_t next_black, next_white;
+  if (remote::tape_thresholds(&next_black, &next_white) &&
+      (black != next_black || white != next_white)) {
+    black = next_black;
+    white = next_white;
+    tape = nav::EndTapeDetector({black, white}); // Sole sensor-task owner.
+  }
   return tape.process(raw, stamp, out);
 }
