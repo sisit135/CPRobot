@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 syntax = "proto3";
 package generic.field.tool.v1;
 // Stream and typed SPI kinds: 9 command, 10 response, 11 sensor sample.

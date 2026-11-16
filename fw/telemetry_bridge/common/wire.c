@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "wire.h"
 #include <string.h>
 uint16_t axi_crc16(const uint8_t *bytes, size_t size) {

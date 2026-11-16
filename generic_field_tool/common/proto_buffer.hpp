@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #pragma once
+#include <cstring>
+
+#include "Errors.h"
 #include "ReadBufferFixedSize.h"
 #include "WriteBufferFixedSize.h"
-#include <cstring>
 namespace tool_proto {
 template <class Message>
 bool decode(Message &message, const uint8_t *data, size_t size) {

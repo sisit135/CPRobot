@@ -3,12 +3,13 @@
 set -euo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 command -v protoc >/dev/null
+python3 "$repo/host/tools/generate_schema.py"
 bash "$repo/fw/scripts/setup_embeddedproto.sh"
-output="$repo/generic_field_tool/esp32c6/generated"
+output="$repo/generic_field_tool/esp32_multiboard/generated"
 mkdir -p "$output"
 protoc -I "$repo/proto" -I "$repo/generic_field_tool" \
     --plugin="protoc-gen-eams=$repo/generic_field_tool/tools/protoc-gen-eams" \
-    --eams_out="$output" telemetry.proto remote_config.proto protocol.proto
+    --eams_out="$output" telemetry.proto remote_config.proto flash_settings.proto protocol.proto
 
 resources="$repo/generic_field_tool/android/protocol/src/main/resources"
 mkdir -p "$resources"

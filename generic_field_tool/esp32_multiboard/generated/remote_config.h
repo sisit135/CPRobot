@@ -336,6 +336,8 @@ class FieldSpec final: public ::EmbeddedProto::MessageInterface
       set_minimum(rhs.get_minimum());
       set_maximum(rhs.get_maximum());
       set_source(rhs.get_source());
+      set_default_value(rhs.get_default_value());
+      set_source_id(rhs.get_source_id());
     }
 
     FieldSpec(const FieldSpec&& rhs ) noexcept
@@ -347,6 +349,8 @@ class FieldSpec final: public ::EmbeddedProto::MessageInterface
       set_minimum(rhs.get_minimum());
       set_maximum(rhs.get_maximum());
       set_source(rhs.get_source());
+      set_default_value(rhs.get_default_value());
+      set_source_id(rhs.get_source_id());
     }
 
     ~FieldSpec() override = default;
@@ -360,7 +364,9 @@ class FieldSpec final: public ::EmbeddedProto::MessageInterface
       TYPE = 4,
       MINIMUM = 5,
       MAXIMUM = 6,
-      SOURCE = 7
+      SOURCE = 7,
+      DEFAULT_VALUE = 8,
+      SOURCE_ID = 9
     };
 
     FieldSpec& operator=(const FieldSpec& rhs)
@@ -372,6 +378,8 @@ class FieldSpec final: public ::EmbeddedProto::MessageInterface
       set_minimum(rhs.get_minimum());
       set_maximum(rhs.get_maximum());
       set_source(rhs.get_source());
+      set_default_value(rhs.get_default_value());
+      set_source_id(rhs.get_source_id());
       return *this;
     }
 
@@ -384,6 +392,8 @@ class FieldSpec final: public ::EmbeddedProto::MessageInterface
       set_minimum(rhs.get_minimum());
       set_maximum(rhs.get_maximum());
       set_source(rhs.get_source());
+      set_default_value(rhs.get_default_value());
+      set_source_id(rhs.get_source_id());
       return *this;
     }
 
@@ -439,6 +449,22 @@ class FieldSpec final: public ::EmbeddedProto::MessageInterface
     inline const ::EmbeddedProto::FieldString<FieldSpec_source_LENGTH>& get_source() const { return source_; }
     inline const char* source() const { return source_.get_const(); }
 
+    static constexpr char const* DEFAULT_VALUE_NAME = "default_value";
+    inline void clear_default_value() { default_value_.clear(); }
+    inline void set_default_value(const float& value) { default_value_ = value; }
+    inline void set_default_value(const float&& value) { default_value_ = value; }
+    inline float& mutable_default_value() { return default_value_.get(); }
+    inline const float& get_default_value() const { return default_value_.get(); }
+    inline float default_value() const { return default_value_.get(); }
+
+    static constexpr char const* SOURCE_ID_NAME = "source_id";
+    inline void clear_source_id() { source_id_.clear(); }
+    inline void set_source_id(const uint32_t& value) { source_id_ = value; }
+    inline void set_source_id(const uint32_t&& value) { source_id_ = value; }
+    inline uint32_t& mutable_source_id() { return source_id_.get(); }
+    inline const uint32_t& get_source_id() const { return source_id_.get(); }
+    inline uint32_t source_id() const { return source_id_.get(); }
+
 
     ::EmbeddedProto::Error serialize(::EmbeddedProto::WriteBufferInterface& buffer) const override
     {
@@ -477,6 +503,16 @@ class FieldSpec final: public ::EmbeddedProto::MessageInterface
       if(::EmbeddedProto::Error::NO_ERRORS == return_value)
       {
         return_value = source_.serialize_with_id(static_cast<uint32_t>(FieldNumber::SOURCE), buffer, false);
+      }
+
+      if((0.0f != default_value_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = default_value_.serialize_with_id(static_cast<uint32_t>(FieldNumber::DEFAULT_VALUE), buffer, false);
+      }
+
+      if((0U != source_id_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = source_id_.serialize_with_id(static_cast<uint32_t>(FieldNumber::SOURCE_ID), buffer, false);
       }
 
       return return_value;
@@ -523,6 +559,14 @@ class FieldSpec final: public ::EmbeddedProto::MessageInterface
             return_value = source_.deserialize_check_type(buffer, wire_type);
             break;
 
+          case FieldNumber::DEFAULT_VALUE:
+            return_value = default_value_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::SOURCE_ID:
+            return_value = source_id_.deserialize_check_type(buffer, wire_type);
+            break;
+
           case FieldNumber::NOT_SET:
             return_value = ::EmbeddedProto::Error::INVALID_FIELD_ID;
             break;
@@ -559,6 +603,8 @@ class FieldSpec final: public ::EmbeddedProto::MessageInterface
       clear_minimum();
       clear_maximum();
       clear_source();
+      clear_default_value();
+      clear_source_id();
 
     }
 
@@ -590,6 +636,12 @@ class FieldSpec final: public ::EmbeddedProto::MessageInterface
         case FieldNumber::SOURCE:
           name = SOURCE_NAME;
           break;
+        case FieldNumber::DEFAULT_VALUE:
+          name = DEFAULT_VALUE_NAME;
+          break;
+        case FieldNumber::SOURCE_ID:
+          name = SOURCE_ID_NAME;
+          break;
         default:
           name = "Invalid FieldNumber";
           break;
@@ -615,6 +667,8 @@ class FieldSpec final: public ::EmbeddedProto::MessageInterface
           + EmbeddedProto::floatfixed::max_serialized_size(static_cast<uint32_t>(FieldNumber::MINIMUM))
           + EmbeddedProto::floatfixed::max_serialized_size(static_cast<uint32_t>(FieldNumber::MAXIMUM))
           + ::EmbeddedProto::FieldString<FieldSpec_source_LENGTH>::max_serialized_size(static_cast<uint32_t>(FieldNumber::SOURCE))
+          + EmbeddedProto::floatfixed::max_serialized_size(static_cast<uint32_t>(FieldNumber::DEFAULT_VALUE))
+          + EmbeddedProto::uint32::max_serialized_size(static_cast<uint32_t>(FieldNumber::SOURCE_ID))
         ;
     }
 
@@ -692,6 +746,8 @@ class FieldSpec final: public ::EmbeddedProto::MessageInterface
       left_chars = minimum_.to_string(left_chars, indent_level + 2, MINIMUM_NAME, false);
       left_chars = maximum_.to_string(left_chars, indent_level + 2, MAXIMUM_NAME, false);
       left_chars = source_.to_string(left_chars, indent_level + 2, SOURCE_NAME, false);
+      left_chars = default_value_.to_string(left_chars, indent_level + 2, DEFAULT_VALUE_NAME, false);
+      left_chars = source_id_.to_string(left_chars, indent_level + 2, SOURCE_ID_NAME, false);
   
       if( 0 == indent_level) 
       {
@@ -724,6 +780,8 @@ class FieldSpec final: public ::EmbeddedProto::MessageInterface
       EmbeddedProto::floatfixed minimum_ = 0.0f;
       EmbeddedProto::floatfixed maximum_ = 0.0f;
       ::EmbeddedProto::FieldString<FieldSpec_source_LENGTH> source_;
+      EmbeddedProto::floatfixed default_value_ = 0.0f;
+      EmbeddedProto::uint32 source_id_ = 0U;
 
 };
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #ifndef AXI_TELEMETRY_WIRE_H
 #define AXI_TELEMETRY_WIRE_H
 #include <stddef.h>
