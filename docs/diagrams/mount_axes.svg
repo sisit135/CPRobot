@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="570" viewBox="0 0 680 570" role="img" aria-labelledby="title desc">
+<title id="title">Mounting coordinates: X right, Y forward</title>
+<desc id="desc">Top view of the 190 mm diagonal square platform. Both wheel centers sit at Y minus 24 mm, below the platform origin. Both side ToFs sit at Y plus 22.5 mm. Tire edges remain inside the platform sides.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#344256"/></marker></defs>
+<rect width="680" height="570" fill="#ffffff"/>
+<g font-family="sans-serif" fill="#172338">
+<text x="340" y="30" font-size="21" text-anchor="middle">Mounting frame: X right · Y forward/up</text>
+<text x="340" y="55" font-size="14" text-anchor="middle">Origin at platform center · dimensions in mm</text>
+<rect x="178.780" y="108.780" width="322.441" height="322.441" fill="#edf3fa" stroke="#526b8b" stroke-width="2"/>
+<text x="511.220" y="423.220" font-size="12">134.35 side</text>
+<line x1="340" y1="108.77965388946717" x2="340" y2="431.22034611053283" stroke="#bdc9d8" stroke-dasharray="5 5"/>
+<line x1="178.77965388946717" y1="270" x2="501.22034611053283" y2="270" stroke="#bdc9d8" stroke-dasharray="5 5"/>
+<rect x="178.780" y="249.600" width="62.400" height="156.000" rx="5" fill="#3b4351" stroke="#d1a000" stroke-width="2"/>
+<circle cx="209.980" cy="327.600" r="4" fill="#ffd34d"/>
+<text x="209.980" y="458.220" font-size="15" text-anchor="middle">L wheel</text>
+<text x="209.980" y="479.220" font-size="13" text-anchor="middle">(-54.175, −24)</text>
+<rect x="438.820" y="249.600" width="62.400" height="156.000" rx="5" fill="#3b4351" stroke="#d1a000" stroke-width="2"/>
+<circle cx="470.020" cy="327.600" r="4" fill="#ffd34d"/>
+<text x="470.020" y="458.220" font-size="15" text-anchor="middle">R wheel</text>
+<text x="470.020" y="479.220" font-size="13" text-anchor="middle">(54.175, −24)</text>
+<circle cx="178.780" cy="216.000" r="6" fill="#008875"/>
+<text x="163.780" y="208.000" font-size="14" text-anchor="end">L ToF</text>
+<text x="163.780" y="229.000" font-size="12" text-anchor="end">(-67.175, +22.5)</text>
+<circle cx="501.220" cy="216.000" r="6" fill="#008875"/>
+<text x="516.220" y="208.000" font-size="14" text-anchor="start">R ToF</text>
+<text x="516.220" y="229.000" font-size="12" text-anchor="start">(67.175, +22.5)</text>
+<circle cx="340" cy="108.77965388946717" r="6" fill="#008875"/>
+<text x="340" y="92.780" font-size="13" text-anchor="middle">Front ToF (0, +67.175)</text>
+<line x1="340" y1="270" x2="410" y2="270" stroke="#344256" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="340" y1="270" x2="340" y2="180" stroke="#344256" stroke-width="2" marker-end="url(#arrow)"/>
+<circle cx="340" cy="270" r="4" fill="#344256"/>
+<text x="415" y="262" font-size="14">+X</text>
+<text x="348" y="184" font-size="14">+Y / forward</text>
+<text x="333" y="290" font-size="12" text-anchor="end">(0, 0)</text>
+<line x1="350" y1="275" x2="350" y2="327.600" stroke="#be4f22" stroke-width="2"/>
+<line x1="344" y1="327.600" x2="357" y2="327.600" stroke="#be4f22" stroke-width="2"/>
+<text x="363" y="309" font-size="13" fill="#a6421c">Y = −24</text>
+<text x="340" y="515" font-size="14" text-anchor="middle">Wheels down/back · side ToFs up/forward · 190 mm diagonal</text>
+<text x="340" y="542" font-size="13" text-anchor="middle">Navigation conversion: body x = mount Y; body y = −mount X</text>
+</g></svg>

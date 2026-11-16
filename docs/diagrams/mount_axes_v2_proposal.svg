@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="850" viewBox="0 0 1100 850" role="img" aria-labelledby="title desc">
+<title id="title">V2 platform mounting geometry</title><desc id="desc">135 by 110 millimeter V2 bounds, with triangular head at absolute mounting coordinates L=(-67.175,23), tip=(0,55), R=(67.175,23) mm. Original origin, wheels and all ToF mounts retained.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#44536b" /></marker></defs>
+<rect width="1100" height="850" fill="#fff" /><g font-family="sans-serif" fill="#172338">
+<text x="42" y="44" font-size="27" font-weight="bold">V2 platform · mounting geometry</text>
+<text x="42" y="73" font-size="16">Top view · millimeters · original origin retained · +X right / +Y forward</text>
+<rect x="157" y="197" width="486" height="396" fill="none" stroke="#9aa7b6" stroke-width="2" stroke-dasharray="7 6" />
+<polygon points="157.0000,593.0000 643.0000,593.0000 643.0000,312.2000 641.8305,312.2000 400.0000,197.0000 158.1695,312.2000 157.0000,312.2000" fill="#e8f1fb" fill-opacity=".8" stroke="#416b99" stroke-width="2.5" /><line x1="130.0" y1="395" x2="684.4000000000001" y2="395" stroke="#bbc8d7" stroke-width="1.7" stroke-dasharray="5 5" />
+<line x1="400" y1="647.0" x2="400" y2="117.80000000000001" stroke="#bbc8d7" stroke-width="1.7" stroke-dasharray="5 5" />
+<rect x="158.16948083420073" y="364.4" width="93.60000000000001" height="234.0" rx="5" fill="#394354" stroke="#dbab25" stroke-width="2" />
+<circle cx="204.96948083420074" cy="481.4" r="5" fill="#ffdc62" />
+<text x="204.96948083420074" y="467.4" font-size="15" fill="white" text-anchor="middle">L wheel</text>
+<text x="204.96948083420074" y="501.4" font-size="13" fill="white" text-anchor="middle">(-54.175, −24)</text>
+<rect x="548.2305191657993" y="364.4" width="93.60000000000001" height="234.0" rx="5" fill="#394354" stroke="#dbab25" stroke-width="2" />
+<circle cx="595.0305191657992" cy="481.4" r="5" fill="#ffdc62" />
+<text x="595.0305191657992" y="467.4" font-size="15" fill="white" text-anchor="middle">R wheel</text>
+<text x="595.0305191657992" y="501.4" font-size="13" fill="white" text-anchor="middle">(+54.175, −24)</text>
+<circle cx="158.16948083420073" cy="314" r="7" fill="#008875" />
+<line x1="148.17" y1="314" x2="116.17" y2="314" stroke="#008875" stroke-width="1.7" marker-end="url(#arrow)" />
+<text x="168" y="296" font-size="14">L-ToF (−67.175, +22.5)</text>
+<circle cx="400" cy="153.16948083420073" r="7" fill="white" stroke="#9aa7b6" stroke-width="2" />
+<text x="416" y="145" font-size="14" fill="#748194">Old front ToF (0, +67.175)</text>
+<line x1="400" y1="164" x2="407.92" y2="270" stroke="#c08030" stroke-width="1.7" stroke-dasharray="5 5" marker-end="url(#arrow)" />
+<circle cx="407.92" cy="281.24" r="7" fill="#cf6b13" />
+<line x1="407.92" y1="271.24" x2="407.92" y2="239.24" stroke="#cf6b13" stroke-width="1.7" marker-end="url(#arrow)" />
+<text x="423" y="264" font-size="16" fill="#a74f0d" font-weight="bold">Front ToF (+2.2, +31.6)</text>
+<circle cx="641.8305191657993" cy="314.0" r="7" fill="#008875" />
+<line x1="651.8305191657993" y1="314.0" x2="683.8305191657993" y2="314.0" stroke="#008875" stroke-width="1.7" marker-end="url(#arrow)" />
+<text x="633.8305191657993" y="296.0" font-size="14" text-anchor="end">R-ToF (+67.175, +22.5)</text>
+<line x1="400" y1="395" x2="515.2" y2="395" stroke="#44536b" stroke-width="1.7" marker-end="url(#arrow)" />
+<line x1="400" y1="395" x2="400" y2="312.2" stroke="#44536b" stroke-width="1.7" marker-end="url(#arrow)" />
+<text x="523.2" y="387" font-size="15">+X</text>
+<text x="390" y="305.2" font-size="15" text-anchor="end">+Y</text>
+<circle cx="400" cy="395" r="4" fill="#172338" />
+<text x="410" y="417" font-size="14">Original origin (0, 0)</text>
+<line x1="157.0" y1="599.0" x2="157.0" y2="675" stroke="#93a1b3" stroke-width="1.7" />
+<line x1="643.0" y1="599.0" x2="643.0" y2="675" stroke="#93a1b3" stroke-width="1.7" />
+<line x1="157.0" y1="660" x2="643.0" y2="660" stroke="#44536b" stroke-width="1.7" marker-start="url(#arrow)" marker-end="url(#arrow)" />
+<text x="400" y="687" font-size="16" text-anchor="middle">135 mm width (X)</text>
+<line x1="151.0" y1="593.0" x2="112" y2="593.0" stroke="#93a1b3" stroke-width="1.7" />
+<line x1="151.0" y1="197.0" x2="112" y2="197.0" stroke="#93a1b3" stroke-width="1.7" />
+<line x1="125" y1="593.0" x2="125" y2="197.0" stroke="#44536b" stroke-width="1.7" marker-start="url(#arrow)" marker-end="url(#arrow)" />
+<text x="92" y="395" font-size="16" text-anchor="middle" transform="rotate(-90 92 395)">110 mm length (Y)</text>
+<rect x="744" y="115" width="325" height="585" rx="12" fill="#f5f7fa" stroke="#dce2e9" />
+<text x="42" y="747" font-size="17" fill="#a74f0d">Triangle shoulders use Y = +23 mm from the origin. Center tip remains at Y = +55 mm.</text>
+<text x="42" y="778" font-size="15">L/F/R name identifies the beam direction. Arrows at sensors show the retained beam directions.</text>
+<text x="42" y="812" font-size="15" fill="#64748b">V2 geometry · three-point head · original origin and all wheel / ToF mounts retained.</text>
+<text x="764" y="149" font-size="16" font-weight="bold">V2 · TRIANGULAR HEAD</text><text x="764" y="184" font-size="16" font-weight="bold">Head points · absolute mm</text><text x="764" y="211" font-size="15">L: (−67.175, +23)</text><text x="764" y="237" font-size="15">Tip: (0, +55)</text><text x="764" y="263" font-size="15">R: (+67.175, +23)</text><text x="764" y="300" font-size="16" font-weight="bold">Outer bounds / origin retained</text><text x="764" y="327" font-size="15">X: −67.5 to +67.5 mm</text><text x="764" y="353" font-size="15">Y: −55 to +55 mm</text><text x="764" y="394" font-size="16" font-weight="bold">Wheel mounts unchanged</text><text x="764" y="421" font-size="15">X: ±54.175 mm · Y: −24 mm</text><text x="764" y="447" font-size="15">Tire reference: 65 × 26 mm</text><text x="764" y="488" font-size="16" font-weight="bold">ToF mounts unchanged</text><text x="764" y="515" font-size="15">Front: (+2.2, +31.6) mm</text><text x="764" y="541" font-size="15">L/R: X ±67.175 · Y +22.5 mm</text><text x="764" y="580" font-size="15">Head shoulders: Y = +23 mm</text><text x="764" y="606" font-size="15">0.5 mm ahead of the side ToFs</text><text x="764" y="645" font-size="15">Rear tire edge: Y = −56.5 mm</text><text x="764" y="678" font-size="15">Dashed: previous V2 rectangle</text><polyline points="158.1695,312.2000 400.0000,197.0000 641.8305,312.2000" fill="none" stroke="#c75724" stroke-width="3" /></g></svg>

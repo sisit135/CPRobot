@@ -1,0 +1,700 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1700" viewBox="0 0 2400 1700" role="img" aria-labelledby="title desc">
+<title id="title">THS v2 HAL wiring with a 200-contact breadboard</title>
+<desc id="desc">Firmware-assigned electrical wiring. Module connectors are logical power, signal, miscellaneous order, not physical pin order. Straight wire vectors have no splices; named bus terminals connect through the breadboard. Two isolated I2C controllers avoid the TCS and ToF reset address conflict.</desc>
+<style>text{font-family:DejaVu Sans,Arial,sans-serif;fill:#172033} .small{font-size:16px} .pin{font-size:18px} .head{font-size:24px;font-weight:bold} .note{font-size:19px} .board{fill:#f1f5f9;stroke:#64748b;stroke-width:2} .wire{fill:none;stroke-width:3;stroke-linecap:round} .terminal{fill:white;stroke-width:2}</style>
+<rect width="2400" height="1700" fill="#ffffff"/>
+<text x="55" y="55" class="head" text-anchor="start">THS v2 • HAL electrical wiring</text>
+<text x="55" y="90" class="note" text-anchor="start">STM32F411CE Black Pill • 2 isolated I²C buses • DRV8833 • ESP32-C6 / LuatOS CORE ESP32-C3</text>
+<text x="55" y="125" class="note" text-anchor="start">Logical connector order: POWER → SIGNALS → MISC. The symbols do not specify physical module pin positions.</text>
+<text x="55" y="158" class="note" text-anchor="start">Every wire is one straight vector. Crossings are unconnected. Named open-circle bus terminals are connected by the breadboard rows below.</text>
+<rect x="55" y="220" width="370" height="255" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+<text x="73" y="250" class="head" text-anchor="start">VL53L0X • LEFT</text>
+<text x="73" y="277" class="small" text-anchor="start">7-bit: boot 0x29 → runtime 0x30</text>
+<text x="73" y="316" class="pin" text-anchor="start">VCC / VIN</text>
+<circle cx="425" cy="310" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="425" y1="310" x2="500" y2="310" stroke="#dc2626"><title>3V3</title></line>
+<circle cx="425" cy="310" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<circle cx="500" cy="310" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<text x="509" y="304" class="small" text-anchor="start">3V3</text>
+<circle cx="500" cy="310" r="5" class="terminal" stroke="#dc2626"/>
+<text x="73" y="348" class="pin" text-anchor="start">GND</text>
+<circle cx="425" cy="342" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="425" y1="342" x2="500" y2="342" stroke="#374151"><title>GND</title></line>
+<circle cx="425" cy="342" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<circle cx="500" cy="342" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<text x="509" y="336" class="small" text-anchor="start">GND</text>
+<circle cx="500" cy="342" r="5" class="terminal" stroke="#374151"/>
+<text x="73" y="380" class="pin" text-anchor="start">SDA</text>
+<circle cx="425" cy="374" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="425" y1="374" x2="500" y2="374" stroke="#16a34a"><title>TOF SDA</title></line>
+<circle cx="425" cy="374" r="4" fill="white" stroke="#16a34a" stroke-width="2"/>
+<circle cx="500" cy="374" r="4" fill="white" stroke="#16a34a" stroke-width="2"/>
+<text x="509" y="368" class="small" text-anchor="start">TOF SDA</text>
+<circle cx="500" cy="374" r="5" class="terminal" stroke="#16a34a"/>
+<text x="73" y="412" class="pin" text-anchor="start">SCL</text>
+<circle cx="425" cy="406" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="425" y1="406" x2="500" y2="406" stroke="#65a30d"><title>TOF SCL</title></line>
+<circle cx="425" cy="406" r="4" fill="white" stroke="#65a30d" stroke-width="2"/>
+<circle cx="500" cy="406" r="4" fill="white" stroke="#65a30d" stroke-width="2"/>
+<text x="509" y="400" class="small" text-anchor="start">TOF SCL</text>
+<circle cx="500" cy="406" r="5" class="terminal" stroke="#65a30d"/>
+<text x="73" y="444" class="pin" text-anchor="start">XSHUT</text>
+<circle cx="425" cy="438" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<text x="75" y="495" class="small" text-anchor="start">GPIO1: NC • XSHUT: local logic pull-up</text>
+<rect x="55" y="530" width="370" height="255" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+<text x="73" y="560" class="head" text-anchor="start">VL53L0X • FRONT</text>
+<text x="73" y="587" class="small" text-anchor="start">7-bit: boot 0x29 → runtime 0x31</text>
+<text x="73" y="626" class="pin" text-anchor="start">VCC / VIN</text>
+<circle cx="425" cy="620" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="425" y1="620" x2="500" y2="620" stroke="#dc2626"><title>3V3</title></line>
+<circle cx="425" cy="620" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<circle cx="500" cy="620" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<text x="509" y="614" class="small" text-anchor="start">3V3</text>
+<circle cx="500" cy="620" r="5" class="terminal" stroke="#dc2626"/>
+<text x="73" y="658" class="pin" text-anchor="start">GND</text>
+<circle cx="425" cy="652" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="425" y1="652" x2="500" y2="652" stroke="#374151"><title>GND</title></line>
+<circle cx="425" cy="652" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<circle cx="500" cy="652" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<text x="509" y="646" class="small" text-anchor="start">GND</text>
+<circle cx="500" cy="652" r="5" class="terminal" stroke="#374151"/>
+<text x="73" y="690" class="pin" text-anchor="start">SDA</text>
+<circle cx="425" cy="684" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="425" y1="684" x2="500" y2="684" stroke="#16a34a"><title>TOF SDA</title></line>
+<circle cx="425" cy="684" r="4" fill="white" stroke="#16a34a" stroke-width="2"/>
+<circle cx="500" cy="684" r="4" fill="white" stroke="#16a34a" stroke-width="2"/>
+<text x="509" y="678" class="small" text-anchor="start">TOF SDA</text>
+<circle cx="500" cy="684" r="5" class="terminal" stroke="#16a34a"/>
+<text x="73" y="722" class="pin" text-anchor="start">SCL</text>
+<circle cx="425" cy="716" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="425" y1="716" x2="500" y2="716" stroke="#65a30d"><title>TOF SCL</title></line>
+<circle cx="425" cy="716" r="4" fill="white" stroke="#65a30d" stroke-width="2"/>
+<circle cx="500" cy="716" r="4" fill="white" stroke="#65a30d" stroke-width="2"/>
+<text x="509" y="710" class="small" text-anchor="start">TOF SCL</text>
+<circle cx="500" cy="716" r="5" class="terminal" stroke="#65a30d"/>
+<text x="73" y="754" class="pin" text-anchor="start">XSHUT</text>
+<circle cx="425" cy="748" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<text x="75" y="805" class="small" text-anchor="start">GPIO1: NC • XSHUT: local logic pull-up</text>
+<rect x="55" y="840" width="370" height="255" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+<text x="73" y="870" class="head" text-anchor="start">VL53L0X • RIGHT</text>
+<text x="73" y="897" class="small" text-anchor="start">7-bit: boot 0x29 → runtime 0x32</text>
+<text x="73" y="936" class="pin" text-anchor="start">VCC / VIN</text>
+<circle cx="425" cy="930" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="425" y1="930" x2="500" y2="930" stroke="#dc2626"><title>3V3</title></line>
+<circle cx="425" cy="930" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<circle cx="500" cy="930" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<text x="509" y="924" class="small" text-anchor="start">3V3</text>
+<circle cx="500" cy="930" r="5" class="terminal" stroke="#dc2626"/>
+<text x="73" y="968" class="pin" text-anchor="start">GND</text>
+<circle cx="425" cy="962" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="425" y1="962" x2="500" y2="962" stroke="#374151"><title>GND</title></line>
+<circle cx="425" cy="962" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<circle cx="500" cy="962" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<text x="509" y="956" class="small" text-anchor="start">GND</text>
+<circle cx="500" cy="962" r="5" class="terminal" stroke="#374151"/>
+<text x="73" y="1000" class="pin" text-anchor="start">SDA</text>
+<circle cx="425" cy="994" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="425" y1="994" x2="500" y2="994" stroke="#16a34a"><title>TOF SDA</title></line>
+<circle cx="425" cy="994" r="4" fill="white" stroke="#16a34a" stroke-width="2"/>
+<circle cx="500" cy="994" r="4" fill="white" stroke="#16a34a" stroke-width="2"/>
+<text x="509" y="988" class="small" text-anchor="start">TOF SDA</text>
+<circle cx="500" cy="994" r="5" class="terminal" stroke="#16a34a"/>
+<text x="73" y="1032" class="pin" text-anchor="start">SCL</text>
+<circle cx="425" cy="1026" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="425" y1="1026" x2="500" y2="1026" stroke="#65a30d"><title>TOF SCL</title></line>
+<circle cx="425" cy="1026" r="4" fill="white" stroke="#65a30d" stroke-width="2"/>
+<circle cx="500" cy="1026" r="4" fill="white" stroke="#65a30d" stroke-width="2"/>
+<text x="509" y="1020" class="small" text-anchor="start">TOF SCL</text>
+<circle cx="500" cy="1026" r="5" class="terminal" stroke="#65a30d"/>
+<text x="73" y="1064" class="pin" text-anchor="start">XSHUT</text>
+<circle cx="425" cy="1058" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<text x="75" y="1115" class="small" text-anchor="start">GPIO1: NC • XSHUT: local logic pull-up</text>
+<rect x="1920" y="220" width="420" height="287" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+<text x="1938" y="250" class="head" text-anchor="start">MPU9250 + AK8963</text>
+<text x="1938" y="277" class="small" text-anchor="start">7-bit: MPU 0x68 • magnetometer 0x0C</text>
+<text x="2322" y="316" class="pin" text-anchor="end">VCC / VIN</text>
+<circle cx="1920" cy="310" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="1920" y1="310" x2="1845" y2="310" stroke="#dc2626"><title>3V3</title></line>
+<circle cx="1920" cy="310" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<circle cx="1845" cy="310" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<text x="1836" y="304" class="small" text-anchor="end">3V3</text>
+<circle cx="1845" cy="310" r="5" class="terminal" stroke="#dc2626"/>
+<text x="2322" y="348" class="pin" text-anchor="end">GND</text>
+<circle cx="1920" cy="342" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="1920" y1="342" x2="1845" y2="342" stroke="#374151"><title>GND</title></line>
+<circle cx="1920" cy="342" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<circle cx="1845" cy="342" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<text x="1836" y="336" class="small" text-anchor="end">GND</text>
+<circle cx="1845" cy="342" r="5" class="terminal" stroke="#374151"/>
+<text x="2322" y="380" class="pin" text-anchor="end">SDA</text>
+<circle cx="1920" cy="374" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="1920" y1="374" x2="1845" y2="374" stroke="#0891b2"><title>MAIN SDA</title></line>
+<circle cx="1920" cy="374" r="4" fill="white" stroke="#0891b2" stroke-width="2"/>
+<circle cx="1845" cy="374" r="4" fill="white" stroke="#0891b2" stroke-width="2"/>
+<text x="1836" y="368" class="small" text-anchor="end">MAIN SDA</text>
+<circle cx="1845" cy="374" r="5" class="terminal" stroke="#0891b2"/>
+<text x="2322" y="412" class="pin" text-anchor="end">SCL</text>
+<circle cx="1920" cy="406" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="1920" y1="406" x2="1845" y2="406" stroke="#2563eb"><title>MAIN SCL</title></line>
+<circle cx="1920" cy="406" r="4" fill="white" stroke="#2563eb" stroke-width="2"/>
+<circle cx="1845" cy="406" r="4" fill="white" stroke="#2563eb" stroke-width="2"/>
+<text x="1836" y="400" class="small" text-anchor="end">MAIN SCL</text>
+<circle cx="1845" cy="406" r="5" class="terminal" stroke="#2563eb"/>
+<text x="2322" y="444" class="pin" text-anchor="end">CS: strap to local VDDIO</text>
+<circle cx="1920" cy="438" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<text x="2322" y="476" class="pin" text-anchor="end">AD0: strap to local GND</text>
+<circle cx="1920" cy="470" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<text x="1940" y="535" class="small" text-anchor="start">INT / FSYNC / auxiliary I²C: unused</text>
+<rect x="1920" y="600" width="420" height="223" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+<text x="1938" y="630" class="head" text-anchor="start">TCS34725</text>
+<text x="1938" y="657" class="small" text-anchor="start">7-bit: fixed 0x29 • separate from ToF boot bus</text>
+<text x="2322" y="696" class="pin" text-anchor="end">VCC / VIN</text>
+<circle cx="1920" cy="690" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="1920" y1="690" x2="1845" y2="690" stroke="#dc2626"><title>3V3</title></line>
+<circle cx="1920" cy="690" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<circle cx="1845" cy="690" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<text x="1836" y="684" class="small" text-anchor="end">3V3</text>
+<circle cx="1845" cy="690" r="5" class="terminal" stroke="#dc2626"/>
+<text x="2322" y="728" class="pin" text-anchor="end">GND</text>
+<circle cx="1920" cy="722" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="1920" y1="722" x2="1845" y2="722" stroke="#374151"><title>GND</title></line>
+<circle cx="1920" cy="722" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<circle cx="1845" cy="722" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<text x="1836" y="716" class="small" text-anchor="end">GND</text>
+<circle cx="1845" cy="722" r="5" class="terminal" stroke="#374151"/>
+<text x="2322" y="760" class="pin" text-anchor="end">SDA</text>
+<circle cx="1920" cy="754" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="1920" y1="754" x2="1845" y2="754" stroke="#0891b2"><title>MAIN SDA</title></line>
+<circle cx="1920" cy="754" r="4" fill="white" stroke="#0891b2" stroke-width="2"/>
+<circle cx="1845" cy="754" r="4" fill="white" stroke="#0891b2" stroke-width="2"/>
+<text x="1836" y="748" class="small" text-anchor="end">MAIN SDA</text>
+<circle cx="1845" cy="754" r="5" class="terminal" stroke="#0891b2"/>
+<text x="2322" y="792" class="pin" text-anchor="end">SCL</text>
+<circle cx="1920" cy="786" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="1920" y1="786" x2="1845" y2="786" stroke="#2563eb"><title>MAIN SCL</title></line>
+<circle cx="1920" cy="786" r="4" fill="white" stroke="#2563eb" stroke-width="2"/>
+<circle cx="1845" cy="786" r="4" fill="white" stroke="#2563eb" stroke-width="2"/>
+<text x="1836" y="780" class="small" text-anchor="end">MAIN SCL</text>
+<circle cx="1845" cy="786" r="5" class="terminal" stroke="#2563eb"/>
+<text x="1940" y="855" class="small" text-anchor="start">INT: NC • LED: module-local configuration</text>
+<rect x="1880" y="940" width="460" height="319" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+<text x="1898" y="970" class="head" text-anchor="start">ESP32 bridge • choose one board</text>
+<text x="1898" y="997" class="small" text-anchor="start">C6 or LuatOS CORE C3 • SPI slave</text>
+<text x="2322" y="1036" class="pin" text-anchor="end">3V3 supply / regulator</text>
+<circle cx="1880" cy="1030" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="1880" y1="1030" x2="1805" y2="1030" stroke="#dc2626"><title>3V3</title></line>
+<circle cx="1880" cy="1030" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<circle cx="1805" cy="1030" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<text x="1796" y="1024" class="small" text-anchor="end">3V3</text>
+<circle cx="1805" cy="1030" r="5" class="terminal" stroke="#dc2626"/>
+<text x="2322" y="1068" class="pin" text-anchor="end">GND</text>
+<circle cx="1880" cy="1062" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="1880" y1="1062" x2="1805" y2="1062" stroke="#374151"><title>GND</title></line>
+<circle cx="1880" cy="1062" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<circle cx="1805" cy="1062" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<text x="1796" y="1056" class="small" text-anchor="end">GND</text>
+<circle cx="1805" cy="1062" r="5" class="terminal" stroke="#374151"/>
+<text x="2322" y="1100" class="pin" text-anchor="end">GPIO5 / SCK</text>
+<circle cx="1880" cy="1094" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<text x="2322" y="1132" class="pin" text-anchor="end">GPIO7 / MOSI</text>
+<circle cx="1880" cy="1126" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<text x="2322" y="1164" class="pin" text-anchor="end">GPIO6 / MISO</text>
+<circle cx="1880" cy="1158" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<text x="2322" y="1196" class="pin" text-anchor="end">GPIO4 / CS</text>
+<circle cx="1880" cy="1190" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<text x="2322" y="1228" class="pin" text-anchor="end">GPIO3 / READY</text>
+<circle cx="1880" cy="1222" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<text x="1900" y="1290" class="small" text-anchor="start">3V3 needs a separately rated regulator.</text>
+<text x="1900" y="1315" class="small" text-anchor="start">Do not power the radio from Black Pill 3V3.</text>
+<rect x="1490" y="500" width="300" height="191" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+<text x="1508" y="530" class="head" text-anchor="start">External supplies</text>
+<text x="1508" y="557" class="small" text-anchor="start">Regulated logic + motor rail</text>
+<text x="1508" y="596" class="pin" text-anchor="start">3V3 output</text>
+<circle cx="1790" cy="590" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="1790" y1="590" x2="1865" y2="590" stroke="#dc2626"><title>3V3</title></line>
+<circle cx="1790" cy="590" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<circle cx="1865" cy="590" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<text x="1874" y="584" class="small" text-anchor="start">3V3</text>
+<circle cx="1865" cy="590" r="5" class="terminal" stroke="#dc2626"/>
+<text x="1508" y="628" class="pin" text-anchor="start">Common return</text>
+<circle cx="1790" cy="622" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="1790" y1="622" x2="1865" y2="622" stroke="#374151"><title>GND</title></line>
+<circle cx="1790" cy="622" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<circle cx="1865" cy="622" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<text x="1874" y="616" class="small" text-anchor="start">GND</text>
+<circle cx="1865" cy="622" r="5" class="terminal" stroke="#374151"/>
+<text x="1508" y="660" class="pin" text-anchor="start">Motor VM output</text>
+<circle cx="1790" cy="654" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="1790" y1="654" x2="1865" y2="654" stroke="#991b1b"><title>VM</title></line>
+<circle cx="1790" cy="654" r="4" fill="white" stroke="#991b1b" stroke-width="2"/>
+<circle cx="1865" cy="654" r="4" fill="white" stroke="#991b1b" stroke-width="2"/>
+<text x="1874" y="648" class="small" text-anchor="start">VM</text>
+<circle cx="1865" cy="654" r="5" class="terminal" stroke="#991b1b"/>
+<rect x="970" y="260" width="430" height="1045" rx="12" fill="#e2e8f0" stroke="#334155" stroke-width="2"/>
+<text x="1185" y="298" class="head" text-anchor="middle">BLACK PILL • F411CE</text>
+<text x="1185" y="327" class="small" text-anchor="middle">POWER → SIGNALS → MISC</text>
+<text x="990" y="381" class="pin" text-anchor="start">3V3 bus</text>
+<line class="wire" x1="970" y1="375" x2="875" y2="375" stroke="#dc2626"><title>3V3</title></line>
+<circle cx="970" cy="375" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<circle cx="875" cy="375" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<text x="866" y="369" class="small" text-anchor="end">3V3</text>
+<circle cx="875" cy="375" r="5" class="terminal" stroke="#dc2626"/>
+<text x="990" y="433" class="pin" text-anchor="start">GND bus</text>
+<line class="wire" x1="970" y1="427" x2="875" y2="427" stroke="#374151"><title>GND</title></line>
+<circle cx="970" cy="427" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<circle cx="875" cy="427" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<text x="866" y="421" class="small" text-anchor="end">GND</text>
+<circle cx="875" cy="427" r="5" class="terminal" stroke="#374151"/>
+<text x="990" y="485" class="pin" text-anchor="start">PB7 / I2C1 SDA</text>
+<line class="wire" x1="970" y1="479" x2="875" y2="479" stroke="#0891b2"><title>MAIN SDA</title></line>
+<circle cx="970" cy="479" r="4" fill="white" stroke="#0891b2" stroke-width="2"/>
+<circle cx="875" cy="479" r="4" fill="white" stroke="#0891b2" stroke-width="2"/>
+<text x="866" y="473" class="small" text-anchor="end">MAIN SDA</text>
+<circle cx="875" cy="479" r="5" class="terminal" stroke="#0891b2"/>
+<text x="990" y="537" class="pin" text-anchor="start">PB6 / I2C1 SCL</text>
+<line class="wire" x1="970" y1="531" x2="875" y2="531" stroke="#2563eb"><title>MAIN SCL</title></line>
+<circle cx="970" cy="531" r="4" fill="white" stroke="#2563eb" stroke-width="2"/>
+<circle cx="875" cy="531" r="4" fill="white" stroke="#2563eb" stroke-width="2"/>
+<text x="866" y="525" class="small" text-anchor="end">MAIN SCL</text>
+<circle cx="875" cy="531" r="5" class="terminal" stroke="#2563eb"/>
+<text x="990" y="589" class="pin" text-anchor="start">PB3 / I2C2 SDA</text>
+<line class="wire" x1="970" y1="583" x2="875" y2="583" stroke="#16a34a"><title>TOF SDA</title></line>
+<circle cx="970" cy="583" r="4" fill="white" stroke="#16a34a" stroke-width="2"/>
+<circle cx="875" cy="583" r="4" fill="white" stroke="#16a34a" stroke-width="2"/>
+<text x="866" y="577" class="small" text-anchor="end">TOF SDA</text>
+<circle cx="875" cy="583" r="5" class="terminal" stroke="#16a34a"/>
+<text x="990" y="641" class="pin" text-anchor="start">PB10 / I2C2 SCL</text>
+<line class="wire" x1="970" y1="635" x2="875" y2="635" stroke="#65a30d"><title>TOF SCL</title></line>
+<circle cx="970" cy="635" r="4" fill="white" stroke="#65a30d" stroke-width="2"/>
+<circle cx="875" cy="635" r="4" fill="white" stroke="#65a30d" stroke-width="2"/>
+<text x="866" y="629" class="small" text-anchor="end">TOF SCL</text>
+<circle cx="875" cy="635" r="5" class="terminal" stroke="#65a30d"/>
+<text x="990" y="693" class="pin" text-anchor="start">PA1 / LEFT XSHUT</text>
+<text x="990" y="745" class="pin" text-anchor="start">PA2 / FRONT XSHUT</text>
+<text x="990" y="797" class="pin" text-anchor="start">PA3 / RIGHT XSHUT</text>
+<text x="990" y="849" class="pin" text-anchor="start">PA8 / TIM1 CH1</text>
+<text x="990" y="901" class="pin" text-anchor="start">PA9 / TIM1 CH2</text>
+<text x="990" y="953" class="pin" text-anchor="start">PB8 / TIM4 CH3</text>
+<text x="990" y="1005" class="pin" text-anchor="start">PB9 / TIM4 CH4</text>
+<text x="990" y="1057" class="pin" text-anchor="start">PB12 / nSLEEP</text>
+<text x="990" y="1109" class="pin" text-anchor="start">PB13 / nFAULT</text>
+<text x="1380" y="821" class="pin" text-anchor="end">PA5 / SPI1 SCK</text>
+<text x="1380" y="883" class="pin" text-anchor="end">PA7 / SPI1 MOSI</text>
+<text x="1380" y="945" class="pin" text-anchor="end">PA6 / SPI1 MISO</text>
+<text x="1380" y="1007" class="pin" text-anchor="end">PA4 / SPI1 CS</text>
+<text x="1380" y="1069" class="pin" text-anchor="end">PB0 / READY</text>
+<text x="1185" y="1195" class="small" text-anchor="middle">PA11 / PA12 → USB connector</text>
+<text x="1185" y="1225" class="small" text-anchor="middle">PA13 / PA14 → SWD (RTT)</text>
+<text x="1185" y="1255" class="small" text-anchor="middle">PA0: on-board KEY • PC13: LED</text>
+<line class="wire" x1="425" y1="438" x2="970" y2="687" stroke="#c026d3"><title>XL</title></line>
+<circle cx="425" cy="438" r="4" fill="white" stroke="#c026d3" stroke-width="2"/>
+<circle cx="970" cy="687" r="4" fill="white" stroke="#c026d3" stroke-width="2"/>
+<line class="wire" x1="425" y1="748" x2="970" y2="739" stroke="#9333ea"><title>XF</title></line>
+<circle cx="425" cy="748" r="4" fill="white" stroke="#9333ea" stroke-width="2"/>
+<circle cx="970" cy="739" r="4" fill="white" stroke="#9333ea" stroke-width="2"/>
+<line class="wire" x1="425" y1="1058" x2="970" y2="791" stroke="#db2777"><title>XR</title></line>
+<circle cx="425" cy="1058" r="4" fill="white" stroke="#db2777" stroke-width="2"/>
+<circle cx="970" cy="791" r="4" fill="white" stroke="#db2777" stroke-width="2"/>
+<line class="wire" x1="1400" y1="815" x2="1880" y2="1094" stroke="#ca8a04"><title>SCK</title></line>
+<circle cx="1400" cy="815" r="4" fill="white" stroke="#ca8a04" stroke-width="2"/>
+<circle cx="1880" cy="1094" r="4" fill="white" stroke="#ca8a04" stroke-width="2"/>
+<line class="wire" x1="1400" y1="877" x2="1880" y2="1126" stroke="#e11d48"><title>MOSI</title></line>
+<circle cx="1400" cy="877" r="4" fill="white" stroke="#e11d48" stroke-width="2"/>
+<circle cx="1880" cy="1126" r="4" fill="white" stroke="#e11d48" stroke-width="2"/>
+<line class="wire" x1="1400" y1="939" x2="1880" y2="1158" stroke="#0284c7"><title>MISO</title></line>
+<circle cx="1400" cy="939" r="4" fill="white" stroke="#0284c7" stroke-width="2"/>
+<circle cx="1880" cy="1158" r="4" fill="white" stroke="#0284c7" stroke-width="2"/>
+<line class="wire" x1="1400" y1="1001" x2="1880" y2="1190" stroke="#7c2d12"><title>CS</title></line>
+<circle cx="1400" cy="1001" r="4" fill="white" stroke="#7c2d12" stroke-width="2"/>
+<circle cx="1880" cy="1190" r="4" fill="white" stroke="#7c2d12" stroke-width="2"/>
+<line class="wire" x1="1400" y1="1063" x2="1880" y2="1222" stroke="#059669"><title>READY</title></line>
+<circle cx="1400" cy="1063" r="4" fill="white" stroke="#059669" stroke-width="2"/>
+<circle cx="1880" cy="1222" r="4" fill="white" stroke="#059669" stroke-width="2"/>
+<text x="1470" y="320" class="head" text-anchor="start">Localization key</text>
+<text x="1470" y="350" class="small" text-anchor="start">External normally-open switch</text>
+<text x="1420" y="405" class="pin" text-anchor="start">PB1 / internal pull-up</text>
+<line class="wire" x1="1400" y1="420" x2="1630" y2="420" stroke="#475569"><title>KEY</title></line>
+<circle cx="1400" cy="420" r="4" fill="white" stroke="#475569" stroke-width="2"/>
+<circle cx="1630" cy="420" r="4" fill="white" stroke="#475569" stroke-width="2"/>
+<circle cx="1630" cy="420" r="5" fill="white" stroke="#475569" stroke-width="2"/><circle cx="1700" cy="420" r="5" fill="white" stroke="#475569" stroke-width="2"/><line x1="1630" y1="420" x2="1695" y2="395" stroke="#475569" stroke-width="3"/>
+<line class="wire" x1="1700" y1="420" x2="1760" y2="420" stroke="#374151"><title>GND</title></line>
+<circle cx="1700" cy="420" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<circle cx="1760" cy="420" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<text x="1769" y="414" class="small" text-anchor="start">GND</text>
+<circle cx="1760" cy="420" r="5" class="terminal" stroke="#374151"/>
+<rect x="55" y="1190" width="420" height="351" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+<text x="73" y="1220" class="head" text-anchor="start">DRV8833 • 2 bridges</text>
+<text x="73" y="1247" class="small" text-anchor="start">A → left motor • B → right motor</text>
+<text x="73" y="1286" class="pin" text-anchor="start">VM: motor supply</text>
+<circle cx="475" cy="1280" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="475" y1="1280" x2="550" y2="1280" stroke="#991b1b"><title>VM</title></line>
+<circle cx="475" cy="1280" r="4" fill="white" stroke="#991b1b" stroke-width="2"/>
+<circle cx="550" cy="1280" r="4" fill="white" stroke="#991b1b" stroke-width="2"/>
+<text x="559" y="1274" class="small" text-anchor="start">VM</text>
+<circle cx="550" cy="1280" r="5" class="terminal" stroke="#991b1b"/>
+<text x="73" y="1318" class="pin" text-anchor="start">GND</text>
+<circle cx="475" cy="1312" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="475" y1="1312" x2="550" y2="1312" stroke="#374151"><title>GND</title></line>
+<circle cx="475" cy="1312" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<circle cx="550" cy="1312" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<text x="559" y="1306" class="small" text-anchor="start">GND</text>
+<circle cx="550" cy="1312" r="5" class="terminal" stroke="#374151"/>
+<text x="73" y="1350" class="pin" text-anchor="start">AIN1</text>
+<circle cx="475" cy="1344" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<text x="73" y="1382" class="pin" text-anchor="start">AIN2</text>
+<circle cx="475" cy="1376" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<text x="73" y="1414" class="pin" text-anchor="start">BIN1</text>
+<circle cx="475" cy="1408" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<text x="73" y="1446" class="pin" text-anchor="start">BIN2</text>
+<circle cx="475" cy="1440" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<text x="73" y="1478" class="pin" text-anchor="start">nSLEEP</text>
+<circle cx="475" cy="1472" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<text x="73" y="1510" class="pin" text-anchor="start">nFAULT</text>
+<circle cx="475" cy="1504" r="5" fill="white" stroke="#64748b" stroke-width="2"/>
+<line class="wire" x1="475" y1="1344" x2="970" y2="843" stroke="#b45309"><title>AIN1</title></line>
+<circle cx="475" cy="1344" r="4" fill="white" stroke="#b45309" stroke-width="2"/>
+<circle cx="970" cy="843" r="4" fill="white" stroke="#b45309" stroke-width="2"/>
+<line class="wire" x1="475" y1="1376" x2="970" y2="895" stroke="#ea580c"><title>AIN2</title></line>
+<circle cx="475" cy="1376" r="4" fill="white" stroke="#ea580c" stroke-width="2"/>
+<circle cx="970" cy="895" r="4" fill="white" stroke="#ea580c" stroke-width="2"/>
+<line class="wire" x1="475" y1="1408" x2="970" y2="947" stroke="#7c3aed"><title>BIN1</title></line>
+<circle cx="475" cy="1408" r="4" fill="white" stroke="#7c3aed" stroke-width="2"/>
+<circle cx="970" cy="947" r="4" fill="white" stroke="#7c3aed" stroke-width="2"/>
+<line class="wire" x1="475" y1="1440" x2="970" y2="999" stroke="#4f46e5"><title>BIN2</title></line>
+<circle cx="475" cy="1440" r="4" fill="white" stroke="#4f46e5" stroke-width="2"/>
+<circle cx="970" cy="999" r="4" fill="white" stroke="#4f46e5" stroke-width="2"/>
+<line class="wire" x1="475" y1="1472" x2="970" y2="1051" stroke="#0f766e"><title>nSLEEP</title></line>
+<circle cx="475" cy="1472" r="4" fill="white" stroke="#0f766e" stroke-width="2"/>
+<circle cx="970" cy="1051" r="4" fill="white" stroke="#0f766e" stroke-width="2"/>
+<line class="wire" x1="475" y1="1504" x2="970" y2="1103" stroke="#a21caf"><title>nFAULT</title></line>
+<circle cx="475" cy="1504" r="4" fill="white" stroke="#a21caf" stroke-width="2"/>
+<circle cx="970" cy="1103" r="4" fill="white" stroke="#a21caf" stroke-width="2"/>
+<text x="550" y="1570" class="pin" text-anchor="start">AOUT1 / AOUT2 → LEFT motor</text>
+<text x="550" y="1602" class="pin" text-anchor="start">BOUT1 / BOUT2 → RIGHT motor</text>
+<text x="110" y="1530" class="small" text-anchor="middle">AO1</text>
+<text x="210" y="1530" class="small" text-anchor="middle">AO2</text>
+<text x="310" y="1530" class="small" text-anchor="middle">BO1</text>
+<text x="410" y="1530" class="small" text-anchor="middle">BO2</text>
+<line class="wire" x1="110" y1="1541" x2="540" y2="1570" stroke="#92400e"><title>LEFT+</title></line>
+<circle cx="110" cy="1541" r="4" fill="white" stroke="#92400e" stroke-width="2"/>
+<circle cx="540" cy="1570" r="4" fill="white" stroke="#92400e" stroke-width="2"/>
+<line class="wire" x1="210" y1="1541" x2="540" y2="1583" stroke="#d97706"><title>LEFT-</title></line>
+<circle cx="210" cy="1541" r="4" fill="white" stroke="#d97706" stroke-width="2"/>
+<circle cx="540" cy="1583" r="4" fill="white" stroke="#d97706" stroke-width="2"/>
+<line class="wire" x1="310" y1="1541" x2="540" y2="1602" stroke="#4338ca"><title>RIGHT+</title></line>
+<circle cx="310" cy="1541" r="4" fill="white" stroke="#4338ca" stroke-width="2"/>
+<circle cx="540" cy="1602" r="4" fill="white" stroke="#4338ca" stroke-width="2"/>
+<line class="wire" x1="410" y1="1541" x2="540" y2="1615" stroke="#818cf8"><title>RIGHT-</title></line>
+<circle cx="410" cy="1541" r="4" fill="white" stroke="#818cf8" stroke-width="2"/>
+<circle cx="540" cy="1615" r="4" fill="white" stroke="#818cf8" stroke-width="2"/>
+<text x="75" y="1620" class="small" text-anchor="start">nFAULT: 10 kΩ external pull-up to 3V3</text>
+<text x="75" y="1648" class="small" text-anchor="start">VM: 2.7–10.8 V, selected for motors</text>
+<rect x="1010" y="1348" width="460" height="280" rx="12" fill="#fffdf5" stroke="#cbd5e1" stroke-width="2"/>
+<text x="1020" y="1334" class="head" text-anchor="start">200-contact breadboard • 20 × (5 + 5)</text>
+<text x="1005" y="1384" class="small" text-anchor="end">1</text>
+<line x1="1030" y1="1380" x2="1070" y2="1380" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1380" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1380" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1380" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1380" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1380" r="3" fill="#64748b"/>
+<line x1="1310" y1="1380" x2="1350" y2="1380" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1380" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1380" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1380" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1380" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1380" r="3" fill="#64748b"/>
+<text x="1082" y="1385" class="small" text-anchor="start">3V3</text>
+<text x="1362" y="1385" class="small" text-anchor="start">3V3</text>
+<text x="1005" y="1396" class="small" text-anchor="end">2</text>
+<line x1="1030" y1="1392" x2="1070" y2="1392" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1392" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1392" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1392" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1392" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1392" r="3" fill="#64748b"/>
+<line x1="1310" y1="1392" x2="1350" y2="1392" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1392" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1392" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1392" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1392" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1392" r="3" fill="#64748b"/>
+<text x="1082" y="1397" class="small" text-anchor="start">GND</text>
+<text x="1362" y="1397" class="small" text-anchor="start">GND</text>
+<text x="1005" y="1408" class="small" text-anchor="end">3</text>
+<line x1="1030" y1="1404" x2="1070" y2="1404" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1404" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1404" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1404" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1404" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1404" r="3" fill="#64748b"/>
+<line x1="1310" y1="1404" x2="1350" y2="1404" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1404" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1404" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1404" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1404" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1404" r="3" fill="#64748b"/>
+<text x="1082" y="1409" class="small" text-anchor="start">MAIN SDA</text>
+<text x="1362" y="1409" class="small" text-anchor="start">TOF SDA</text>
+<text x="1005" y="1420" class="small" text-anchor="end">4</text>
+<line x1="1030" y1="1416" x2="1070" y2="1416" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1416" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1416" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1416" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1416" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1416" r="3" fill="#64748b"/>
+<line x1="1310" y1="1416" x2="1350" y2="1416" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1416" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1416" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1416" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1416" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1416" r="3" fill="#64748b"/>
+<text x="1082" y="1421" class="small" text-anchor="start">MAIN SCL</text>
+<text x="1362" y="1421" class="small" text-anchor="start">TOF SCL</text>
+<text x="1005" y="1432" class="small" text-anchor="end">5</text>
+<line x1="1030" y1="1428" x2="1070" y2="1428" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1428" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1428" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1428" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1428" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1428" r="3" fill="#64748b"/>
+<line x1="1310" y1="1428" x2="1350" y2="1428" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1428" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1428" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1428" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1428" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1428" r="3" fill="#64748b"/>
+<text x="1082" y="1433" class="small" text-anchor="start">3V3</text>
+<text x="1362" y="1433" class="small" text-anchor="start">3V3</text>
+<text x="1005" y="1444" class="small" text-anchor="end">6</text>
+<line x1="1030" y1="1440" x2="1070" y2="1440" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1440" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1440" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1440" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1440" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1440" r="3" fill="#64748b"/>
+<line x1="1310" y1="1440" x2="1350" y2="1440" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1440" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1440" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1440" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1440" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1440" r="3" fill="#64748b"/>
+<text x="1082" y="1445" class="small" text-anchor="start">GND</text>
+<text x="1362" y="1445" class="small" text-anchor="start">GND</text>
+<text x="1005" y="1456" class="small" text-anchor="end">7</text>
+<line x1="1030" y1="1452" x2="1070" y2="1452" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1452" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1452" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1452" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1452" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1452" r="3" fill="#64748b"/>
+<line x1="1310" y1="1452" x2="1350" y2="1452" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1452" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1452" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1452" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1452" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1452" r="3" fill="#64748b"/>
+<text x="1005" y="1468" class="small" text-anchor="end">8</text>
+<line x1="1030" y1="1464" x2="1070" y2="1464" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1464" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1464" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1464" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1464" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1464" r="3" fill="#64748b"/>
+<line x1="1310" y1="1464" x2="1350" y2="1464" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1464" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1464" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1464" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1464" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1464" r="3" fill="#64748b"/>
+<text x="1005" y="1480" class="small" text-anchor="end">9</text>
+<line x1="1030" y1="1476" x2="1070" y2="1476" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1476" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1476" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1476" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1476" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1476" r="3" fill="#64748b"/>
+<line x1="1310" y1="1476" x2="1350" y2="1476" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1476" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1476" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1476" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1476" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1476" r="3" fill="#64748b"/>
+<text x="1005" y="1492" class="small" text-anchor="end">10</text>
+<line x1="1030" y1="1488" x2="1070" y2="1488" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1488" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1488" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1488" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1488" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1488" r="3" fill="#64748b"/>
+<line x1="1310" y1="1488" x2="1350" y2="1488" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1488" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1488" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1488" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1488" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1488" r="3" fill="#64748b"/>
+<text x="1005" y="1504" class="small" text-anchor="end">11</text>
+<line x1="1030" y1="1500" x2="1070" y2="1500" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1500" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1500" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1500" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1500" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1500" r="3" fill="#64748b"/>
+<line x1="1310" y1="1500" x2="1350" y2="1500" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1500" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1500" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1500" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1500" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1500" r="3" fill="#64748b"/>
+<text x="1005" y="1516" class="small" text-anchor="end">12</text>
+<line x1="1030" y1="1512" x2="1070" y2="1512" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1512" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1512" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1512" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1512" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1512" r="3" fill="#64748b"/>
+<line x1="1310" y1="1512" x2="1350" y2="1512" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1512" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1512" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1512" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1512" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1512" r="3" fill="#64748b"/>
+<text x="1005" y="1528" class="small" text-anchor="end">13</text>
+<line x1="1030" y1="1524" x2="1070" y2="1524" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1524" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1524" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1524" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1524" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1524" r="3" fill="#64748b"/>
+<line x1="1310" y1="1524" x2="1350" y2="1524" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1524" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1524" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1524" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1524" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1524" r="3" fill="#64748b"/>
+<text x="1005" y="1540" class="small" text-anchor="end">14</text>
+<line x1="1030" y1="1536" x2="1070" y2="1536" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1536" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1536" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1536" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1536" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1536" r="3" fill="#64748b"/>
+<line x1="1310" y1="1536" x2="1350" y2="1536" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1536" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1536" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1536" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1536" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1536" r="3" fill="#64748b"/>
+<text x="1005" y="1552" class="small" text-anchor="end">15</text>
+<line x1="1030" y1="1548" x2="1070" y2="1548" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1548" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1548" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1548" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1548" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1548" r="3" fill="#64748b"/>
+<line x1="1310" y1="1548" x2="1350" y2="1548" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1548" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1548" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1548" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1548" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1548" r="3" fill="#64748b"/>
+<text x="1005" y="1564" class="small" text-anchor="end">16</text>
+<line x1="1030" y1="1560" x2="1070" y2="1560" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1560" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1560" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1560" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1560" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1560" r="3" fill="#64748b"/>
+<line x1="1310" y1="1560" x2="1350" y2="1560" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1560" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1560" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1560" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1560" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1560" r="3" fill="#64748b"/>
+<text x="1005" y="1576" class="small" text-anchor="end">17</text>
+<line x1="1030" y1="1572" x2="1070" y2="1572" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1572" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1572" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1572" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1572" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1572" r="3" fill="#64748b"/>
+<line x1="1310" y1="1572" x2="1350" y2="1572" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1572" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1572" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1572" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1572" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1572" r="3" fill="#64748b"/>
+<text x="1005" y="1588" class="small" text-anchor="end">18</text>
+<line x1="1030" y1="1584" x2="1070" y2="1584" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1584" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1584" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1584" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1584" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1584" r="3" fill="#64748b"/>
+<line x1="1310" y1="1584" x2="1350" y2="1584" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1584" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1584" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1584" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1584" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1584" r="3" fill="#64748b"/>
+<text x="1005" y="1600" class="small" text-anchor="end">19</text>
+<line x1="1030" y1="1596" x2="1070" y2="1596" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1596" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1596" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1596" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1596" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1596" r="3" fill="#64748b"/>
+<line x1="1310" y1="1596" x2="1350" y2="1596" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1596" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1596" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1596" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1596" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1596" r="3" fill="#64748b"/>
+<text x="1005" y="1612" class="small" text-anchor="end">20</text>
+<line x1="1030" y1="1608" x2="1070" y2="1608" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1030" cy="1608" r="3" fill="#64748b"/>
+<circle cx="1040" cy="1608" r="3" fill="#64748b"/>
+<circle cx="1050" cy="1608" r="3" fill="#64748b"/>
+<circle cx="1060" cy="1608" r="3" fill="#64748b"/>
+<circle cx="1070" cy="1608" r="3" fill="#64748b"/>
+<line x1="1310" y1="1608" x2="1350" y2="1608" stroke="#cbd5e1" stroke-width="3"/>
+<circle cx="1310" cy="1608" r="3" fill="#64748b"/>
+<circle cx="1320" cy="1608" r="3" fill="#64748b"/>
+<circle cx="1330" cy="1608" r="3" fill="#64748b"/>
+<circle cx="1340" cy="1608" r="3" fill="#64748b"/>
+<circle cx="1350" cy="1608" r="3" fill="#64748b"/>
+<line class="wire" x1="1060" y1="1380" x2="1060" y2="1428" stroke="#dc2626"><title>3V3</title></line>
+<circle cx="1060" cy="1380" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<circle cx="1060" cy="1428" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<line class="wire" x1="1340" y1="1380" x2="1340" y2="1428" stroke="#dc2626"><title>3V3</title></line>
+<circle cx="1340" cy="1380" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<circle cx="1340" cy="1428" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<line class="wire" x1="1070" y1="1428" x2="1310" y2="1428" stroke="#dc2626"><title>3V3</title></line>
+<circle cx="1070" cy="1428" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<circle cx="1310" cy="1428" r="4" fill="white" stroke="#dc2626" stroke-width="2"/>
+<line class="wire" x1="1060" y1="1392" x2="1060" y2="1440" stroke="#374151"><title>GND</title></line>
+<circle cx="1060" cy="1392" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<circle cx="1060" cy="1440" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<line class="wire" x1="1340" y1="1392" x2="1340" y2="1440" stroke="#374151"><title>GND</title></line>
+<circle cx="1340" cy="1392" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<circle cx="1340" cy="1440" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<line class="wire" x1="1070" y1="1440" x2="1310" y2="1440" stroke="#374151"><title>GND</title></line>
+<circle cx="1070" cy="1440" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<circle cx="1310" cy="1440" r="4" fill="white" stroke="#374151" stroke-width="2"/>
+<text x="1190" y="1485" class="small" text-anchor="middle">center gap</text>
+<text x="1190" y="1515" class="small" text-anchor="middle">rows 7–20 spare</text>
+<text x="1190" y="1545" class="small" text-anchor="middle">Same names = same bus.</text>
+<text x="1190" y="1575" class="small" text-anchor="middle">14 taps per supply rail.</text>
+<text x="1515" y="1400" class="head" text-anchor="start">POWER / BUS NOTES</text>
+<text x="1515" y="1432" class="small" text-anchor="start">3V3 = regulated logic bus; all GNDs common.</text>
+<text x="1515" y="1455" class="small" text-anchor="start">Use an adequately rated external 3V3 regulator.</text>
+<text x="1515" y="1478" class="small" text-anchor="start">Black Pill 3V3 pin is supply input in this sketch.</text>
+<text x="1515" y="1501" class="small" text-anchor="start">Motor VM stays off the breadboard logic buses.</text>
+<text x="1515" y="1524" class="small" text-anchor="start">USB: data + GND; avoid feeding a second power source.</text>
+<text x="1515" y="1547" class="small" text-anchor="start">4 × I²C pull-ups: SDA/SCL → 3V3 (e.g. 4.7 kΩ).</text>
+<text x="1515" y="1570" class="small" text-anchor="start">XSHUT: open-drain; pull up to module-permitted rail.</text>
+<text x="1515" y="1593" class="small" text-anchor="start">Select sensor breakouts accepting 3V3 supply / I²C.</text>
+<text x="1515" y="1616" class="small" text-anchor="start">Optional on-board SPI flash must be absent/isolated.</text>
+<text x="1515" y="1639" class="small" text-anchor="start">PB3 = I²C2; SWO unavailable. SWD RTT is retained.</text>
+<text x="55" y="1680" class="note" text-anchor="start">SOURCE-CONFIGURED DESIGN • not a physical qualification • USB upload/serial and SWD use existing board connectors • no encoder wiring</text>
+</svg>
