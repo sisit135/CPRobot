@@ -76,7 +76,9 @@ status and runtime assumptions live in [ADR firmware architecture](fw_adr_archit
 The maintained autonomous hardware path uses STM32F411CE and ESP32-C6 / LuatOS ESP32-C3 with BLE
 and WLAN station IPv6/TLS. THS board configuration, sensor qualification, and
 physical stopping behavior still require board validation. Remote configuration
-is required in every THS build; physical flash power-loss behavior and first-time
+is required in every production THS build; the explicit sensor-free open-loop
+demo is described in the [THS architecture](fw_ths_architecture.md#compile-time-open-loop-demo).
+Physical flash power-loss behavior and first-time
 bridge pairing still require qualification in their owning component pages. ADR's checked-in
 application is documented separately from the THS deployment path; its board
 runtime and physical behavior are not qualified here.
@@ -91,6 +93,5 @@ intended behavior and historical validation.
 - [Hardware wiring](hardware_wiring.md): THS/bridge source defaults and unverified pin examples.
 - [Tracing and collection](tracing.md): THS deferred logging and current collector paths.
 - [Frozen EKF references](ekf/README.md): retained algorithm studies and historical results.
-- [Validation records](validation/white_field_end_tape.md): results for specific revisions.
 - [Competition objectives](objectives.md): robot tasks and competition context.
 

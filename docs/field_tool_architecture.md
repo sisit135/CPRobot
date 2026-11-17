@@ -242,7 +242,7 @@ restore mapped color navigation. See
 Android uses the advertised source-page IDs for its source buttons and shows a
 field's factory default separately from its fetched saved value. The generated
 descriptor, catalog, and source pages are checked together; the latest automated
-results are in [required remote configuration validation](validation/required_remote_config.md).
+results are in required remote configuration validation (internal record).
 
 ## Linux collector and host tools
 

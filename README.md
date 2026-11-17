@@ -20,27 +20,16 @@ Vulkan lifecycle viewer makes successful routes and failures inspectable:
 *Illustrative host runs with different seeds. This screenshot is not a paired
 benchmark or evidence of physical robot qualification.*
 
-## E2E results and current status
+## E2E demonstration
 
-The [2026-11-16 triangular-head replay](docs/validation/v2_triangular_head_2026-11-16.md)
-reached GOAL **38.461 seconds after the start key**, with tape confirmed, no
-collision, zero final PWM, stopped simulated wheels, and 12.6 mm final center
-error. It used seed 1234, the supplied Q1 maze, fixed goal `(0,0)`, TurnGuard
-and non-stop turns enabled, and full-output mode disabled.
+The teaser shows a FEATURE host-simulation run reaching GOAL. The lifecycle
+viewer supports replayable seeds, map rotations and headless runs; see the
+[interactive lifecycle guide](docs/building.md#interactive-feature-lifecycle-test-linux).
+Simulation demonstrations do not qualify physical robot behavior. Broader
+navigation qualification and physical deployment remain incomplete.
 
-This is one successful simulated mission. The
-[2026-11-15 native results](docs/validation/v2_nonstop_turn_2026-11-15.md)
-record **82/95 tests passing** with non-stop turns enabled, versus **91/95**
-with them disabled: nine additional lifecycle regressions were recorded.
-These counts precede the triangular-head update and are not a fresh test of
-this checkout. A subsequent front-profile TurnGuard experiment was withdrawn;
-the [restoration replay](docs/validation/v2_turnguard_front_profile_2026-11-16.md#restoration-validation)
-again completed the seed-1234 mission in 38.461 seconds.
-
-The project is being prepared for public source release. Broader navigation
-qualification and physical deployment remain incomplete. See the
-[release status and documentation errata](docs/public_release.md) for component
-status, evidence availability, and outstanding release work.
+Validation reports, raw evidence and analysis notebooks are maintained privately
+and are excluded from the public source tree and release bundles.
 
 ## Repository map
 
@@ -49,12 +38,12 @@ status, evidence availability, and outstanding release work.
 | [`fw/robot_sf`](fw/robot_sf) | Portable THS navigation, geometry, localization and motor-control core |
 | [`fw/autonomous/STM32_TINYRCP`](fw/autonomous/STM32_TINYRCP) | STM32F411CE HAL, bring-up, FreeRTOS tasks and host lifecycle tests |
 | [`fw/manual`](fw/manual) | ADR uPython application, samples, USB uploader, tests and firmware-owned field-tool provider |
-| [`fw/robot_localization`](fw/robot_localization) | Localization library and retained validation material |
+| [`fw/robot_localization`](fw/robot_localization) | Localization library and compatibility entry point |
 | [`fw/telemetry_bridge`](fw/telemetry_bridge) | Bridge protocol, Linux collector and transport checks |
 | [`fw/tools/navigation_host`](fw/tools/navigation_host) | Standalone native navigation build |
 | [`generic_field_tool`](generic_field_tool) | Generic Android app, shared protocol and ESP32 multiboard bridge firmware |
 | [`proto`](proto) / [`host/tools`](host/tools) | Schemas, configuration catalog, generators and optional gRPC gateway |
-| [`docs`](docs) | Architecture, hardware, operation, diagrams and dated validation records |
+| [`docs`](docs) | Architecture, hardware, operation and diagrams |
 
 The generic field tool stays platform agnostic; robot-specific schemas, codecs
 and providers belong to the owning firmware component. EKF development is frozen.
@@ -77,7 +66,6 @@ successful replay does not qualify the campaign.
 - [Architecture overview](docs/architecture.md) and component boundaries.
 - [THS architecture](docs/fw_ths_architecture.md), [ADR architecture](docs/fw_adr_architecture.md), and [field-tool architecture](docs/field_tool_architecture.md).
 - [Hardware wiring](docs/hardware_wiring.md), [tracing](docs/tracing.md), and [ADR USB serial](docs/adr_usb_serial.md).
-- [Release status and errata](docs/public_release.md), including how to interpret historical validation evidence.
 
 ## Licensing
 

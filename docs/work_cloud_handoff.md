@@ -126,7 +126,7 @@ contradiction/entry/phase logs. Cancel and new goals do not clear the latch.
 A valid end-tape cue still needs fresh feature evidence for measured final
 approach and completion. Preserve the regression cases and logging.
 
-See [FEATURE failsafe validation](validation/feature_rhr_failsafe.md),
+See FEATURE failsafe validation (internal record),
 [THS architecture](fw_ths_architecture.md), and [tracing](tracing.md).
 
 ## Last recorded validation
@@ -147,7 +147,7 @@ handoff did not rerun them or qualify later edits:
 - ESP32-C6 build: 1,260,801-byte application and 42,980 bytes static RAM.
 
 The detailed evidence, toolchain versions, artifact paths, APK hash, and limits
-are in [required remote configuration validation](validation/required_remote_config.md).
+are in required remote configuration validation (internal record).
 Those results are host/build evidence, not physical sensor/transport/motion or
 power-loss qualification. The frozen EKF equations and tuning were preserved.
 

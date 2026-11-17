@@ -130,7 +130,7 @@ pose, a new motor snapshot and pose displacement at most 5 mm. Pose jitter reset
 confirmations without restarting coast dwell. Nonzero PWM or nonquiet/stale gyro
 revokes coast evidence. Low clearance while arrival remains inside tolerance
 holds zero output rather than restarting creep; this is the
-[seed-1485012174 livelock fix](validation/settled_corner_livelock_2026-11-04.md).
+seed-1485012174 livelock fix (internal record).
 Reapproach is specifically the low-clearance corner branch outside that window;
 other drift up to 50 mm follows the normal settle proof. Waits consume the
 original 30-second leg budget. `PASS_WAYPOINT` and `NEXT_WAYPOINT` start a new
@@ -163,7 +163,7 @@ deadline continue to elapse. See the
 for correction details. Executor `v=0` pivot requests pass through this guard:
 with a fresh measured pose, it may add at most ±8 mm/s to hold the rear axle
 midpoint after proving the remaining mapped arc. The rear-axle geometry and
-single-run limitation are recorded in [mount validation](validation/mount_offsets_2026-11-08.md).
+single-run limitation are recorded in mount validation (internal record).
 The final speed cap is
 `max(0.005, 2 × (stop_distance − coast_allowance))` m/s when a fresh stop
 observation matches the final target. DONE alone cannot declare GOAL; the

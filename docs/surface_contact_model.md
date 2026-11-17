@@ -53,7 +53,7 @@ impulse contributes yaw `-side*b*J_long/I`; a lateral impulse contributes
 grip and rolling drag couple translation and yaw about the rear axle. The legacy
 plant likewise preserves the axle midpoint during an ideal pivot; the platform
 center moves. GUI tire outlines use the same geometry. The TT output drives the
-wheel directly, with no extra ratio. See [mount validation](validation/mount_offsets_2026-11-08.md).
+wheel directly, with no extra ratio. See mount validation (internal record).
 
 Contact fraction describes available supported load, not visible rubber contact
 area. A zero-contact wheel can spin without accelerating the chassis. An already

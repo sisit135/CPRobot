@@ -31,5 +31,4 @@ APK assembly and APK signature verification. Physical phone UI interaction,
 DEX execution on ART, sustained BLE behavior and robot motion
 require device qualification; they are not established by the APK build.
 
-See the [initial release validation record](docs/initial-source-release-validation.md)
-for exact results and the locally retained APK identity.
+Detailed validation records and local artifact identities are maintained privately.

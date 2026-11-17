@@ -1,0 +1,9 @@
+# Internal evidence must stay out of public git archives.
+/docs/validation export-ignore
+/docs/validation_figures export-ignore
+/docs/public_release.md export-ignore
+/fw/robot_localization/VALIDATION.md export-ignore
+/fw/telemetry_bridge/docs/REMOTE_VALIDATION.md export-ignore
+/generic_field_tool/VALIDATION.md export-ignore
+/generic_field_tool/android/docs/initial-source-release-validation.md export-ignore
+/prebuilt/lc_gui_snapshot/validation export-ignore

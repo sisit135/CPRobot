@@ -7,7 +7,6 @@ Android field toolkit and ESP32-C6 / LuatOS ESP32-C3 BLE/WLAN TLS-to-SPI bridge.
 - [Build and compilation](../docs/building.md): Android, ESP32-C6 / LuatOS ESP32-C3 and protobuf generation.
 - [Android project](android/README.md) and [adapted setup views](android/app/SETUP_UI_SOURCES.md).
 - [Envelope schema](protocol.proto) and [shared codecs](common/).
-- [Historical validation](validation.md).
 
 The STM32 telemetry adapter consumes the same generated codec. Optional remote
 configuration requires the portable remote implementation described in the

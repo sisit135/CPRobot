@@ -19,3 +19,13 @@ __pycache__/
 /docs/assets/.xdp-*
 /test_output.txt
 /generic_field_tool/esp32_multiboard/sdkconfig.esp32c6
+
+# Internal validation reports and evidence; keep local, exclude from public source.
+/docs/validation/
+/docs/validation_figures/
+/docs/public_release.md
+/fw/robot_localization/VALIDATION.md
+/fw/telemetry_bridge/docs/REMOTE_VALIDATION.md
+/generic_field_tool/VALIDATION.md
+/generic_field_tool/android/docs/initial-source-release-validation.md
+/prebuilt/lc_gui_snapshot/validation/

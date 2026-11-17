@@ -161,7 +161,7 @@ establish client behavior, not firmware behavior. Physical USB verification on
 and print tracing from an uploaded non-actuating script. The actual ADR boot
 trace additionally established that CyberOS runs the project as module `main1`,
 so the application entry guard now accepts MicroPython `mainN` slots.
-See the [hardware boot record](validation/adr_usb_serial_2026-11-13.md).
+See the hardware boot record (internal record).
 A subsequent [gamepad API retest](adr_gamepad_api.md) confirmed the controller
 connected via `gamepad.is_online()` and corrected ADR's link method. Gamepad
 input-to-actuator end-to-end testing and physical movement remain deferred.

@@ -11,7 +11,7 @@ See the [project overview](../docs/architecture.md),
 and [frozen EKF references](../docs/ekf/README.md).
 
 The [ESP32-C6 bridge and Android toolkit](../generic_field_tool/README.md) use
-BLE and WLAN/TLS. Historical validation reports live in [docs/validation](../docs/validation/white_field_end_tape.md).
+BLE and WLAN/TLS.
 
 ## Licensing
 

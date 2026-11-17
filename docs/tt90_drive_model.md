@@ -104,7 +104,7 @@ The navigation task requests up to 0.21 m/s straight travel (about 56.9% duty
 for this wheel) and 1.8 rad/s body pivots. The measured distance approach gain is
 4/s. These task limits remain below the motor reference ceiling; lifecycle
 qualification records establish the results for each tested source revision.
-The [v2 cap comparison](validation/platform_v2_speed_2026-11-15.md) records
+The v2 cap comparison (internal record) records
 the unchanged timing with a PWM-only increase and the gains from navigation caps.
 
 The existing request slew limit remains 20 rad/s^2, equivalent to
@@ -128,6 +128,6 @@ from a local copy of the current source. Its byte-hash manifest is retained at
 `/tmp/cprobot-tt90-local-source/source-sha256.json`; build outputs are under
 `/tmp/cprobot-tt90-local-build`. Subsequent headless/GUI E2E runs, private timing
 profiles, and focused native results are recorded in the
-[TT90 timeout report](validation/tt90_timeout_e2e.md). Older validation artifacts
+TT90 timeout report (internal record). Older validation artifacts
 describe the preceding speed model. See the consolidated
 [build guide](building.md) for compilation and validation commands.
