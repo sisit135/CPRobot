@@ -4,6 +4,7 @@
 #include "localization/hal_sensors.hpp"
 #include "logging/log.hpp"
 #include "platform/hal_platform.hpp"
+#include "stm32f4xx_hal.h"
 #include <cassert>
 #include <cstdio>
 FakeWire Wire;

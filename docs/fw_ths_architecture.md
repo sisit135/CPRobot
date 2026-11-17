@@ -24,7 +24,7 @@ ADR's manual uPython firmware has a separate [architecture](fw_adr_architecture.
   Pose feedback closes the navigation loop; nominal wheel rates do not measure speed.
 - **All floor tiles are white.** A debounced black entrance tape and a fresh
   independent feature pose are required to confirm arrival at the end-cell center.
-- **One 86-second motion budget applies per boot.** Pauses, cancellation, and new
+- **One 86-second production motion budget applies per boot.** Pauses, cancellation, and new
   goals cannot extend it. Terminal GOAL, TIMEOUT, or HALTED requires a reset.
 
 Build prerequisites and commands live in [building.md](building.md). Pin defaults,
@@ -126,7 +126,39 @@ checks, not a measured electrical BIST. DRV8833 has no power-on feedback; its
 milestone only reports configured, stopped outputs. The motor task never
 reinitializes the driver. `boot_log` drains USB serial diagnostics before telemetry
 attaches its sink, including failed bring-up; telemetry owns draining afterward.
-The task ends with a DEBUG box-drawn step/result table before deleting itself.
+The task reports a DEBUG box-drawn step/result table.
+Immediately after the sensor HAL initialization attempt, and before creating
+application services, BUP captures one diagnostic sample set through the HALs
+with a 500 ms overall polling deadline (plus in-flight bounded calls and task
+scheduling). It prints that retained set after the BUP summary at INFO under
+`bup.sample`, then deletes itself. Thus the sample printer never becomes a
+second sensor-bus owner after service startup. Failed/skipped/unavailable
+sensors print `N/A`; initialization and application-start gates are unchanged.
+The [snapshot HAL](../fw/autonomous/STM32_TINYRCP/src/hal/boot_sensor_sample.cpp)
+owns polling and formatting; [tracing](tracing.md#bup-sensor-snapshot) defines
+units and ToF `Inf` semantics.
+The temporary trace-profile `AXI_BUP_IMU_DIAGNOSTIC=1` exception defers
+IMU/magnetometer failure so ToF and TCS diagnostics can run. Other HAL failures
+still halt sensor setup. When diagnostics finish, Sensors says `diagnostic`,
+Services stays `skipped`, BUP remains FAILED and motors are stopped. The
+application-start callback is never called in this mode, even with a healthy
+IMU: localization, navigation, sensor polling, telemetry and motor service tasks
+remain blocked. The [build guide](building.md#stm32f411ce-firmware) owns the flag
+and restoration instructions.
+During sensor HAL startup, BUP first prepares the main and isolated ToF buses
+and runs address-only I2C scans before initializing the IMU. Separate INFO
+tables and log sources identify the actual I2C controller (`i2c1`/`i2c2` with
+default wiring), logical bus and scan phase. Tables show
+configured device bindings, ACK/no-ACK results and unknown responders, so an IMU
+failure still leaves both bus inventories when bus setup succeeds. The main bus
+is scanned again after the IMU attempt when startup continues, and the ToF bus after its
+initialization attempt. An ACK is not an identity check: AK8963 may be hidden
+until MPU bypass is enabled; multiple unassigned ToFs can share boot address
+0x29. Device HAL initialization remains authoritative and scan results do not
+override bring-up gates. Invalid isolated-bus wiring now fails before IMU init.
+The [I2C diagnostics HAL](../fw/autonomous/STM32_TINYRCP/src/hal/i2c_diagnostics.cpp)
+owns probes and table formatting; no service task reads sensor registers for
+diagnostics. Probe bounds and log interpretation live in [tracing](tracing.md).
 Both navigation engines bootstrap from the feature task. Initial ambiguity does
 not cause autonomous scanning or motion. Motor task readiness and selected EKF
 initialization stages have a two-second timeout. No goal is selected at boot.
@@ -135,6 +167,46 @@ Source evidence: [THS entry](../fw/autonomous/STM32_TINYRCP/src/main.cpp),
 [navigation startup and state machine](../fw/autonomous/STM32_TINYRCP/src/tasks/navigation_tasks.cpp),
 [bring-up](../fw/autonomous/STM32_TINYRCP/src/tasks/bup_tasks.cpp),
 and [telemetry start/key](../fw/autonomous/STM32_TINYRCP/src/telemetry/adapter.cpp).
+
+## Compile-time open-loop demo
+
+`AXI_OPENLOOP_DEMO=1` replaces the production application at compilation. The
+separate tracing-derived build profile and validation commands live in the
+[build guide](building.md#open-loop-motor-demo). Production profiles default to
+the normal application described elsewhere on this page.
+
+The application creates `openloop_demo` independently before requesting BUP.
+The demo task runs at motor priority 4 with 768 stack words; it alone initializes
+DRV8833 and writes outputs. It samples the active-low LOC key every 20 ms and
+requires three consecutive low samples. One press starts repeated nominal 1 m
+straight legs at 0.20 m/s followed by clockwise 90-degree pivots lasting 1 second.
+It stops sampling the key after that trigger, so later presses cannot restart it.
+
+The task reuses the production `WheelController` through an explicit factory
+configuration, retaining PWM calibration, polarity, caps, request slew and timing
+checks without a remote-store dependency. Straight distance integrates the last
+issued nominal ramped wheel rates using the physical wheel radius. Pivot rate
+uses the track width and compensates the request acceleration ramp for a nominal
+quarter turn in 1 second. A zero-output control tick separates motion phases.
+These are open-loop estimates, with no measured travel/angle, slip correction or
+active braking. A driver/converter fault stops the task until reset. The demo
+repeats without the production navigation/run-deadline state machine.
+
+BUP still exists and logs its inert mode, then deletes itself. It performs no
+sensor initialization, I2C probes, HAL reads, settings mount or boot snapshot,
+does not invoke the production service callback, and never touches DRV. BUP
+allocation failure, pending state or completion cannot gate or stop the demo.
+The demo source graph omits all sensor drivers and production localization,
+FEATURE/EKF/path/motor tasks, SPI telemetry and remote/LittleFS/protobuf sources;
+they are absent from the resulting image. Only DRV, key GPIO, clock and logging
+are used. The deferred boot logger remains the USB/RTT log drain owner.
+
+Source evidence: [demo task](../fw/autonomous/STM32_TINYRCP/src/tasks/openloop_demo.cpp),
+[entry](../fw/autonomous/STM32_TINYRCP/src/main.cpp),
+[inert BUP branch](../fw/autonomous/STM32_TINYRCP/src/tasks/bup_tasks.cpp),
+[source selection](../fw/autonomous/STM32_TINYRCP/scripts/platformio_sources.py),
+and [native isolation/motion checks](../fw/autonomous/STM32_TINYRCP/test/test_openloop_demo.cpp).
+Native checks and target compilation do not qualify physical distance or angle.
 
 ## RTOS task ownership and data flow
 
@@ -211,10 +283,18 @@ requested wheel rates and the command timestamp after leaving the motor critical
 section. The existing deferred logger handles delivery; see
 [motor command enqueue events](tracing.md#motor-command-enqueue-events).
 
+The current bench setup leaves DRV8833 nFAULT disconnected. The motor HAL's
+`driver_fault_clear()` therefore returns `true` immediately; its original
+read/latch/shutdown logic is retained in a comment for restoration. This bypass
+applies to initialization and duty writes in every profile. Pin assignments
+and nFAULT input-pullup configuration remain unchanged, as do initialization,
+finite/range checks and zero-output stopping. Physical driver faults are not
+observed or latched by this software path while the bypass is present.
+
 The motor's provisional TT 1:90 reference uses a 32.5 mm wheel radius and 6 V
 at DRV8833 VM. Its nominal PWM conversion includes a 0.106 running-duty offset
 and a 0.07162 duty/(rad/s) slope, with a 12.483 rad/s request ceiling at the
-100% duty cap. The unchanged 20 rad/s^2 request slew corresponds to
+100% duty cap. The factory 20 rad/s^2 request slew corresponds to
 0.65 m/s^2 for equal wheel requests. These are open-loop starting values,
 not measured load-dependent speeds. The [drive calculation](tt90_drive_model.md)
 records the user-supplied 250 g mass, published reference motors, torque and
@@ -305,7 +385,7 @@ stateDiagram-v2
       MotorTerminal: Keep forcing zero output and halting localization
     }
     --
-    state "ekf_spi / configured loc_key (all profiles)" as Telemetry {
+    state "ekf_spi / configured loc_key (production profiles)" as Telemetry {
       [*] --> TransportLoop
       TransportLoop: SPI worker and optional key polling continue after navigation halt
     }
@@ -347,7 +427,7 @@ Startup entrance POIs for Q1 (TopRight) use these ordered zero-based world
 cells: POI 0 `(0,4)`, POI 1 `(4,4)`, POI 2 `(4,0)`. Q2–Q4 apply the existing
 counterclockwise cell rotations to that same ordered list. The former `(0,0)`
 POI is retired. The FEATURE startup search still permits all four headings.
-[POI reconfiguration and archive](validation/q1_start_pois_2026-11-09.md) records
+POI reconfiguration and archive (internal record) records
 the new validation and preserves the old configuration/results.
 The deprecated prototype platform used a 190 mm diagonal (134.35 mm side). Mounting
 coordinates use **+X right, +Y forward/up**, with the origin at platform center.
@@ -400,10 +480,10 @@ ToF ray tracing and GUI rendering. This axis clarification preserves the physica
 backward wheel shift and forward sensor shift; it does not move either pair
 sideways. Provisional 65 × 26 mm tires fit flush inside the platform sides. The
 wheels attach directly to TT output shafts. Width remains a supplier reference,
-not an installed measurement. See [mount validation](validation/mount_offsets_2026-11-08.md)
+not an installed measurement. See mount validation (internal record)
 for dimensions, sources, GDB evidence and the failed single lifecycle attempt;
 its dimension table uses navigation body coordinates.
-The subsequent [before/after E2E comparison](validation/mount_offsets_e2e_comparison_2026-11-08.md)
+The subsequent before/after E2E comparison (internal record)
 records a baseline GOAL and current startup watchdog on the same saved seed,
 with the complete native source diff.
 
@@ -590,7 +670,7 @@ relocate before permitting angular motion. Position drift beyond the arrival
 window plus the 5 mm pose-step allowance requests reapproach while still ahead
 of center; passed-center drift faults rather than driving farther. The existing
 50 mm drift bound remains. This replaces the old stopped-clearance wait recorded
-in the [arrival investigation](validation/remaining_feature_failures_gdb_2026-11-09.md).
+in the arrival investigation (internal record).
 The executor's circular turn gate uses finite mapped wall segments and treats
 unknown edges as closed. The guard's complete rear-axle footprint proof remains
 required independently of stopped arrival.
@@ -602,7 +682,7 @@ The executor turns, advances, stops, and confirms settling. The application uses
 400 ms settle dwell. Its stopping approach requests at most four times the
 measured forward distance per second, capped at cruise speed. Portable default
 configuration remains 0.04 m/s, 0.5 rad/s and an approach gain of 1/s.
-The [v2 cap comparison](validation/platform_v2_speed_2026-11-15.md) records
+The v2 cap comparison (internal record) records
 the selected limits, rejected higher-cap combinations and measured run times.
 The zero-PWM/quiet-gyro coast timer and the three fresh stable-pose confirmations
 are independent gates. Pose jitter restarts the confirmations; it does not
@@ -692,7 +772,7 @@ alignment, RETURN chooses forward or reverse from the measured displacement
 to the selected turning posture; it need not restore the original longitudinal
 coordinate. Every translation and the final pivot must clear mapped walls;
 unknown rear edges do not authorize reversing. The 15-second correction deadline
-and 128-byte object bound remain. [Turn shunt validation](validation/turn_shunts_2026-11-09.md)
+and 128-byte object bound remain. Turn shunt validation (internal record)
 records the new physical regression and retained lifecycle results.
 
 Release requires fresh range proof of the entire intended arc, a mapped sweep
@@ -711,7 +791,7 @@ Active navigation is restored to the version immediately after the triangular
 front geometry update; that geometry remains in the mapped footprint and initial
 range-envelope checks. The extension is retained as a
 [commented source diff](../fw/robot_sf/include/navigation/turn_guard_front_profile_disabled.hpp).
-Its [validation report](validation/v2_turnguard_front_profile_2026-11-16.md)
+Its validation report (internal record)
 records the timing regression and restoration.
 
 Outside that ownership, RHR's original side-range stop still applies. RHR CLEAR
@@ -730,17 +810,17 @@ side-stop PAUSED/COAST/DECIDE transitions while withholding motion on every
 invalid frame. FEATURE rejects distant runtime refits (over 50 mm) whose chassis
 footprint intersects mapped walls before they can replace measured history;
 nearby measurements retain their noise tolerance. These changes and their
-remaining limits are recorded in [bounded stall fixes](validation/stall_fixes_2026-11-09.md).
+remaining limits are recorded in bounded stall fixes (internal record).
 
 
 The guard has no heap allocation and its component fixture bounds object size
 to 128 bytes. Every simulated recovery and subsequent pivot step checks the
 physical polygonal footprint; axle drift during the pivot must remain
-under 1 mm. [Current mount validation](validation/mount_offsets_2026-11-08.md)
+under 1 mm. Current mount validation (internal record)
 records the initial component checks and unsuccessful lifecycle run.
-[The lifecycle fix report](validation/lifecycle_fix_2026-11-09.md) records the
+The lifecycle fix report (internal record) records the
 subsequent FEATURE pass and remaining RHR/startup limits. Earlier
-[turn-guard validation](validation/turn_guard_component.md) describes its former
+turn-guard validation (internal record) describes its former
 centered-axle geometry.
 
 When a tracked turn becomes BLOCKED, or its stationary VERIFY phase cannot
@@ -770,7 +850,7 @@ end-tape proof take priority. `RELOCATE_TURN` diagnostics identify temporary
 travel without representing it as goal completion. Both relocation state and
 turn-guard state have independent 128-byte test bounds and use no heap.
 
-[The junction-recovery validation](validation/junction_recovery_2026-11-09.md)
+The junction-recovery validation (internal record)
 records the physical tests, GDB evidence, and remaining lifecycle failures.
 
 The executor reports a typed `ExecuteFault` reason for invalid startup, leg
@@ -800,15 +880,15 @@ Source evidence: [maze/ray geometry](../fw/robot_sf/src/localization/maze_map.cp
 [executor](../fw/robot_sf/src/navigation/path_executor.cpp),
 [fallback](../fw/robot_sf/src/navigation/right_hand_rule.cpp).
 
-The [FEATURE RHR failsafe validation](validation/feature_rhr_failsafe.md) records
+The FEATURE RHR failsafe validation (internal record) records
 the contradiction, recovery, cancellation, logging, and end-tape regression cases.
-The [FEATURE/RHR timing report](validation/feature_rhr_timing_2026-11-04.md)
+The FEATURE/RHR timing report (internal record)
 retains the pre-fix full matrix; its linked RHR follow-up records GDB evidence,
 the passing sample gate, and the RHR-only retry matrix.
-The [FEATURE stall investigation](validation/feature_waypoint3_stall_trace.md)
+The FEATURE stall investigation (internal record)
 retains the two wall-endpoint pause backtraces, runtime fit changes, and focused
 boundary-route E2E results separately from full fixed-goal qualification.
-The [2026-11-04 campaign investigation](validation/campaign_debug_2026-11-04.md)
+The 2026-11-04 campaign investigation (internal record)
 records the subsequent resolver/gyro/tape/settling fixes, 65-test pass, both
 five-run campaign passes and the real interactive baseline.
 
@@ -885,9 +965,15 @@ PA11/PA12; early records emitted without an open host are not retained for repla
 See [tracing](tracing.md) for drain ownership and
 [building](building.md#stm32f411ce-firmware) for host connection commands.
 
+The MPU9250 HAL defaults to this deferred logger for lifecycle and error
+diagnostics (`imu` source, including the HAL code). The tracing profile also
+routes vendor debug callbacks as `mpu9250` TRACE records, independently of the
+HAL error rate limiter. Custom `imu::Config::log` callbacks still override the
+default HAL event sink.
+
 The logger also has an optional, default-enabled RTT sink in
-`src/hal/rtt_log.cpp`. Its static 2 KiB upstream ring and 48-byte ARM control
-block expose deferred text over SWD to OpenOCD/Cortex-Debug, without requiring
+`src/hal/rtt_log.cpp`. Its static 2 KiB upstream ring, 512-byte downstream command ring and 72-byte
+ARM control block expose deferred text over SWD to OpenOCD/Cortex-Debug, without requiring
 SWO pins, USB enumeration, an extra task, or a connected host. Full rings drop
 whole new lines without delaying the other sinks. This is RAM-based logging,
 not ETM instruction trace or semihosting. See
@@ -915,7 +1001,8 @@ Detailed log sinks and collection paths live in [tracing.md](tracing.md).
 
 ## Remote configuration and storage
 
-Remote configuration is required in every STM32 profile. `_telemetry` and
+Remote configuration is required in every production STM32 profile. The
+compile-time open-loop demo above excludes it. `_telemetry` and
 `_remote` remain compatibility build names; the default build has the same store,
 protobuf RPC service, and SPI transport. The store must initialize before sensors
 or application tasks start. A failed/uncertain commit makes it unavailable and
@@ -936,8 +1023,8 @@ upgrading it requires an explicit backup/migration/reset procedure, not an
 automatic first-boot format. No flash/migration operation is performed by the
 build or schema generators.
 
-The version-2 record is 248 bytes: magic/version, catalog identity, revision,
-flags, field count, 55 binary32 values, and CRC32. It fits a 256-byte inline file
+The version-2 record is 316 bytes: magic/version, catalog identity, revision,
+flags, field count, 72 binary32 values, and CRC32. It fits a 512-byte inline file
 so the two-block filesystem does not allocate extra data blocks. Updates write
 and sync a temporary record, then atomically rename it over the current record.
 Unchanged values perform no flash mutation. Revision checks reject stale writes;
@@ -949,7 +1036,7 @@ physical flash power loss is not qualified by those tests.
 source references, and bindings. One generator emits the C++ catalog/bindings,
 typed `FlashSettings` protobuf, firmware descriptor/source pages, and Android
 descriptor. `FieldSpec` carries factory values and source IDs. Generated static
-checks detect FEATURE/RHR factory-default drift; descriptor/catalog checks run in
+checks detect FEATURE/RHR/open-loop factory-default drift; descriptor/catalog checks run in
 the native suite. Catalog identity covers key/name/type/binding semantics;
 metadata-only changes do not discard saved values, which must still satisfy
 current bounds and cross-field rules. See [building.md](building.md) for generation.
@@ -960,6 +1047,7 @@ current bounds and cross-field rules. See [building.md](building.md) for generat
 | 220–232 | RHR speeds, clearances, freshness and timing; captured at navigation start |
 | 240–241 | Raw black/white tape thresholds; atomically published together, detector reset by its sole sensor owner on change |
 | 250 | Body-Z gyro zero correction; atomic publication, applied before tilt qualification and IMU publication |
+| 300–316 | Open-loop motor polarity, PWM cap, wheel-rate ceiling, slew, per-wheel/per-direction gains and offsets, task period, command timeout and timing bounds; consumed by the motor owner |
 | 100–106, 110–116, 120–126, 130–136 | Retained legacy color-reference slots; storage/calibration only, never mapped floor navigation |
 
 Both tape thresholds default to zero (disabled); when both are nonzero, black
@@ -967,11 +1055,45 @@ must be below white. Feature skew cannot exceed its maximum frame age; RHR wall,
 side-clearance, opening, and timing relationships are checked before commit.
 Frozen EKF equations and tuning constants are not writable catalog fields.
 
+The motor configuration is published as atomic binary32 values bracketed by a
+generation counter. Readers attempt one coherent snapshot without waiting; the
+motor owner retains its last complete configuration during publication and
+resets its nominal slew/timing state when a new generation arrives. Command
+admission uses the runtime wheel-rate ceiling; the motor task uses the runtime
+period, gains, offsets, cap, polarity, timeout and timing bounds. Polarity is
+applied once by the portable converter; the HAL receives the resulting signed
+physical PWM and retains electrical fault checks. Full-output diagnostic scaling
+also uses the runtime wheel-rate ceiling. Normal navigation caps and the
+86-second run deadline remain independent. Physical wheel geometry, PWM
+resolution, task allocation/priority and reference plant constants stay fixed.
+
+The store rejects offsets at or above the PWM cap, inverted timing bounds,
+a task period outside those bounds, and a timeout shorter than one task period.
+Factory defaults retain the previous TT90 conversion. Flash writes remain
+idle-only and are denied after navigation start or a latched stop.
+
+The expanded catalog changes its identity, record size and LittleFS file/cache
+limits. Existing 55-field/256-byte stores require an explicit backup and
+reprovisioning procedure before deployment; boot does not migrate or format
+them automatically. The RTT factory-reset command resets a healthy mounted
+current-catalog store; it does not recover an incompatible store that already
+prevented bring-up. Two erase blocks and the application flash boundary remain
+unchanged. Static read/program caches grow by 512 bytes in total; atomic motor
+publications, the RTT input ring and bounded CLI state add further fixed RAM.
+No build, timing measurement or tests were run for this change, as requested.
+
 Gyro calibration consumes 64 distinct, fresh published sensor frames, requires
 quiet finite body gyro, acceleration magnitude near gravity, and bounded gyro
 variance, then commits the new zero with the expected revision. It does not read
 registers from the SPI task. Legacy color calibration commits normalized RGB in
 one revision but does not re-enable color navigation on the all-white field.
+
+The [RTT AT interface](tracing.md#rtt-at-commands) adds six commands
+for version, machine-readable/human-readable catalog listing, reads, writes and
+factory reset. It is polled by
+the SPI worker under the existing start/configuration mutex; it does not create
+a second flash owner. Factory reset commits all catalog defaults in one normal
+validated revision and does not reboot, format flash or remove the start gate.
 
 The field-tool document owns the operator's
 [configuration workflow](field_tool_architecture.md#remote-configuration-workflow).
@@ -983,7 +1105,7 @@ and [layout](../fw/autonomous/STM32_TINYRCP/include/remote/flash_layout.hpp),
 [generator](../host/tools/generate_schema.py),
 and [build preflights](../fw/autonomous/STM32_TINYRCP/scripts/platformio_sources.py).
 
-The [required remote configuration validation](validation/required_remote_config.md)
+The required remote configuration validation (internal record)
 records schema checks, storage recovery tests, application integration, and
 STM32/bridge build sizes for this layout.
 
@@ -1036,8 +1158,8 @@ counts shallow contact separately from deeper wall collisions; it is not a
 wall-contact physics model. The EKF is unchanged.
 Source evidence: [profile and scaling](../fw/robot_sf/include/navigation/motion_experiment.hpp),
 [paired runner](../fw/autonomous/STM32_TINYRCP/test/lifecycle/run_motion_comparison.py)
-and the [full-output](validation/v2_rolling_max_2026-11-15.md) and
-[non-stop-only comparison results](validation/v2_nonstop_turn_2026-11-15.md).
+and the full-output (internal record) and
+non-stop-only comparison results (internal record).
 The native executable's omitted seed comes directly from x86 RDSEED after a
 CPU capability check and bounded retries. Explicit seed replay bypasses that
 draw. This host-only seed source does not change firmware RNG behavior.
@@ -1078,10 +1200,10 @@ Its optional quiet mode filters TRACE/INFO while retaining structured terminal
 timing and physical-goal/stop evidence; five fixed replay cases verify identical
 TRACE/quiet outcomes and timing. Persistent compressed checkpoint parts retain
 completed pairs independently of local build/cache lifetimes. The
-[reliability report](validation/reliability_index_2026-11-04.md) records source,
+reliability report (internal record) records source,
 sampling, failure counts, uncertainty and the earlier turn-level scatter.
 
-The [TT90 timeout investigation](validation/tt90_timeout_e2e.md) records the
+The TT90 timeout investigation (internal record) records the
 current calibration's headless/GUI baselines, campaign failures, and private
 executor timing profiles. It distinguishes active deadline misses from
 unresolved startup and preserves the production success checks.
@@ -1110,9 +1232,9 @@ start, heading, or expected-failure overrides. Existing controlled short-route
 tests remain component fixtures. The supplied-map campaign remains an ordinary
 failing CTest when a draw fails; open-arena success does not override it.
 
-[Lifecycle validation](validation/feature_lifecycle.md) records the native and
+Lifecycle validation (internal record) records the native and
 Vulkan runs for this implementation, including the remaining supplied-map limits.
-The separate [interactive E2E results](validation/interactive_e2e_results_2026-11-02.md)
+The separate interactive E2E results (internal record)
 lists every PASS/FAIL test and each seeded campaign run.
 
 ## Integration limits and validation
@@ -1133,17 +1255,17 @@ Its 64-bit extension must be serviced at least once per 32-bit TIM5 counter
 wrap (2^32 microseconds, about 71.6 minutes). Actual sensor latency, scheduling, RAM, PWM frequency,
 driver faults and physical stopping accuracy require board validation.
 
-[White-field validation](validation/white_field_end_tape.md) records 27/27 native
+White-field validation (internal record) records 27/27 native
 and sanitizer checks for its revision. The arbitrary-heading fixture accepted 15
 of 500 synthetic cases correctly and held the other 485 rather than guessing;
 three-ray observability remains a practical limit. Earlier
-[feature](validation/ra_feature_navigation_validation.md),
-[fallback](validation/ra_timeout_fallback_validation.md), and
-[EKF baseline](ekf/validation.md) reports describe different source revisions.
+feature (internal record),
+fallback (internal record), and
+EKF baseline (internal record) reports describe different source revisions.
 They are not claims of current full target or physical qualification. No new
 hardware validation is implied by this consolidation.
 
-The [evidence-based regression fixes](validation/evidence_fixes_2026-11-09.md)
+The evidence-based regression fixes (internal record)
 record the retained-seed before/after results and physical/controller checks for
 arrival handoff, narrow correction-search intervals, measured progress and
 continuous tape observations.

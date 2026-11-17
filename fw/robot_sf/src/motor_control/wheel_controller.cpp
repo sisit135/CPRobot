@@ -10,16 +10,17 @@ namespace {
 /** @brief Convert a nominal request using direction-specific calibration.
  * @param[in] speed Ramped nominal wheel request in rad/s.
  * @param[in] c Calibration for one wheel.
- * @returns Signed duty capped by cfg::max_duty; exactly zero at zero request.
+ * @returns Signed duty capped by the runtime duty limit; exactly zero at zero
+ * request.
  */
-float duty(float speed, const cfg::OpenLoopCalibration &c) {
+float duty(float speed, const cfg::OpenLoopCalibration &c, float max_duty) {
   if (speed == 0)
     return 0;
   const float gain =
       speed > 0 ? c.forward_duty_per_rad_s : c.reverse_duty_per_rad_s;
   const float offset = speed > 0 ? c.forward_offset : c.reverse_offset;
-  return std::copysign(
-      std::min(cfg::max_duty, offset + gain * std::fabs(speed)), speed);
+  return std::copysign(std::min(max_duty, offset + gain * std::fabs(speed)),
+                       speed);
 }
 /** @brief Slew through zero on reversal; zero requests stop immediately.
  * @param[in] target Current ramp value.
@@ -36,10 +37,20 @@ float ramp(float target, float request, float step) {
 }
 } // namespace
 void WheelController::reset_control() { target_left_ = target_right_ = 0; }
-MotorSnapshot WheelController::update(const WheelCommand &cmd, int64_t now) {
+MotorSnapshot WheelController::update(const WheelCommand &cmd, int64_t now,
+                                      const OpenLoopConfig &settings,
+                                      uint32_t generation) {
+  if (generation)
+    settings_ = settings;
+  if (generation && generation != settings_generation_) {
+    settings_generation_ = generation;
+    previous_us_ = 0;
+    reset_control();
+  }
+  const auto &config = settings_;
   MotorSnapshot p{};
   p.timestamp_us = now;
-  float dt = cfg::control_period_ms * 0.001f;
+  float dt = config.control_period_ms * 0.001f;
   if (now <= 0 || (previous_us_ && now <= previous_us_)) {
     previous_us_ = 0;
     reset_control();
@@ -49,7 +60,7 @@ MotorSnapshot WheelController::update(const WheelCommand &cmd, int64_t now) {
   if (previous_us_)
     dt = static_cast<float>(now - previous_us_) * 1e-6f;
   previous_us_ = now;
-  if (dt < cfg::min_dt_s || dt > cfg::max_dt_s) {
+  if (dt < config.min_dt_s || dt > config.max_dt_s) {
     reset_control();
     p.status = ControlStatus::TIMING_FAULT;
     return p;
@@ -60,13 +71,13 @@ MotorSnapshot WheelController::update(const WheelCommand &cmd, int64_t now) {
   }
   if (cmd.timestamp_us < 0 || cmd.timestamp_us > now ||
       !std::isfinite(cmd.left_rad_s) || !std::isfinite(cmd.right_rad_s) ||
-      std::fabs(cmd.left_rad_s) > cfg::max_wheel_rad_s ||
-      std::fabs(cmd.right_rad_s) > cfg::max_wheel_rad_s) {
+      std::fabs(cmd.left_rad_s) > config.max_wheel_rad_s ||
+      std::fabs(cmd.right_rad_s) > config.max_wheel_rad_s) {
     reset_control();
     p.status = ControlStatus::INVALID_COMMAND;
     return p;
   }
-  if (now - cmd.timestamp_us > cfg::command_timeout_us) {
+  if (now - cmd.timestamp_us > config.command_timeout_us) {
     reset_control();
     p.status = ControlStatus::COMMAND_TIMEOUT;
     return p;
@@ -75,7 +86,7 @@ MotorSnapshot WheelController::update(const WheelCommand &cmd, int64_t now) {
     reset_control();
     return p;
   }
-  const float step = cfg::max_accel_rad_s2 * dt;
+  const float step = config.max_accel_rad_s2 * dt;
   target_left_ = ramp(target_left_, cmd.left_rad_s, step);
   target_right_ = ramp(target_right_, cmd.right_rad_s, step);
 #if ROBOT_MAX_SPEED_ROLLING_TEST
@@ -84,8 +95,12 @@ MotorSnapshot WheelController::update(const WheelCommand &cmd, int64_t now) {
 #endif
   p.target_left_rad_s = target_left_;
   p.target_right_rad_s = target_right_;
-  p.duty_left = duty(target_left_, cfg::left_pwm);
-  p.duty_right = duty(target_right_, cfg::right_pwm);
+  p.duty_left = duty(target_left_, config.left_pwm, config.max_duty);
+  p.duty_right = duty(target_right_, config.right_pwm, config.max_duty);
+  if (config.invert_left_motor)
+    p.duty_left = -p.duty_left;
+  if (config.invert_right_motor)
+    p.duty_right = -p.duty_right;
   p.status = ControlStatus::RUNNING;
   return p;
 }

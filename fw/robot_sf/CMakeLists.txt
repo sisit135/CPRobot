@@ -9,7 +9,8 @@ add_library(robot_littlefs ${littlefs_root}/lfs.c ${littlefs_root}/lfs_util.c)
 target_include_directories(robot_littlefs PUBLIC ${littlefs_root})
 target_compile_definitions(robot_littlefs PRIVATE LFS_NO_DEBUG LFS_NO_WARN LFS_NO_ERROR)
 option(AXI_PLATFORM_V2 "Use the 135 x 110 mm v2 platform geometry (v1 deprecated)" ON)
-add_library(robot_remote src/remote/config.cpp src/remote/codec.cpp src/remote/service.cpp)
+add_library(robot_remote src/remote/config.cpp src/remote/codec.cpp src/remote/service.cpp
+    src/remote/at_cli.cpp)
 target_include_directories(robot_remote PUBLIC include include/motor_control
     "${CMAKE_CURRENT_SOURCE_DIR}/../../generic_field_tool/common"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../generic_field_tool/esp32_multiboard/generated")
@@ -20,7 +21,8 @@ add_library(robot_core
     src/localization/robot_ekf.cpp src/localization/maze_map.cpp
     src/localization/fusion_engine.cpp src/localization/color_tracker.cpp
     src/navigation/AStar.cpp src/navigation/map_resolver.cpp src/navigation/path_executor.cpp src/navigation/right_hand_rule.cpp src/navigation/feature_navigation.cpp src/navigation/end_cell.cpp
-    src/motor_control/wheel_controller.cpp)
+    src/motor_control/wheel_controller.cpp
+    src/motor_control/wheel_controller_settings.cpp)
 target_include_directories(robot_core PUBLIC include include/motor_control)
 target_link_libraries(robot_core PUBLIC robot_remote)
 target_compile_options(robot_core PRIVATE -Wall -Wextra -Wpedantic)

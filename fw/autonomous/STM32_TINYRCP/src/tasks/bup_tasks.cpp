@@ -1,20 +1,26 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "bup/bup_tasks.hpp"
+#include "openloop_demo/openloop_demo.hpp"
+#if !AXI_OPENLOOP_DEMO
+#include "hal/boot_sensor_sample.hpp"
 #include "localization/hal_sensors.hpp"
-#include "logging/log.hpp"
 #include "motor_control/hal_motor.hpp"
-#include "platform/rtos.hpp"
 #include "remote/board_store.hpp"
+#endif
+#include "logging/log.hpp"
+#include "platform/rtos.hpp"
 #include <atomic>
 
 namespace bup {
 namespace {
 std::atomic<BupStatus> bup_status{BupStatus::NOT_STARTED};
 bool bup_started = false;
+#if !AXI_OPENLOOP_DEMO
 bool (*start_services)() = nullptr;
-enum class Step : uint8_t { SKIPPED, READY, FAILED };
+enum class Step : uint8_t { SKIPPED, READY, FAILED, DIAGNOSTIC };
 struct Summary {
+  boot_sensors::Snapshot sample;
   Step motor = Step::SKIPPED;
   Step settings = Step::SKIPPED;
   Step sensors = Step::SKIPPED;
@@ -42,11 +48,21 @@ bool initialize(Summary &summary) {
   summary.settings = Step::READY;
   robot_log::write(robot_log::Level::INFO, "remote", "settings ready");
   summary.sensors = Step::FAILED;
-  if (!hal_sensors_init()) {
+  const bool sensors_ready = hal_sensors_init();
+  boot_sensors::capture(summary.sample); // BUP still owns both sensor buses.
+  if (!sensors_ready) {
     robot_log::write(robot_log::Level::ERROR, "bup",
                      "sensor init failed; halted");
     return false;
   }
+#if AXI_BUP_IMU_DIAGNOSTIC
+  // This bench mode never authorizes localization, navigation or motor tasks,
+  // even if the IMU happens to pass on a later boot.
+  summary.sensors = Step::DIAGNOSTIC;
+  robot_log::write(robot_log::Level::ERROR, "bup",
+                   "sensor diagnostics complete; services/localization halted");
+  return false;
+#endif
   summary.sensors = Step::READY;
   robot_log::write(robot_log::Level::INFO, "bup", "sensor HALs ready");
   if (start_services) {
@@ -65,9 +81,10 @@ void print_summary(const Summary &summary, bool success) {
   if (robot_log::minimum_level() < robot_log::Level::DEBUG)
     return;
   const auto result = [](Step step) {
-    return step == Step::READY    ? "ready"
-           : step == Step::FAILED ? "failed"
-                                  : "skipped";
+    return step == Step::READY        ? "ready"
+           : step == Step::FAILED     ? "failed"
+           : step == Step::DIAGNOSTIC ? "diagnostic"
+                                      : "skipped";
   };
   // UTF-8 box-drawing lines fit the fixed 96-byte log message buffer.
   robot_log::write(robot_log::Level::DEBUG, "bup",
@@ -105,8 +122,17 @@ void bup_task_entry(void *context) {
       success ? robot_log::Level::INFO : robot_log::Level::ERROR, "bup",
       "bring-up %s", success ? "succeeded" : "failed");
   print_summary(summary, success);
+  boot_sensors::print(summary.sample);
   vTaskDelete(nullptr);
 }
+#else
+void bup_task_entry(void *) {
+  robot_log::write(robot_log::Level::INFO, "bup",
+                   "DEMO: inert; sensor/settings/services init skipped");
+  bup_status.store(BupStatus::SUCCEEDED, std::memory_order_release);
+  vTaskDelete(nullptr);
+}
+#endif
 } // namespace
 
 bool bup_task_start(bool (*services)()) {
@@ -114,7 +140,11 @@ bool bup_task_start(bool (*services)()) {
     return false;
 
   bup_started = true;
+#if AXI_OPENLOOP_DEMO
+  (void)services;
+#else
   start_services = services;
+#endif
 
   robot_log::write(robot_log::Level::INFO, "bup", "Bringing up AXI THS platform STM32 MCU >> Hello from KMiTL RAI LabRoom");
 
@@ -124,9 +154,15 @@ bool bup_task_start(bool (*services)()) {
       pdPASS) {
     bup_status.store(BupStatus::FAILED, std::memory_order_release);
     bup_started = false;
+#if !AXI_OPENLOOP_DEMO
     hal_motor_stop();
+#endif
     robot_log::write(robot_log::Level::ERROR, "bup",
+#if AXI_OPENLOOP_DEMO
+                     "task creation failed; demo remains independent");
+#else
                      "task creation failed; halted");
+#endif
     return false;
   }
   return true;

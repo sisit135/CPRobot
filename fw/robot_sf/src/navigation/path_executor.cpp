@@ -149,7 +149,7 @@ bool PathExecutor::begin(const loc::MazeMap &m, loc::Cell goal,
       !std::isfinite(p.yaw_rad) || !std::isfinite(cfg_.max_speed_m_s) ||
       cfg_.max_speed_m_s <= 0 ||
       cfg_.max_speed_m_s >
-          (motion_test::enabled ? motion_test::max_linear_m_s : .21f) ||
+          (motion_test::enabled ? motion_test::max_linear_m_s() : .21f) ||
       !std::isfinite(cfg_.approach_gain_per_s) ||
       cfg_.approach_gain_per_s <= 0 || cfg_.approach_gain_per_s > 10 ||
       !std::isfinite(cfg_.max_turn_rad_s) || cfg_.max_turn_rad_s <= 0 ||

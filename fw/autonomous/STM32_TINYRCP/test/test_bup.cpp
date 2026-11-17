@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "bup/bup_tasks.hpp"
+#include "hal/boot_sensor_sample.hpp"
 #include "logging/log.hpp"
 #include "support/fake_rtos.hpp"
 #include <cassert>
@@ -14,6 +15,7 @@ std::string failure;
 std::vector<std::string> steps, errors;
 std::vector<std::string> table;
 bool stopped = false;
+unsigned captures = 0, prints = 0;
 robot_log::Level threshold = robot_log::Level::TRACE;
 bool services() {
   steps.push_back("services");
@@ -35,6 +37,16 @@ bool board_init() {
   return failure != "settings";
 }
 } // namespace remote
+void boot_sensors::capture(Snapshot &) {
+  assert(steps.back() == "sensors"); // Before application services own buses.
+  ++captures;
+}
+void boot_sensors::print(const Snapshot &) {
+  assert(bup::bup_task_get_status() != bup::BupStatus::RUNNING);
+  if (threshold >= robot_log::Level::DEBUG)
+    assert(table.back() == "└────────────┴────────────┘");
+  ++prints;
+}
 namespace robot_log {
 Level minimum_level() { return threshold; }
 bool write(Level level, const char *source, const char *format, ...) {
@@ -77,6 +89,8 @@ int main(int argc, char **argv) {
   assert(bup::bup_task_get_status() ==
          (success ? bup::BupStatus::SUCCEEDED : bup::BupStatus::FAILED));
   assert(stopped == !success);
+  assert(captures == (failure == "motor" || failure == "settings" ? 0u : 1u));
+  assert(prints == 1);
   assert(errors.empty() == success);
   if (!success)
     assert(errors.front().find("halted") != std::string::npos);

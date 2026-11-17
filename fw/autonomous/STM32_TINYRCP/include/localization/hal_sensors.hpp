@@ -15,6 +15,9 @@ bool hal_end_tape_classify(const loc::RgbcSample &, int64_t timestamp_us,
  * @returns true when initialization succeeds; false on an I2C/identity failure.
  */
 bool hal_sensors_init();
+// True while the TCS driver is initialized, including power/integration waits.
+// No bus access; use only from the startup/sensor owner.
+bool hal_tcs34725_initialized();
 /** @brief Initialize board-specific IMU and ToF devices after Wire.begin().
  * @returns true when board sensor initialization succeeds.
  */

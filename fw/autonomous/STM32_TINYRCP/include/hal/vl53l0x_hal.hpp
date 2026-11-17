@@ -123,6 +123,7 @@ struct Statistics {
   uint32_t valid = 0, rejected = 0, api_errors = 0, timeouts = 0;
   uint32_t overwritten = 0, expired = 0;
   uint8_t last_range_status = 255;
+  bool last_out_of_range = false; // Latest completed shot, diagnostic only.
   int last_api_error = 0;
   bool online = false;
 };

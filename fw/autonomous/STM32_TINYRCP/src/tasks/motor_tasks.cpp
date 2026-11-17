@@ -8,6 +8,7 @@
 #include "motor_control/wheel_controller.hpp"
 #include "platform/hal_platform.hpp"
 #include "platform/rtos.hpp"
+#include "remote/settings.hpp"
 #include <algorithm>
 #include <cmath>
 
@@ -36,8 +37,6 @@ void motor_task(void *context) {
   bool driver_ok = true;
   WheelController controller;
   TickType_t wake = xTaskGetTickCount();
-  const TickType_t period =
-      std::max<TickType_t>(1, pdMS_TO_TICKS(cfg::control_period_ms));
   for (;;) {
     WheelCommand cmd{};
     MotorSnapshot p{};
@@ -45,6 +44,8 @@ void motor_task(void *context) {
     const int64_t now = hal_time_us();
     const auto run = s_run.poll(now);
     (void)xQueuePeek(s_command, &cmd, 0);
+    const auto period = std::max<TickType_t>(
+        1, pdMS_TO_TICKS(controller.settings().control_period_ms));
     if (run.terminal()) {
       stop_terminal();
       loc::localization_halt();
@@ -81,7 +82,9 @@ void motor_task(void *context) {
     }
     xQueueOverwrite(s_state, &p);
     taskEXIT_CRITICAL();
-    vTaskDelayUntil(&wake, period);
+    vTaskDelayUntil(
+        &wake, std::max<TickType_t>(
+                   1, pdMS_TO_TICKS(controller.settings().control_period_ms)));
   }
 }
 } // namespace
@@ -111,9 +114,13 @@ bool motor_control_start() {
   return true;
 }
 bool motor_set_wheel_speeds(float left, float right) {
+  OpenLoopConfig config;
+  // A transient publication cannot admit nonzero motion against mixed limits.
+  if (!remote::motor_settings(&config) && (left != 0 || right != 0))
+    return false;
   if (!s_started || !std::isfinite(left) || !std::isfinite(right) ||
-      std::fabs(left) > cfg::max_wheel_rad_s ||
-      std::fabs(right) > cfg::max_wheel_rad_s)
+      std::fabs(left) > config.max_wheel_rad_s ||
+      std::fabs(right) > config.max_wheel_rad_s)
     return false;
   taskENTER_CRITICAL();
   const int64_t now = hal_time_us();

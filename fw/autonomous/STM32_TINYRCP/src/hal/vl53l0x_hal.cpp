@@ -314,6 +314,13 @@ void service() {
   const int64_t completed = hal_time_us();
   active = -1;
   c.stats.last_range_status = result.RangeStatus;
+  // Keep this display-only classification separate from navigation admission.
+  // Signal/phase failures with a beyond-limit distance include no-return shots;
+  // sigma/min-range/hardware failures must not be displayed as open space.
+  c.stats.last_out_of_range =
+      result.RangeMilliMeter > cfg.max_range_mm &&
+      (result.RangeStatus == 0 || result.RangeStatus == 2 ||
+       result.RangeStatus == 4);
   if (result.RangeStatus == 0 && result.RangeMilliMeter > 0 &&
       result.RangeMilliMeter <= cfg.max_range_mm) {
     if (c.fresh)

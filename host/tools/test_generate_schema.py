@@ -20,7 +20,7 @@ class SchemaGeneration(unittest.TestCase):
         fields = sorted(manifest['fields'], key=lambda field: field['key'])
         self.assertEqual([(f.number, f.name) for f in message.field],
                          [(f['key'], f['name']) for f in fields])
-        self.assertEqual(len(message.field), 55)
+        self.assertEqual(len(message.field), 72)
         blob = outputs['fw/robot_sf/include/remote/schema_blob.hpp'].decode().split('schema_blob[] = {')[1].split('}')[0]
         self.assertEqual(bytes(int(v) for v in re.findall(r'\d+', blob)), data)
         spec = next(m for f in desc.file for m in f.message_type if m.name == 'FieldSpec')

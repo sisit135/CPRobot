@@ -293,7 +293,7 @@ void damage_and_wear() {
   for (int i = 0; i < 1200; ++i)
     assert(store.write(206, i % 2 ? 3 : 4, store.snapshot().revision) ==
            remote::OK);
-  uint8_t cache[256], invalid[248]{};
+  uint8_t cache[layout::cache_size], invalid[28 + 4 * remote::kFields]{};
   lfs_file_config cfg{};
   cfg.buffer = cache;
   lfs_file_t file{};

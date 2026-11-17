@@ -21,7 +21,7 @@ std::string host_read() {
 
 int main() {
   assert(std::strcmp(_SEGGER_RTT.id, "SEGGER RTT") == 0);
-  assert(_SEGGER_RTT.up_count == 1 && _SEGGER_RTT.down_count == 0);
+  assert(_SEGGER_RTT.up_count == 1 && _SEGGER_RTT.down_count == 1);
   auto &up = _SEGGER_RTT.up[0];
   assert(up.flags == 0 && up.size == 2048);
   const std::string fill(up.size - 1, 'x');

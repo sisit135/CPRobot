@@ -7,9 +7,9 @@
 #include <cstdint>
 struct FakeWire {
   FakeWire() = default;
-  FakeWire(uint32_t, uint32_t) {}
+  FakeWire(uint32_t, uint32_t) { bus.Instance = I2C2; }
+  I2C_HandleTypeDef bus{I2C1};
   I2C_HandleTypeDef *getHandle() {
-    static I2C_HandleTypeDef bus{reinterpret_cast<void *>(1)};
     return &bus;
   }
   uint8_t registers[256]{}, pointer = 0, command = 0;

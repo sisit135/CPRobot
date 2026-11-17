@@ -247,7 +247,7 @@ void path_task(void *) {
   execute_config.approach_gain_per_s = 4.f;
   execute_config.position_tolerance_m = .010f;
   if constexpr (motion_test::enabled)
-    execute_config.max_speed_m_s = motion_test::max_linear_m_s;
+    execute_config.max_speed_m_s = motion_test::max_linear_m_s();
   PathExecutor executor(execute_config);
 #if NAV_TURN_GUARD
   TurnGuard turn_guard;

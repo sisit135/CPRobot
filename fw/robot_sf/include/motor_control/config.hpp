@@ -68,3 +68,22 @@ static_assert(
         right_pwm.reverse_offset >= 0 && right_pwm.reverse_offset < max_duty,
     "PWM offsets must be in [0,max_duty)");
 } // namespace motor::cfg
+
+namespace motor {
+// Factory values stay constexpr above; flash settings are copied coherently
+// into this runtime configuration before conversion. Task allocation and PWM
+// resolution remain board/build properties.
+struct OpenLoopConfig {
+  bool invert_left_motor = cfg::invert_left_motor;
+  bool invert_right_motor = cfg::invert_right_motor;
+  float max_duty = cfg::max_duty;
+  float max_wheel_rad_s = cfg::max_wheel_rad_s;
+  float max_accel_rad_s2 = cfg::max_accel_rad_s2;
+  cfg::OpenLoopCalibration left_pwm = cfg::left_pwm;
+  cfg::OpenLoopCalibration right_pwm = cfg::right_pwm;
+  uint32_t control_period_ms = cfg::control_period_ms;
+  int64_t command_timeout_us = cfg::command_timeout_us;
+  float min_dt_s = cfg::min_dt_s;
+  float max_dt_s = cfg::max_dt_s;
+};
+} // namespace motor

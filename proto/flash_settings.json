@@ -5,7 +5,8 @@
     "2": "navigation/right_hand_rule.hpp",
     "3": "navigation/end_cell.hpp",
     "4": "remote/settings.hpp",
-    "5": "motor_control/localization/color_tracker.hpp"
+    "5": "motor_control/localization/color_tracker.hpp",
+    "6": "motor_control/config.hpp"
   },
   "fields": [
     {
@@ -612,6 +613,193 @@
       "default": 0,
       "binding": "gyro_zero",
       "source_id": 4
+    },
+    {
+      "key": 300,
+      "name": "motor_invert_left_motor",
+      "group": "Motor open-loop",
+      "type": "bool",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0,
+      "binding": "motor.invert_left_motor",
+      "source_id": 6
+    },
+    {
+      "key": 301,
+      "name": "motor_invert_right_motor",
+      "group": "Motor open-loop",
+      "type": "bool",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0,
+      "binding": "motor.invert_right_motor",
+      "source_id": 6
+    },
+    {
+      "key": 302,
+      "name": "motor_max_duty",
+      "group": "Motor open-loop",
+      "type": "float",
+      "minimum": 0.01,
+      "maximum": 1,
+      "default": 1,
+      "binding": "motor.max_duty",
+      "source_id": 6
+    },
+    {
+      "key": 303,
+      "name": "motor_max_wheel_rad_s",
+      "group": "Motor open-loop",
+      "type": "float",
+      "minimum": 0.1,
+      "maximum": 100,
+      "default": 12.48259449005127,
+      "binding": "motor.max_wheel_rad_s",
+      "source_id": 6
+    },
+    {
+      "key": 304,
+      "name": "motor_max_accel_rad_s2",
+      "group": "Motor open-loop",
+      "type": "float",
+      "minimum": 0.1,
+      "maximum": 1000,
+      "default": 20,
+      "binding": "motor.max_accel_rad_s2",
+      "source_id": 6
+    },
+    {
+      "key": 305,
+      "name": "motor_left_pwm_forward_duty_per_rad_s",
+      "group": "Motor open-loop",
+      "type": "float",
+      "minimum": 0.0001,
+      "maximum": 10,
+      "default": 0.07161972671747208,
+      "binding": "motor.left_pwm.forward_duty_per_rad_s",
+      "source_id": 6
+    },
+    {
+      "key": 306,
+      "name": "motor_left_pwm_reverse_duty_per_rad_s",
+      "group": "Motor open-loop",
+      "type": "float",
+      "minimum": 0.0001,
+      "maximum": 10,
+      "default": 0.07161972671747208,
+      "binding": "motor.left_pwm.reverse_duty_per_rad_s",
+      "source_id": 6
+    },
+    {
+      "key": 307,
+      "name": "motor_left_pwm_forward_offset",
+      "group": "Motor open-loop",
+      "type": "float",
+      "minimum": 0,
+      "maximum": 0.99,
+      "default": 0.10600000619888306,
+      "binding": "motor.left_pwm.forward_offset",
+      "source_id": 6
+    },
+    {
+      "key": 308,
+      "name": "motor_left_pwm_reverse_offset",
+      "group": "Motor open-loop",
+      "type": "float",
+      "minimum": 0,
+      "maximum": 0.99,
+      "default": 0.10600000619888306,
+      "binding": "motor.left_pwm.reverse_offset",
+      "source_id": 6
+    },
+    {
+      "key": 309,
+      "name": "motor_right_pwm_forward_duty_per_rad_s",
+      "group": "Motor open-loop",
+      "type": "float",
+      "minimum": 0.0001,
+      "maximum": 10,
+      "default": 0.07161972671747208,
+      "binding": "motor.right_pwm.forward_duty_per_rad_s",
+      "source_id": 6
+    },
+    {
+      "key": 310,
+      "name": "motor_right_pwm_reverse_duty_per_rad_s",
+      "group": "Motor open-loop",
+      "type": "float",
+      "minimum": 0.0001,
+      "maximum": 10,
+      "default": 0.07161972671747208,
+      "binding": "motor.right_pwm.reverse_duty_per_rad_s",
+      "source_id": 6
+    },
+    {
+      "key": 311,
+      "name": "motor_right_pwm_forward_offset",
+      "group": "Motor open-loop",
+      "type": "float",
+      "minimum": 0,
+      "maximum": 0.99,
+      "default": 0.10600000619888306,
+      "binding": "motor.right_pwm.forward_offset",
+      "source_id": 6
+    },
+    {
+      "key": 312,
+      "name": "motor_right_pwm_reverse_offset",
+      "group": "Motor open-loop",
+      "type": "float",
+      "minimum": 0,
+      "maximum": 0.99,
+      "default": 0.10600000619888306,
+      "binding": "motor.right_pwm.reverse_offset",
+      "source_id": 6
+    },
+    {
+      "key": 313,
+      "name": "motor_control_period_ms",
+      "group": "Motor open-loop",
+      "type": "uint32",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 10,
+      "binding": "motor.control_period_ms",
+      "source_id": 6
+    },
+    {
+      "key": 314,
+      "name": "motor_command_timeout_us",
+      "group": "Motor open-loop",
+      "type": "uint32",
+      "minimum": 1000,
+      "maximum": 2000000,
+      "default": 300000,
+      "binding": "motor.command_timeout_us",
+      "source_id": 6
+    },
+    {
+      "key": 315,
+      "name": "motor_min_dt_s",
+      "group": "Motor open-loop",
+      "type": "float",
+      "minimum": 0.0001,
+      "maximum": 0.1,
+      "default": 0.001,
+      "binding": "motor.min_dt_s",
+      "source_id": 6
+    },
+    {
+      "key": 316,
+      "name": "motor_max_dt_s",
+      "group": "Motor open-loop",
+      "type": "float",
+      "minimum": 0.001,
+      "maximum": 0.5,
+      "default": 0.05,
+      "binding": "motor.max_dt_s",
+      "source_id": 6
     }
   ]
 }

@@ -2,6 +2,7 @@
 
 #include "hal/mpu9250_hal.hpp"
 #include "hal/sensors_config.hpp"
+#include "logging/log.hpp"
 #include "platform/hal_platform.hpp"
 #include "remote/settings.hpp"
 #include <Arduino.h>
@@ -19,6 +20,8 @@ namespace cfg = board::sensors;
 constexpr float kGravity = 9.80665f;
 constexpr float kRadiansPerDegree = 0.017453292519943295f;
 constexpr uint8_t kIntStatusReg = 0x3A;
+constexpr uint8_t kWhoAmIReg = 0x75;
+constexpr uint8_t kExpectedChipId = 0x71;
 constexpr uint8_t kMagSt1Reg = 0x02;
 imu::Config config;
 imu::Statistics stats;
@@ -49,20 +52,16 @@ void log_event(imu::Event event, int code, const char *message) {
     config.log(record, config.log_context);
     return;
   }
-  char line[64];
-  const int n =
-      std::snprintf(line, sizeof(line), "imu %lld e=%u c=%d %.22s\n",
-                    static_cast<long long>(now), static_cast<unsigned>(event),
-                    code, message ? message : "");
-  if (n <= 0)
-    return;
-  const size_t len =
-      static_cast<size_t>(n) < sizeof(line) ? n : sizeof(line) - 1;
-  if (Serial.availableForWrite() < static_cast<int>(len)) {
+  auto level = robot_log::Level::INFO;
+  if (event == imu::Event::API_ERROR || event == imu::Event::BAD_CONFIG)
+    level = robot_log::Level::ERROR;
+  else if (event == imu::Event::REJECTED ||
+           (event == imu::Event::READY && code != 0))
+    level = robot_log::Level::WARN;
+  const char *text = message ? message : "";
+  if (!robot_log::write(level, "imu", "code=%d %.*s", code,
+                        static_cast<int>(std::strcspn(text, "\r\n")), text))
     ++stats.log_dropped;
-    return;
-  }
-  Serial.write(reinterpret_cast<const uint8_t *>(line), len);
 }
 
 bool api_ok(uint8_t result, const char *operation) {
@@ -99,8 +98,23 @@ uint8_t bus_read(uint8_t address8, uint8_t reg, uint8_t *bytes,
   if (result != HAL_OK) {
     ++stats.bus_errors;
     stats.last_hal_error = HAL_I2C_GetError(config.i2c);
+    if (address8 == (cfg::kMpu9250Address7bit << 1) && reg == kWhoAmIReg &&
+        count == 1)
+      robot_log::write(robot_log::Level::DEBUG, "imu",
+                       "CHIPID addr=0x%02x reg=0x%02x read failed status=%u error=0x%lx",
+                       unsigned(address8 >> 1), unsigned(reg), unsigned(result),
+                       static_cast<unsigned long>(stats.last_hal_error));
     return 1;
   }
+  // Observe the driver's identity read, including mismatches before init fails.
+  // No extra I2C transaction or change to the vendor's identity validation.
+  if (address8 == (cfg::kMpu9250Address7bit << 1) && reg == kWhoAmIReg &&
+      count == 1)
+    robot_log::write(robot_log::Level::DEBUG, "imu",
+                     "CHIPID addr=0x%02x WHO_AM_I=0x%02x expected=0x%02x %s",
+                     unsigned(address8 >> 1), unsigned(bytes[0]),
+                     unsigned(kExpectedChipId),
+                     bytes[0] == kExpectedChipId ? "match" : "mismatch");
   // Inspect status from THE SAME burst consumed by libdriver's mag converter.
   // A separate read of ST2 would unlock/clear the data before validation.
   if (address8 == (cfg::kAk8963Address7bit << 1) && reg == kMagSt1Reg &&
@@ -148,7 +162,14 @@ void driver_debug(const char *const format, ...) {
   va_start(args, format);
   std::vsnprintf(text, sizeof(text), format, args);
   va_end(args);
+#ifdef AXI_VENDOR_TRACE_ENABLE
+  // Vendor bursts must not suppress the HAL's subsequent API failure report.
+  if (!robot_log::write(robot_log::Level::TRACE, "mpu9250", "%.*s",
+                        static_cast<int>(std::strcspn(text, "\r\n")), text))
+    ++stats.log_dropped;
+#else
   log_event(imu::Event::API_ERROR, -1, text);
+#endif
 }
 
 bool valid_axes(const int8_t axes[3]) {

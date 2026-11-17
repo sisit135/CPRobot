@@ -2,6 +2,7 @@
 #include "remote/config.hpp"
 #include "remote/settings.hpp"
 #include "remote/settings_bindings.hpp"
+#include "remote/storage_limits.hpp"
 #include <atomic>
 #include <cmath>
 #include <cstring>
@@ -10,10 +11,17 @@ namespace remote {
 namespace {
 constexpr const char *path = "settings.bin", *temporary = "settings.tmp";
 constexpr std::size_t record_size = 28 + 4 * kFields;
-static_assert(record_size <= 256,
+static_assert(record_size <= kSettingsFileMax,
               "Flash record must fit a littlefs inline file");
 nav::FeatureConfig features;
 nav::RightHandConfig right_hand;
+// Atomic values and generation bracket a nonblocking motor snapshot. A
+// preempting motor task retains its last complete settings instead of waiting
+// for the lower-priority flash/configuration owner to finish publication.
+static_assert(std::atomic<float>::is_always_lock_free,
+              "Motor settings publication must be lock-free");
+std::array<std::atomic<float>, kFields> motor_values{};
+std::atomic<uint32_t> motor_generation{0};
 std::atomic<float> gyro_bias{0};
 std::atomic<uint32_t> thresholds{0};
 std::atomic<bool> published{false};
@@ -52,8 +60,17 @@ bool valid(const Snapshot &s) {
   }
   const auto f = generated::feature(s.values);
   const auto r = generated::rhr(s.values);
+  const auto m = generated::open_loop(s.values);
   if (f.max_skew_us > f.max_age_us || r.wall_distance_m <= r.side_stop_m ||
       r.opening_m <= r.wall_distance_m || r.coast_us >= r.turn_timeout_us)
+    return false;
+  if (m.left_pwm.forward_offset >= m.max_duty ||
+      m.left_pwm.reverse_offset >= m.max_duty ||
+      m.right_pwm.forward_offset >= m.max_duty ||
+      m.right_pwm.reverse_offset >= m.max_duty || m.min_dt_s > m.max_dt_s ||
+      m.control_period_ms * .001f < m.min_dt_s ||
+      m.control_period_ms * .001f > m.max_dt_s ||
+      m.command_timeout_us < int64_t(m.control_period_ms) * 1000)
     return false;
   const auto black = value(s, generated::tape_black_max_key),
              white = value(s, generated::tape_white_min_key);
@@ -107,7 +124,7 @@ float Store::get(uint32_t key) const {
 }
 Status Store::init() {
   ready_ = false;
-  uint8_t cache[256], bytes[record_size];
+  uint8_t cache[kSettingsCacheSize], bytes[record_size];
   lfs_file_t file{};
   lfs_file_config cfg{};
   cfg.buffer = cache;
@@ -133,7 +150,7 @@ Status Store::init() {
   return OK;
 }
 bool Store::commit(const Snapshot &candidate) {
-  uint8_t bytes[record_size], cache[256];
+  uint8_t bytes[record_size], cache[kSettingsCacheSize];
   encode(candidate, bytes);
   lfs_file_t file{};
   lfs_file_config cfg{};
@@ -172,6 +189,26 @@ Status Store::write(uint32_t key, float v, uint32_t expected) {
 Status Store::calibrate(float bias, uint32_t expected) {
   return write(generated::gyro_zero_key, bias, expected);
 }
+Status Store::factory_reset(uint32_t expected) {
+  if (!ready_)
+    return NOT_READY;
+  if (expected != state_.revision || expected == UINT32_MAX)
+    return CONFLICT;
+  auto next = state_;
+  for (std::size_t i = 0; i < kFields; ++i)
+    next.values[i] = kCatalog[i].initial;
+  if (!valid(next))
+    return INVALID;
+  if (next.values == state_.values)
+    return OK;
+  ++next.revision;
+  if (!commit(next)) {
+    ready_ = false;
+    return IO_ERROR;
+  }
+  state_ = next;
+  return OK;
+}
 Status Store::calibrate_color(uint32_t slot, float red, float green, float blue,
                               uint32_t expected) {
   if (!ready_)
@@ -204,6 +241,10 @@ void apply(const Store &store) {
     return;
   features = generated::feature(store.snapshot().values);
   right_hand = generated::rhr(store.snapshot().values);
+  motor_generation.fetch_add(1);
+  for (std::size_t i = 0; i < kFields; ++i)
+    motor_values[i].store(store.snapshot().values[i]);
+  motor_generation.fetch_add(1);
   gyro_bias.store(store.get(generated::gyro_zero_key),
                   std::memory_order_release);
   const uint32_t black = uint32_t(store.get(generated::tape_black_max_key)),
@@ -213,6 +254,22 @@ void apply(const Store &store) {
 }
 nav::FeatureConfig feature_settings() { return features; }
 nav::RightHandConfig fallback_settings() { return right_hand; }
+uint32_t motor_settings(motor::OpenLoopConfig *out) {
+  if (!out)
+    return 0;
+  const auto before = motor_generation.load();
+  if (!before) {
+    *out = motor::OpenLoopConfig{};
+    return 1; // Factory settings before the first store publication.
+  }
+  if (before & 1)
+    return 0;
+  const auto next = generated::open_loop(motor_values);
+  if (motor_generation.load() != before)
+    return 0;
+  *out = next;
+  return before;
+}
 float gyro_zero() { return gyro_bias.load(std::memory_order_acquire); }
 bool tape_thresholds(uint16_t *black, uint16_t *white) {
   if (!black || !white || !published.load(std::memory_order_acquire))

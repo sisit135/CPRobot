@@ -29,7 +29,7 @@ struct Config {
   uint32_t i2c_timeout_ms = 5;
   uint32_t max_read_duration_us = 20000;
   uint32_t error_log_period_us = 1000000;
-  LogSink log = nullptr; // nullptr: best-effort Serial, without Serial.begin().
+  LogSink log = nullptr; // nullptr: deferred robot_log pipeline (source: imu).
   void *log_context = nullptr;
 };
 struct Statistics {

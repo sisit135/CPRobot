@@ -86,6 +86,23 @@ class FlashSettings final: public ::EmbeddedProto::MessageInterface
       set_tape_black_max(rhs.get_tape_black_max());
       set_tape_white_min(rhs.get_tape_white_min());
       set_gyro_zero_rps(rhs.get_gyro_zero_rps());
+      set_motor_invert_left_motor(rhs.get_motor_invert_left_motor());
+      set_motor_invert_right_motor(rhs.get_motor_invert_right_motor());
+      set_motor_max_duty(rhs.get_motor_max_duty());
+      set_motor_max_wheel_rad_s(rhs.get_motor_max_wheel_rad_s());
+      set_motor_max_accel_rad_s2(rhs.get_motor_max_accel_rad_s2());
+      set_motor_left_pwm_forward_duty_per_rad_s(rhs.get_motor_left_pwm_forward_duty_per_rad_s());
+      set_motor_left_pwm_reverse_duty_per_rad_s(rhs.get_motor_left_pwm_reverse_duty_per_rad_s());
+      set_motor_left_pwm_forward_offset(rhs.get_motor_left_pwm_forward_offset());
+      set_motor_left_pwm_reverse_offset(rhs.get_motor_left_pwm_reverse_offset());
+      set_motor_right_pwm_forward_duty_per_rad_s(rhs.get_motor_right_pwm_forward_duty_per_rad_s());
+      set_motor_right_pwm_reverse_duty_per_rad_s(rhs.get_motor_right_pwm_reverse_duty_per_rad_s());
+      set_motor_right_pwm_forward_offset(rhs.get_motor_right_pwm_forward_offset());
+      set_motor_right_pwm_reverse_offset(rhs.get_motor_right_pwm_reverse_offset());
+      set_motor_control_period_ms(rhs.get_motor_control_period_ms());
+      set_motor_command_timeout_us(rhs.get_motor_command_timeout_us());
+      set_motor_min_dt_s(rhs.get_motor_min_dt_s());
+      set_motor_max_dt_s(rhs.get_motor_max_dt_s());
     }
 
     FlashSettings(const FlashSettings&& rhs ) noexcept
@@ -145,6 +162,23 @@ class FlashSettings final: public ::EmbeddedProto::MessageInterface
       set_tape_black_max(rhs.get_tape_black_max());
       set_tape_white_min(rhs.get_tape_white_min());
       set_gyro_zero_rps(rhs.get_gyro_zero_rps());
+      set_motor_invert_left_motor(rhs.get_motor_invert_left_motor());
+      set_motor_invert_right_motor(rhs.get_motor_invert_right_motor());
+      set_motor_max_duty(rhs.get_motor_max_duty());
+      set_motor_max_wheel_rad_s(rhs.get_motor_max_wheel_rad_s());
+      set_motor_max_accel_rad_s2(rhs.get_motor_max_accel_rad_s2());
+      set_motor_left_pwm_forward_duty_per_rad_s(rhs.get_motor_left_pwm_forward_duty_per_rad_s());
+      set_motor_left_pwm_reverse_duty_per_rad_s(rhs.get_motor_left_pwm_reverse_duty_per_rad_s());
+      set_motor_left_pwm_forward_offset(rhs.get_motor_left_pwm_forward_offset());
+      set_motor_left_pwm_reverse_offset(rhs.get_motor_left_pwm_reverse_offset());
+      set_motor_right_pwm_forward_duty_per_rad_s(rhs.get_motor_right_pwm_forward_duty_per_rad_s());
+      set_motor_right_pwm_reverse_duty_per_rad_s(rhs.get_motor_right_pwm_reverse_duty_per_rad_s());
+      set_motor_right_pwm_forward_offset(rhs.get_motor_right_pwm_forward_offset());
+      set_motor_right_pwm_reverse_offset(rhs.get_motor_right_pwm_reverse_offset());
+      set_motor_control_period_ms(rhs.get_motor_control_period_ms());
+      set_motor_command_timeout_us(rhs.get_motor_command_timeout_us());
+      set_motor_min_dt_s(rhs.get_motor_min_dt_s());
+      set_motor_max_dt_s(rhs.get_motor_max_dt_s());
     }
 
     ~FlashSettings() override = default;
@@ -206,7 +240,24 @@ class FlashSettings final: public ::EmbeddedProto::MessageInterface
       RHR_CLEAR_US = 232,
       TAPE_BLACK_MAX = 240,
       TAPE_WHITE_MIN = 241,
-      GYRO_ZERO_RPS = 250
+      GYRO_ZERO_RPS = 250,
+      MOTOR_INVERT_LEFT_MOTOR = 300,
+      MOTOR_INVERT_RIGHT_MOTOR = 301,
+      MOTOR_MAX_DUTY = 302,
+      MOTOR_MAX_WHEEL_RAD_S = 303,
+      MOTOR_MAX_ACCEL_RAD_S2 = 304,
+      MOTOR_LEFT_PWM_FORWARD_DUTY_PER_RAD_S = 305,
+      MOTOR_LEFT_PWM_REVERSE_DUTY_PER_RAD_S = 306,
+      MOTOR_LEFT_PWM_FORWARD_OFFSET = 307,
+      MOTOR_LEFT_PWM_REVERSE_OFFSET = 308,
+      MOTOR_RIGHT_PWM_FORWARD_DUTY_PER_RAD_S = 309,
+      MOTOR_RIGHT_PWM_REVERSE_DUTY_PER_RAD_S = 310,
+      MOTOR_RIGHT_PWM_FORWARD_OFFSET = 311,
+      MOTOR_RIGHT_PWM_REVERSE_OFFSET = 312,
+      MOTOR_CONTROL_PERIOD_MS = 313,
+      MOTOR_COMMAND_TIMEOUT_US = 314,
+      MOTOR_MIN_DT_S = 315,
+      MOTOR_MAX_DT_S = 316
     };
 
     FlashSettings& operator=(const FlashSettings& rhs)
@@ -266,6 +317,23 @@ class FlashSettings final: public ::EmbeddedProto::MessageInterface
       set_tape_black_max(rhs.get_tape_black_max());
       set_tape_white_min(rhs.get_tape_white_min());
       set_gyro_zero_rps(rhs.get_gyro_zero_rps());
+      set_motor_invert_left_motor(rhs.get_motor_invert_left_motor());
+      set_motor_invert_right_motor(rhs.get_motor_invert_right_motor());
+      set_motor_max_duty(rhs.get_motor_max_duty());
+      set_motor_max_wheel_rad_s(rhs.get_motor_max_wheel_rad_s());
+      set_motor_max_accel_rad_s2(rhs.get_motor_max_accel_rad_s2());
+      set_motor_left_pwm_forward_duty_per_rad_s(rhs.get_motor_left_pwm_forward_duty_per_rad_s());
+      set_motor_left_pwm_reverse_duty_per_rad_s(rhs.get_motor_left_pwm_reverse_duty_per_rad_s());
+      set_motor_left_pwm_forward_offset(rhs.get_motor_left_pwm_forward_offset());
+      set_motor_left_pwm_reverse_offset(rhs.get_motor_left_pwm_reverse_offset());
+      set_motor_right_pwm_forward_duty_per_rad_s(rhs.get_motor_right_pwm_forward_duty_per_rad_s());
+      set_motor_right_pwm_reverse_duty_per_rad_s(rhs.get_motor_right_pwm_reverse_duty_per_rad_s());
+      set_motor_right_pwm_forward_offset(rhs.get_motor_right_pwm_forward_offset());
+      set_motor_right_pwm_reverse_offset(rhs.get_motor_right_pwm_reverse_offset());
+      set_motor_control_period_ms(rhs.get_motor_control_period_ms());
+      set_motor_command_timeout_us(rhs.get_motor_command_timeout_us());
+      set_motor_min_dt_s(rhs.get_motor_min_dt_s());
+      set_motor_max_dt_s(rhs.get_motor_max_dt_s());
       return *this;
     }
 
@@ -326,6 +394,23 @@ class FlashSettings final: public ::EmbeddedProto::MessageInterface
       set_tape_black_max(rhs.get_tape_black_max());
       set_tape_white_min(rhs.get_tape_white_min());
       set_gyro_zero_rps(rhs.get_gyro_zero_rps());
+      set_motor_invert_left_motor(rhs.get_motor_invert_left_motor());
+      set_motor_invert_right_motor(rhs.get_motor_invert_right_motor());
+      set_motor_max_duty(rhs.get_motor_max_duty());
+      set_motor_max_wheel_rad_s(rhs.get_motor_max_wheel_rad_s());
+      set_motor_max_accel_rad_s2(rhs.get_motor_max_accel_rad_s2());
+      set_motor_left_pwm_forward_duty_per_rad_s(rhs.get_motor_left_pwm_forward_duty_per_rad_s());
+      set_motor_left_pwm_reverse_duty_per_rad_s(rhs.get_motor_left_pwm_reverse_duty_per_rad_s());
+      set_motor_left_pwm_forward_offset(rhs.get_motor_left_pwm_forward_offset());
+      set_motor_left_pwm_reverse_offset(rhs.get_motor_left_pwm_reverse_offset());
+      set_motor_right_pwm_forward_duty_per_rad_s(rhs.get_motor_right_pwm_forward_duty_per_rad_s());
+      set_motor_right_pwm_reverse_duty_per_rad_s(rhs.get_motor_right_pwm_reverse_duty_per_rad_s());
+      set_motor_right_pwm_forward_offset(rhs.get_motor_right_pwm_forward_offset());
+      set_motor_right_pwm_reverse_offset(rhs.get_motor_right_pwm_reverse_offset());
+      set_motor_control_period_ms(rhs.get_motor_control_period_ms());
+      set_motor_command_timeout_us(rhs.get_motor_command_timeout_us());
+      set_motor_min_dt_s(rhs.get_motor_min_dt_s());
+      set_motor_max_dt_s(rhs.get_motor_max_dt_s());
       return *this;
     }
 
@@ -769,6 +854,142 @@ class FlashSettings final: public ::EmbeddedProto::MessageInterface
     inline const float& get_gyro_zero_rps() const { return gyro_zero_rps_.get(); }
     inline float gyro_zero_rps() const { return gyro_zero_rps_.get(); }
 
+    static constexpr char const* MOTOR_INVERT_LEFT_MOTOR_NAME = "motor_invert_left_motor";
+    inline void clear_motor_invert_left_motor() { motor_invert_left_motor_.clear(); }
+    inline void set_motor_invert_left_motor(const bool& value) { motor_invert_left_motor_ = value; }
+    inline void set_motor_invert_left_motor(const bool&& value) { motor_invert_left_motor_ = value; }
+    inline bool& mutable_motor_invert_left_motor() { return motor_invert_left_motor_.get(); }
+    inline const bool& get_motor_invert_left_motor() const { return motor_invert_left_motor_.get(); }
+    inline bool motor_invert_left_motor() const { return motor_invert_left_motor_.get(); }
+
+    static constexpr char const* MOTOR_INVERT_RIGHT_MOTOR_NAME = "motor_invert_right_motor";
+    inline void clear_motor_invert_right_motor() { motor_invert_right_motor_.clear(); }
+    inline void set_motor_invert_right_motor(const bool& value) { motor_invert_right_motor_ = value; }
+    inline void set_motor_invert_right_motor(const bool&& value) { motor_invert_right_motor_ = value; }
+    inline bool& mutable_motor_invert_right_motor() { return motor_invert_right_motor_.get(); }
+    inline const bool& get_motor_invert_right_motor() const { return motor_invert_right_motor_.get(); }
+    inline bool motor_invert_right_motor() const { return motor_invert_right_motor_.get(); }
+
+    static constexpr char const* MOTOR_MAX_DUTY_NAME = "motor_max_duty";
+    inline void clear_motor_max_duty() { motor_max_duty_.clear(); }
+    inline void set_motor_max_duty(const float& value) { motor_max_duty_ = value; }
+    inline void set_motor_max_duty(const float&& value) { motor_max_duty_ = value; }
+    inline float& mutable_motor_max_duty() { return motor_max_duty_.get(); }
+    inline const float& get_motor_max_duty() const { return motor_max_duty_.get(); }
+    inline float motor_max_duty() const { return motor_max_duty_.get(); }
+
+    static constexpr char const* MOTOR_MAX_WHEEL_RAD_S_NAME = "motor_max_wheel_rad_s";
+    inline void clear_motor_max_wheel_rad_s() { motor_max_wheel_rad_s_.clear(); }
+    inline void set_motor_max_wheel_rad_s(const float& value) { motor_max_wheel_rad_s_ = value; }
+    inline void set_motor_max_wheel_rad_s(const float&& value) { motor_max_wheel_rad_s_ = value; }
+    inline float& mutable_motor_max_wheel_rad_s() { return motor_max_wheel_rad_s_.get(); }
+    inline const float& get_motor_max_wheel_rad_s() const { return motor_max_wheel_rad_s_.get(); }
+    inline float motor_max_wheel_rad_s() const { return motor_max_wheel_rad_s_.get(); }
+
+    static constexpr char const* MOTOR_MAX_ACCEL_RAD_S2_NAME = "motor_max_accel_rad_s2";
+    inline void clear_motor_max_accel_rad_s2() { motor_max_accel_rad_s2_.clear(); }
+    inline void set_motor_max_accel_rad_s2(const float& value) { motor_max_accel_rad_s2_ = value; }
+    inline void set_motor_max_accel_rad_s2(const float&& value) { motor_max_accel_rad_s2_ = value; }
+    inline float& mutable_motor_max_accel_rad_s2() { return motor_max_accel_rad_s2_.get(); }
+    inline const float& get_motor_max_accel_rad_s2() const { return motor_max_accel_rad_s2_.get(); }
+    inline float motor_max_accel_rad_s2() const { return motor_max_accel_rad_s2_.get(); }
+
+    static constexpr char const* MOTOR_LEFT_PWM_FORWARD_DUTY_PER_RAD_S_NAME = "motor_left_pwm_forward_duty_per_rad_s";
+    inline void clear_motor_left_pwm_forward_duty_per_rad_s() { motor_left_pwm_forward_duty_per_rad_s_.clear(); }
+    inline void set_motor_left_pwm_forward_duty_per_rad_s(const float& value) { motor_left_pwm_forward_duty_per_rad_s_ = value; }
+    inline void set_motor_left_pwm_forward_duty_per_rad_s(const float&& value) { motor_left_pwm_forward_duty_per_rad_s_ = value; }
+    inline float& mutable_motor_left_pwm_forward_duty_per_rad_s() { return motor_left_pwm_forward_duty_per_rad_s_.get(); }
+    inline const float& get_motor_left_pwm_forward_duty_per_rad_s() const { return motor_left_pwm_forward_duty_per_rad_s_.get(); }
+    inline float motor_left_pwm_forward_duty_per_rad_s() const { return motor_left_pwm_forward_duty_per_rad_s_.get(); }
+
+    static constexpr char const* MOTOR_LEFT_PWM_REVERSE_DUTY_PER_RAD_S_NAME = "motor_left_pwm_reverse_duty_per_rad_s";
+    inline void clear_motor_left_pwm_reverse_duty_per_rad_s() { motor_left_pwm_reverse_duty_per_rad_s_.clear(); }
+    inline void set_motor_left_pwm_reverse_duty_per_rad_s(const float& value) { motor_left_pwm_reverse_duty_per_rad_s_ = value; }
+    inline void set_motor_left_pwm_reverse_duty_per_rad_s(const float&& value) { motor_left_pwm_reverse_duty_per_rad_s_ = value; }
+    inline float& mutable_motor_left_pwm_reverse_duty_per_rad_s() { return motor_left_pwm_reverse_duty_per_rad_s_.get(); }
+    inline const float& get_motor_left_pwm_reverse_duty_per_rad_s() const { return motor_left_pwm_reverse_duty_per_rad_s_.get(); }
+    inline float motor_left_pwm_reverse_duty_per_rad_s() const { return motor_left_pwm_reverse_duty_per_rad_s_.get(); }
+
+    static constexpr char const* MOTOR_LEFT_PWM_FORWARD_OFFSET_NAME = "motor_left_pwm_forward_offset";
+    inline void clear_motor_left_pwm_forward_offset() { motor_left_pwm_forward_offset_.clear(); }
+    inline void set_motor_left_pwm_forward_offset(const float& value) { motor_left_pwm_forward_offset_ = value; }
+    inline void set_motor_left_pwm_forward_offset(const float&& value) { motor_left_pwm_forward_offset_ = value; }
+    inline float& mutable_motor_left_pwm_forward_offset() { return motor_left_pwm_forward_offset_.get(); }
+    inline const float& get_motor_left_pwm_forward_offset() const { return motor_left_pwm_forward_offset_.get(); }
+    inline float motor_left_pwm_forward_offset() const { return motor_left_pwm_forward_offset_.get(); }
+
+    static constexpr char const* MOTOR_LEFT_PWM_REVERSE_OFFSET_NAME = "motor_left_pwm_reverse_offset";
+    inline void clear_motor_left_pwm_reverse_offset() { motor_left_pwm_reverse_offset_.clear(); }
+    inline void set_motor_left_pwm_reverse_offset(const float& value) { motor_left_pwm_reverse_offset_ = value; }
+    inline void set_motor_left_pwm_reverse_offset(const float&& value) { motor_left_pwm_reverse_offset_ = value; }
+    inline float& mutable_motor_left_pwm_reverse_offset() { return motor_left_pwm_reverse_offset_.get(); }
+    inline const float& get_motor_left_pwm_reverse_offset() const { return motor_left_pwm_reverse_offset_.get(); }
+    inline float motor_left_pwm_reverse_offset() const { return motor_left_pwm_reverse_offset_.get(); }
+
+    static constexpr char const* MOTOR_RIGHT_PWM_FORWARD_DUTY_PER_RAD_S_NAME = "motor_right_pwm_forward_duty_per_rad_s";
+    inline void clear_motor_right_pwm_forward_duty_per_rad_s() { motor_right_pwm_forward_duty_per_rad_s_.clear(); }
+    inline void set_motor_right_pwm_forward_duty_per_rad_s(const float& value) { motor_right_pwm_forward_duty_per_rad_s_ = value; }
+    inline void set_motor_right_pwm_forward_duty_per_rad_s(const float&& value) { motor_right_pwm_forward_duty_per_rad_s_ = value; }
+    inline float& mutable_motor_right_pwm_forward_duty_per_rad_s() { return motor_right_pwm_forward_duty_per_rad_s_.get(); }
+    inline const float& get_motor_right_pwm_forward_duty_per_rad_s() const { return motor_right_pwm_forward_duty_per_rad_s_.get(); }
+    inline float motor_right_pwm_forward_duty_per_rad_s() const { return motor_right_pwm_forward_duty_per_rad_s_.get(); }
+
+    static constexpr char const* MOTOR_RIGHT_PWM_REVERSE_DUTY_PER_RAD_S_NAME = "motor_right_pwm_reverse_duty_per_rad_s";
+    inline void clear_motor_right_pwm_reverse_duty_per_rad_s() { motor_right_pwm_reverse_duty_per_rad_s_.clear(); }
+    inline void set_motor_right_pwm_reverse_duty_per_rad_s(const float& value) { motor_right_pwm_reverse_duty_per_rad_s_ = value; }
+    inline void set_motor_right_pwm_reverse_duty_per_rad_s(const float&& value) { motor_right_pwm_reverse_duty_per_rad_s_ = value; }
+    inline float& mutable_motor_right_pwm_reverse_duty_per_rad_s() { return motor_right_pwm_reverse_duty_per_rad_s_.get(); }
+    inline const float& get_motor_right_pwm_reverse_duty_per_rad_s() const { return motor_right_pwm_reverse_duty_per_rad_s_.get(); }
+    inline float motor_right_pwm_reverse_duty_per_rad_s() const { return motor_right_pwm_reverse_duty_per_rad_s_.get(); }
+
+    static constexpr char const* MOTOR_RIGHT_PWM_FORWARD_OFFSET_NAME = "motor_right_pwm_forward_offset";
+    inline void clear_motor_right_pwm_forward_offset() { motor_right_pwm_forward_offset_.clear(); }
+    inline void set_motor_right_pwm_forward_offset(const float& value) { motor_right_pwm_forward_offset_ = value; }
+    inline void set_motor_right_pwm_forward_offset(const float&& value) { motor_right_pwm_forward_offset_ = value; }
+    inline float& mutable_motor_right_pwm_forward_offset() { return motor_right_pwm_forward_offset_.get(); }
+    inline const float& get_motor_right_pwm_forward_offset() const { return motor_right_pwm_forward_offset_.get(); }
+    inline float motor_right_pwm_forward_offset() const { return motor_right_pwm_forward_offset_.get(); }
+
+    static constexpr char const* MOTOR_RIGHT_PWM_REVERSE_OFFSET_NAME = "motor_right_pwm_reverse_offset";
+    inline void clear_motor_right_pwm_reverse_offset() { motor_right_pwm_reverse_offset_.clear(); }
+    inline void set_motor_right_pwm_reverse_offset(const float& value) { motor_right_pwm_reverse_offset_ = value; }
+    inline void set_motor_right_pwm_reverse_offset(const float&& value) { motor_right_pwm_reverse_offset_ = value; }
+    inline float& mutable_motor_right_pwm_reverse_offset() { return motor_right_pwm_reverse_offset_.get(); }
+    inline const float& get_motor_right_pwm_reverse_offset() const { return motor_right_pwm_reverse_offset_.get(); }
+    inline float motor_right_pwm_reverse_offset() const { return motor_right_pwm_reverse_offset_.get(); }
+
+    static constexpr char const* MOTOR_CONTROL_PERIOD_MS_NAME = "motor_control_period_ms";
+    inline void clear_motor_control_period_ms() { motor_control_period_ms_.clear(); }
+    inline void set_motor_control_period_ms(const uint32_t& value) { motor_control_period_ms_ = value; }
+    inline void set_motor_control_period_ms(const uint32_t&& value) { motor_control_period_ms_ = value; }
+    inline uint32_t& mutable_motor_control_period_ms() { return motor_control_period_ms_.get(); }
+    inline const uint32_t& get_motor_control_period_ms() const { return motor_control_period_ms_.get(); }
+    inline uint32_t motor_control_period_ms() const { return motor_control_period_ms_.get(); }
+
+    static constexpr char const* MOTOR_COMMAND_TIMEOUT_US_NAME = "motor_command_timeout_us";
+    inline void clear_motor_command_timeout_us() { motor_command_timeout_us_.clear(); }
+    inline void set_motor_command_timeout_us(const uint32_t& value) { motor_command_timeout_us_ = value; }
+    inline void set_motor_command_timeout_us(const uint32_t&& value) { motor_command_timeout_us_ = value; }
+    inline uint32_t& mutable_motor_command_timeout_us() { return motor_command_timeout_us_.get(); }
+    inline const uint32_t& get_motor_command_timeout_us() const { return motor_command_timeout_us_.get(); }
+    inline uint32_t motor_command_timeout_us() const { return motor_command_timeout_us_.get(); }
+
+    static constexpr char const* MOTOR_MIN_DT_S_NAME = "motor_min_dt_s";
+    inline void clear_motor_min_dt_s() { motor_min_dt_s_.clear(); }
+    inline void set_motor_min_dt_s(const float& value) { motor_min_dt_s_ = value; }
+    inline void set_motor_min_dt_s(const float&& value) { motor_min_dt_s_ = value; }
+    inline float& mutable_motor_min_dt_s() { return motor_min_dt_s_.get(); }
+    inline const float& get_motor_min_dt_s() const { return motor_min_dt_s_.get(); }
+    inline float motor_min_dt_s() const { return motor_min_dt_s_.get(); }
+
+    static constexpr char const* MOTOR_MAX_DT_S_NAME = "motor_max_dt_s";
+    inline void clear_motor_max_dt_s() { motor_max_dt_s_.clear(); }
+    inline void set_motor_max_dt_s(const float& value) { motor_max_dt_s_ = value; }
+    inline void set_motor_max_dt_s(const float&& value) { motor_max_dt_s_ = value; }
+    inline float& mutable_motor_max_dt_s() { return motor_max_dt_s_.get(); }
+    inline const float& get_motor_max_dt_s() const { return motor_max_dt_s_.get(); }
+    inline float motor_max_dt_s() const { return motor_max_dt_s_.get(); }
+
 
     ::EmbeddedProto::Error serialize(::EmbeddedProto::WriteBufferInterface& buffer) const override
     {
@@ -1049,6 +1270,91 @@ class FlashSettings final: public ::EmbeddedProto::MessageInterface
         return_value = gyro_zero_rps_.serialize_with_id(static_cast<uint32_t>(FieldNumber::GYRO_ZERO_RPS), buffer, false);
       }
 
+      if((false != motor_invert_left_motor_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = motor_invert_left_motor_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MOTOR_INVERT_LEFT_MOTOR), buffer, false);
+      }
+
+      if((false != motor_invert_right_motor_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = motor_invert_right_motor_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MOTOR_INVERT_RIGHT_MOTOR), buffer, false);
+      }
+
+      if((0.0f != motor_max_duty_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = motor_max_duty_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MOTOR_MAX_DUTY), buffer, false);
+      }
+
+      if((0.0f != motor_max_wheel_rad_s_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = motor_max_wheel_rad_s_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MOTOR_MAX_WHEEL_RAD_S), buffer, false);
+      }
+
+      if((0.0f != motor_max_accel_rad_s2_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = motor_max_accel_rad_s2_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MOTOR_MAX_ACCEL_RAD_S2), buffer, false);
+      }
+
+      if((0.0f != motor_left_pwm_forward_duty_per_rad_s_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = motor_left_pwm_forward_duty_per_rad_s_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MOTOR_LEFT_PWM_FORWARD_DUTY_PER_RAD_S), buffer, false);
+      }
+
+      if((0.0f != motor_left_pwm_reverse_duty_per_rad_s_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = motor_left_pwm_reverse_duty_per_rad_s_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MOTOR_LEFT_PWM_REVERSE_DUTY_PER_RAD_S), buffer, false);
+      }
+
+      if((0.0f != motor_left_pwm_forward_offset_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = motor_left_pwm_forward_offset_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MOTOR_LEFT_PWM_FORWARD_OFFSET), buffer, false);
+      }
+
+      if((0.0f != motor_left_pwm_reverse_offset_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = motor_left_pwm_reverse_offset_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MOTOR_LEFT_PWM_REVERSE_OFFSET), buffer, false);
+      }
+
+      if((0.0f != motor_right_pwm_forward_duty_per_rad_s_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = motor_right_pwm_forward_duty_per_rad_s_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MOTOR_RIGHT_PWM_FORWARD_DUTY_PER_RAD_S), buffer, false);
+      }
+
+      if((0.0f != motor_right_pwm_reverse_duty_per_rad_s_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = motor_right_pwm_reverse_duty_per_rad_s_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MOTOR_RIGHT_PWM_REVERSE_DUTY_PER_RAD_S), buffer, false);
+      }
+
+      if((0.0f != motor_right_pwm_forward_offset_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = motor_right_pwm_forward_offset_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MOTOR_RIGHT_PWM_FORWARD_OFFSET), buffer, false);
+      }
+
+      if((0.0f != motor_right_pwm_reverse_offset_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = motor_right_pwm_reverse_offset_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MOTOR_RIGHT_PWM_REVERSE_OFFSET), buffer, false);
+      }
+
+      if((0U != motor_control_period_ms_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = motor_control_period_ms_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MOTOR_CONTROL_PERIOD_MS), buffer, false);
+      }
+
+      if((0U != motor_command_timeout_us_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = motor_command_timeout_us_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MOTOR_COMMAND_TIMEOUT_US), buffer, false);
+      }
+
+      if((0.0f != motor_min_dt_s_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = motor_min_dt_s_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MOTOR_MIN_DT_S), buffer, false);
+      }
+
+      if((0.0f != motor_max_dt_s_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = motor_max_dt_s_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MOTOR_MAX_DT_S), buffer, false);
+      }
+
       return return_value;
     };
 
@@ -1285,6 +1591,74 @@ class FlashSettings final: public ::EmbeddedProto::MessageInterface
             return_value = gyro_zero_rps_.deserialize_check_type(buffer, wire_type);
             break;
 
+          case FieldNumber::MOTOR_INVERT_LEFT_MOTOR:
+            return_value = motor_invert_left_motor_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::MOTOR_INVERT_RIGHT_MOTOR:
+            return_value = motor_invert_right_motor_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::MOTOR_MAX_DUTY:
+            return_value = motor_max_duty_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::MOTOR_MAX_WHEEL_RAD_S:
+            return_value = motor_max_wheel_rad_s_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::MOTOR_MAX_ACCEL_RAD_S2:
+            return_value = motor_max_accel_rad_s2_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::MOTOR_LEFT_PWM_FORWARD_DUTY_PER_RAD_S:
+            return_value = motor_left_pwm_forward_duty_per_rad_s_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::MOTOR_LEFT_PWM_REVERSE_DUTY_PER_RAD_S:
+            return_value = motor_left_pwm_reverse_duty_per_rad_s_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::MOTOR_LEFT_PWM_FORWARD_OFFSET:
+            return_value = motor_left_pwm_forward_offset_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::MOTOR_LEFT_PWM_REVERSE_OFFSET:
+            return_value = motor_left_pwm_reverse_offset_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::MOTOR_RIGHT_PWM_FORWARD_DUTY_PER_RAD_S:
+            return_value = motor_right_pwm_forward_duty_per_rad_s_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::MOTOR_RIGHT_PWM_REVERSE_DUTY_PER_RAD_S:
+            return_value = motor_right_pwm_reverse_duty_per_rad_s_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::MOTOR_RIGHT_PWM_FORWARD_OFFSET:
+            return_value = motor_right_pwm_forward_offset_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::MOTOR_RIGHT_PWM_REVERSE_OFFSET:
+            return_value = motor_right_pwm_reverse_offset_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::MOTOR_CONTROL_PERIOD_MS:
+            return_value = motor_control_period_ms_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::MOTOR_COMMAND_TIMEOUT_US:
+            return_value = motor_command_timeout_us_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::MOTOR_MIN_DT_S:
+            return_value = motor_min_dt_s_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::MOTOR_MAX_DT_S:
+            return_value = motor_max_dt_s_.deserialize_check_type(buffer, wire_type);
+            break;
+
           case FieldNumber::NOT_SET:
             return_value = ::EmbeddedProto::Error::INVALID_FIELD_ID;
             break;
@@ -1369,6 +1743,23 @@ class FlashSettings final: public ::EmbeddedProto::MessageInterface
       clear_tape_black_max();
       clear_tape_white_min();
       clear_gyro_zero_rps();
+      clear_motor_invert_left_motor();
+      clear_motor_invert_right_motor();
+      clear_motor_max_duty();
+      clear_motor_max_wheel_rad_s();
+      clear_motor_max_accel_rad_s2();
+      clear_motor_left_pwm_forward_duty_per_rad_s();
+      clear_motor_left_pwm_reverse_duty_per_rad_s();
+      clear_motor_left_pwm_forward_offset();
+      clear_motor_left_pwm_reverse_offset();
+      clear_motor_right_pwm_forward_duty_per_rad_s();
+      clear_motor_right_pwm_reverse_duty_per_rad_s();
+      clear_motor_right_pwm_forward_offset();
+      clear_motor_right_pwm_reverse_offset();
+      clear_motor_control_period_ms();
+      clear_motor_command_timeout_us();
+      clear_motor_min_dt_s();
+      clear_motor_max_dt_s();
 
     }
 
@@ -1544,6 +1935,57 @@ class FlashSettings final: public ::EmbeddedProto::MessageInterface
         case FieldNumber::GYRO_ZERO_RPS:
           name = GYRO_ZERO_RPS_NAME;
           break;
+        case FieldNumber::MOTOR_INVERT_LEFT_MOTOR:
+          name = MOTOR_INVERT_LEFT_MOTOR_NAME;
+          break;
+        case FieldNumber::MOTOR_INVERT_RIGHT_MOTOR:
+          name = MOTOR_INVERT_RIGHT_MOTOR_NAME;
+          break;
+        case FieldNumber::MOTOR_MAX_DUTY:
+          name = MOTOR_MAX_DUTY_NAME;
+          break;
+        case FieldNumber::MOTOR_MAX_WHEEL_RAD_S:
+          name = MOTOR_MAX_WHEEL_RAD_S_NAME;
+          break;
+        case FieldNumber::MOTOR_MAX_ACCEL_RAD_S2:
+          name = MOTOR_MAX_ACCEL_RAD_S2_NAME;
+          break;
+        case FieldNumber::MOTOR_LEFT_PWM_FORWARD_DUTY_PER_RAD_S:
+          name = MOTOR_LEFT_PWM_FORWARD_DUTY_PER_RAD_S_NAME;
+          break;
+        case FieldNumber::MOTOR_LEFT_PWM_REVERSE_DUTY_PER_RAD_S:
+          name = MOTOR_LEFT_PWM_REVERSE_DUTY_PER_RAD_S_NAME;
+          break;
+        case FieldNumber::MOTOR_LEFT_PWM_FORWARD_OFFSET:
+          name = MOTOR_LEFT_PWM_FORWARD_OFFSET_NAME;
+          break;
+        case FieldNumber::MOTOR_LEFT_PWM_REVERSE_OFFSET:
+          name = MOTOR_LEFT_PWM_REVERSE_OFFSET_NAME;
+          break;
+        case FieldNumber::MOTOR_RIGHT_PWM_FORWARD_DUTY_PER_RAD_S:
+          name = MOTOR_RIGHT_PWM_FORWARD_DUTY_PER_RAD_S_NAME;
+          break;
+        case FieldNumber::MOTOR_RIGHT_PWM_REVERSE_DUTY_PER_RAD_S:
+          name = MOTOR_RIGHT_PWM_REVERSE_DUTY_PER_RAD_S_NAME;
+          break;
+        case FieldNumber::MOTOR_RIGHT_PWM_FORWARD_OFFSET:
+          name = MOTOR_RIGHT_PWM_FORWARD_OFFSET_NAME;
+          break;
+        case FieldNumber::MOTOR_RIGHT_PWM_REVERSE_OFFSET:
+          name = MOTOR_RIGHT_PWM_REVERSE_OFFSET_NAME;
+          break;
+        case FieldNumber::MOTOR_CONTROL_PERIOD_MS:
+          name = MOTOR_CONTROL_PERIOD_MS_NAME;
+          break;
+        case FieldNumber::MOTOR_COMMAND_TIMEOUT_US:
+          name = MOTOR_COMMAND_TIMEOUT_US_NAME;
+          break;
+        case FieldNumber::MOTOR_MIN_DT_S:
+          name = MOTOR_MIN_DT_S_NAME;
+          break;
+        case FieldNumber::MOTOR_MAX_DT_S:
+          name = MOTOR_MAX_DT_S_NAME;
+          break;
         default:
           name = "Invalid FieldNumber";
           break;
@@ -1617,6 +2059,23 @@ class FlashSettings final: public ::EmbeddedProto::MessageInterface
           + EmbeddedProto::uint32::max_serialized_size(static_cast<uint32_t>(FieldNumber::TAPE_BLACK_MAX))
           + EmbeddedProto::uint32::max_serialized_size(static_cast<uint32_t>(FieldNumber::TAPE_WHITE_MIN))
           + EmbeddedProto::floatfixed::max_serialized_size(static_cast<uint32_t>(FieldNumber::GYRO_ZERO_RPS))
+          + EmbeddedProto::boolean::max_serialized_size(static_cast<uint32_t>(FieldNumber::MOTOR_INVERT_LEFT_MOTOR))
+          + EmbeddedProto::boolean::max_serialized_size(static_cast<uint32_t>(FieldNumber::MOTOR_INVERT_RIGHT_MOTOR))
+          + EmbeddedProto::floatfixed::max_serialized_size(static_cast<uint32_t>(FieldNumber::MOTOR_MAX_DUTY))
+          + EmbeddedProto::floatfixed::max_serialized_size(static_cast<uint32_t>(FieldNumber::MOTOR_MAX_WHEEL_RAD_S))
+          + EmbeddedProto::floatfixed::max_serialized_size(static_cast<uint32_t>(FieldNumber::MOTOR_MAX_ACCEL_RAD_S2))
+          + EmbeddedProto::floatfixed::max_serialized_size(static_cast<uint32_t>(FieldNumber::MOTOR_LEFT_PWM_FORWARD_DUTY_PER_RAD_S))
+          + EmbeddedProto::floatfixed::max_serialized_size(static_cast<uint32_t>(FieldNumber::MOTOR_LEFT_PWM_REVERSE_DUTY_PER_RAD_S))
+          + EmbeddedProto::floatfixed::max_serialized_size(static_cast<uint32_t>(FieldNumber::MOTOR_LEFT_PWM_FORWARD_OFFSET))
+          + EmbeddedProto::floatfixed::max_serialized_size(static_cast<uint32_t>(FieldNumber::MOTOR_LEFT_PWM_REVERSE_OFFSET))
+          + EmbeddedProto::floatfixed::max_serialized_size(static_cast<uint32_t>(FieldNumber::MOTOR_RIGHT_PWM_FORWARD_DUTY_PER_RAD_S))
+          + EmbeddedProto::floatfixed::max_serialized_size(static_cast<uint32_t>(FieldNumber::MOTOR_RIGHT_PWM_REVERSE_DUTY_PER_RAD_S))
+          + EmbeddedProto::floatfixed::max_serialized_size(static_cast<uint32_t>(FieldNumber::MOTOR_RIGHT_PWM_FORWARD_OFFSET))
+          + EmbeddedProto::floatfixed::max_serialized_size(static_cast<uint32_t>(FieldNumber::MOTOR_RIGHT_PWM_REVERSE_OFFSET))
+          + EmbeddedProto::uint32::max_serialized_size(static_cast<uint32_t>(FieldNumber::MOTOR_CONTROL_PERIOD_MS))
+          + EmbeddedProto::uint32::max_serialized_size(static_cast<uint32_t>(FieldNumber::MOTOR_COMMAND_TIMEOUT_US))
+          + EmbeddedProto::floatfixed::max_serialized_size(static_cast<uint32_t>(FieldNumber::MOTOR_MIN_DT_S))
+          + EmbeddedProto::floatfixed::max_serialized_size(static_cast<uint32_t>(FieldNumber::MOTOR_MAX_DT_S))
         ;
     }
 
@@ -1742,6 +2201,23 @@ class FlashSettings final: public ::EmbeddedProto::MessageInterface
       left_chars = tape_black_max_.to_string(left_chars, indent_level + 2, TAPE_BLACK_MAX_NAME, false);
       left_chars = tape_white_min_.to_string(left_chars, indent_level + 2, TAPE_WHITE_MIN_NAME, false);
       left_chars = gyro_zero_rps_.to_string(left_chars, indent_level + 2, GYRO_ZERO_RPS_NAME, false);
+      left_chars = motor_invert_left_motor_.to_string(left_chars, indent_level + 2, MOTOR_INVERT_LEFT_MOTOR_NAME, false);
+      left_chars = motor_invert_right_motor_.to_string(left_chars, indent_level + 2, MOTOR_INVERT_RIGHT_MOTOR_NAME, false);
+      left_chars = motor_max_duty_.to_string(left_chars, indent_level + 2, MOTOR_MAX_DUTY_NAME, false);
+      left_chars = motor_max_wheel_rad_s_.to_string(left_chars, indent_level + 2, MOTOR_MAX_WHEEL_RAD_S_NAME, false);
+      left_chars = motor_max_accel_rad_s2_.to_string(left_chars, indent_level + 2, MOTOR_MAX_ACCEL_RAD_S2_NAME, false);
+      left_chars = motor_left_pwm_forward_duty_per_rad_s_.to_string(left_chars, indent_level + 2, MOTOR_LEFT_PWM_FORWARD_DUTY_PER_RAD_S_NAME, false);
+      left_chars = motor_left_pwm_reverse_duty_per_rad_s_.to_string(left_chars, indent_level + 2, MOTOR_LEFT_PWM_REVERSE_DUTY_PER_RAD_S_NAME, false);
+      left_chars = motor_left_pwm_forward_offset_.to_string(left_chars, indent_level + 2, MOTOR_LEFT_PWM_FORWARD_OFFSET_NAME, false);
+      left_chars = motor_left_pwm_reverse_offset_.to_string(left_chars, indent_level + 2, MOTOR_LEFT_PWM_REVERSE_OFFSET_NAME, false);
+      left_chars = motor_right_pwm_forward_duty_per_rad_s_.to_string(left_chars, indent_level + 2, MOTOR_RIGHT_PWM_FORWARD_DUTY_PER_RAD_S_NAME, false);
+      left_chars = motor_right_pwm_reverse_duty_per_rad_s_.to_string(left_chars, indent_level + 2, MOTOR_RIGHT_PWM_REVERSE_DUTY_PER_RAD_S_NAME, false);
+      left_chars = motor_right_pwm_forward_offset_.to_string(left_chars, indent_level + 2, MOTOR_RIGHT_PWM_FORWARD_OFFSET_NAME, false);
+      left_chars = motor_right_pwm_reverse_offset_.to_string(left_chars, indent_level + 2, MOTOR_RIGHT_PWM_REVERSE_OFFSET_NAME, false);
+      left_chars = motor_control_period_ms_.to_string(left_chars, indent_level + 2, MOTOR_CONTROL_PERIOD_MS_NAME, false);
+      left_chars = motor_command_timeout_us_.to_string(left_chars, indent_level + 2, MOTOR_COMMAND_TIMEOUT_US_NAME, false);
+      left_chars = motor_min_dt_s_.to_string(left_chars, indent_level + 2, MOTOR_MIN_DT_S_NAME, false);
+      left_chars = motor_max_dt_s_.to_string(left_chars, indent_level + 2, MOTOR_MAX_DT_S_NAME, false);
   
       if( 0 == indent_level) 
       {
@@ -1822,6 +2298,23 @@ class FlashSettings final: public ::EmbeddedProto::MessageInterface
       EmbeddedProto::uint32 tape_black_max_ = 0U;
       EmbeddedProto::uint32 tape_white_min_ = 0U;
       EmbeddedProto::floatfixed gyro_zero_rps_ = 0.0f;
+      EmbeddedProto::boolean motor_invert_left_motor_ = false;
+      EmbeddedProto::boolean motor_invert_right_motor_ = false;
+      EmbeddedProto::floatfixed motor_max_duty_ = 0.0f;
+      EmbeddedProto::floatfixed motor_max_wheel_rad_s_ = 0.0f;
+      EmbeddedProto::floatfixed motor_max_accel_rad_s2_ = 0.0f;
+      EmbeddedProto::floatfixed motor_left_pwm_forward_duty_per_rad_s_ = 0.0f;
+      EmbeddedProto::floatfixed motor_left_pwm_reverse_duty_per_rad_s_ = 0.0f;
+      EmbeddedProto::floatfixed motor_left_pwm_forward_offset_ = 0.0f;
+      EmbeddedProto::floatfixed motor_left_pwm_reverse_offset_ = 0.0f;
+      EmbeddedProto::floatfixed motor_right_pwm_forward_duty_per_rad_s_ = 0.0f;
+      EmbeddedProto::floatfixed motor_right_pwm_reverse_duty_per_rad_s_ = 0.0f;
+      EmbeddedProto::floatfixed motor_right_pwm_forward_offset_ = 0.0f;
+      EmbeddedProto::floatfixed motor_right_pwm_reverse_offset_ = 0.0f;
+      EmbeddedProto::uint32 motor_control_period_ms_ = 0U;
+      EmbeddedProto::uint32 motor_command_timeout_us_ = 0U;
+      EmbeddedProto::floatfixed motor_min_dt_s_ = 0.0f;
+      EmbeddedProto::floatfixed motor_max_dt_s_ = 0.0f;
 
 };
 

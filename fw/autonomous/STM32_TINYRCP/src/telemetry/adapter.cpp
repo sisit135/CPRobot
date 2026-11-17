@@ -13,6 +13,10 @@
 #include "remote/board_store.hpp"
 #include "remote/schema_blob.hpp"
 #include "remote/settings.hpp"
+#ifdef AXI_LOG_RTT_ENABLE
+#include "hal/rtt_log.hpp"
+#include "remote/at_cli.hpp"
+#endif
 #include <Arduino.h>
 #include <SPI.h>
 #include <cmath>
@@ -42,6 +46,15 @@ uint8_t ack_op = 0, ack_status = 0;
 uint32_t last_command_id = 0;
 uint8_t remote_reply[238];
 size_t remote_reply_size = 0;
+#ifdef AXI_LOG_RTT_ENABLE
+remote::AtCli at_cli;
+bool at_reply(const char *bytes, std::size_t count) {
+  taskENTER_CRITICAL();
+  const bool written = hal_rtt_try_write(bytes, count);
+  taskEXIT_CRITICAL();
+  return written;
+}
+#endif
 bool calibrate_gyro(float *out) {
   // The sensor task owns I2C; only consume its fresh, published samples.
   float sum = 0, squares = 0;
@@ -164,6 +177,15 @@ void worker(void *) {
   boot_id = (uint32_t)hal_time_us() ^ (uint32_t)micros() ^ 0xAE194371u;
   TickType_t wake = xTaskGetTickCount();
   for (;;) {
+#ifdef AXI_LOG_RTT_ENABLE
+    // The same owner/mutex gates SPI writes, RTT writes and the local key.
+    // Input and output are bounded/nonblocking; flash commits keep the
+    // existing task-context store path and never run in an RTT ISR.
+    xSemaphoreTake(start_mutex, portMAX_DELAY);
+    at_cli.poll(remote::board_store(), !navigation_started && !stop_latched,
+                hal_rtt_read, at_reply);
+    xSemaphoreGive(start_mutex);
+#endif
     memset(tx, 0, sizeof tx);
     // Logs are drained here, so neither a sensor driver nor a producer touches
     // SPI.

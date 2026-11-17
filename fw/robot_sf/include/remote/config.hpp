@@ -28,6 +28,7 @@ public:
   Status init(); // ENOENT seeds defaults; damaged/version-mismatched records
                  // fail closed.
   Status write(uint32_t key, float value, uint32_t expected);
+  Status factory_reset(uint32_t expected);
   Status calibrate(float gyro_bias, uint32_t expected);
   Status calibrate_color(uint32_t color_id, float red, float green, float blue,
                          uint32_t expected);

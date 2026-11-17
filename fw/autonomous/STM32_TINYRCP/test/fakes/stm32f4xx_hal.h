@@ -6,6 +6,10 @@
 struct I2C_HandleTypeDef {
   void *Instance = nullptr;
 };
+// Distinct controller identities for diagnostic routing; never dereferenced.
+#define I2C1 (reinterpret_cast<void *>(0x40005400))
+#define I2C2 (reinterpret_cast<void *>(0x40005800))
+#define I2C3 (reinterpret_cast<void *>(0x40005c00))
 enum HAL_StatusTypeDef {
   HAL_OK = 0,
   HAL_ERROR = 1,

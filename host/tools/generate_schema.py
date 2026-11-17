@@ -36,7 +36,8 @@ def array(name, data):
 def generate(root=ROOT):
     manifest = json.loads((root / "proto/flash_settings.json").read_text())
     fields, sources = manifest["fields"], manifest["sources"]
-    if manifest["format"] != 2 or not 1 <= len(fields) <= 128:
+    # 28-byte header/CRC plus binary32 values must fit the 512-byte inline file.
+    if manifest["format"] != 2 or not 1 <= len(fields) <= 121:
         raise ValueError("Unsupported flash catalog format/count")
     keys, names, bindings = set(), set(), set()
     for field in fields:
@@ -44,7 +45,7 @@ def generate(root=ROOT):
         if (not isinstance(key, int) or not 1 <= key < 19000 or key in keys or
                 not re.fullmatch(r"[a-z][a-z0-9_]{0,47}", name) or name in names or
                 kind not in TYPES or binding in bindings or
-                not re.fullmatch(r"(?:feature|rhr|tape)\.[a-z][a-z0-9_]*|gyro_zero|color\.[0-3]\.[a-z]+", binding)):
+                not re.fullmatch(r"(?:feature|rhr|tape)\.[a-z][a-z0-9_]*|motor\.[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)?|gyro_zero|color\.[0-3]\.[a-z]+", binding)):
             raise ValueError(f"Invalid/duplicate flash field: {field}")
         keys.add(key); names.add(name); bindings.add(binding)
         expected_name = ("gyro_zero_rps" if binding == "gyro_zero" else
@@ -107,20 +108,22 @@ def generate(root=ROOT):
         if field["binding"] in ("tape.black_max", "tape.white_min", "gyro_zero"):
             name = field["binding"].replace(".", "_") + "_key"
             bindings_header += f'inline constexpr uint32_t {name} = {field["key"]};\n'
-    for prefix, typename in (("feature", "nav::FeatureConfig"), ("rhr", "nav::RightHandConfig")):
+    for prefix, typename in (("feature", "nav::FeatureConfig"), ("rhr", "nav::RightHandConfig"),
+                             ("motor", "motor::OpenLoopConfig")):
         for field in fields:
             if field["binding"].startswith(prefix + "."):
-                member = field["binding"].split(".")[1]
+                member = field["binding"].split(".", 1)[1]
                 integral = "true" if field["type"] != "float" else "false"
                 bindings_header += (f'static_assert(std::is_integral_v<decltype({typename}{{}}.{member})> == {integral}, '
                                     f'"Flash type drift: {field["name"]}");\n')
                 bindings_header += (f'static_assert({typename}{{}}.{member} == '
                                     f'static_cast<decltype({typename}{{}}.{member})>({literal(field["default"])}), '
                                     f'"Flash factory default drift: {field["name"]}");\n')
-        bindings_header += f"template <class Values> {typename} {prefix}(const Values &values) {{\n  {typename} result;\n"
+        function = "open_loop" if prefix == "motor" else prefix
+        bindings_header += f"template <class Values> {typename} {function}(const Values &values) {{\n  {typename} result;\n"
         for index, field in enumerate(fields):
             if field["binding"].startswith(prefix + "."):
-                member = field["binding"].split(".")[1]
+                member = field["binding"].split(".", 1)[1]
                 bindings_header += f"  result.{member} = static_cast<decltype(result.{member})>(values[{index}]);\n"
         bindings_header += "  return result;\n}\n"
     bindings_header += "} // namespace remote::generated\n"

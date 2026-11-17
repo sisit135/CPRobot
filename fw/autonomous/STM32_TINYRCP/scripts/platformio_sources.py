@@ -9,6 +9,7 @@ CORE_SOURCES = (
     "navigation/AStar.cpp", "navigation/map_resolver.cpp",
     "navigation/end_cell.cpp", "navigation/feature_navigation.cpp", "navigation/path_executor.cpp", "navigation/right_hand_rule.cpp",
     "motor_control/wheel_controller.cpp",
+    "motor_control/wheel_controller_settings.cpp",
 )
 
 
@@ -16,6 +17,25 @@ def configure(env):
     project = Path(env.subst("$PROJECT_DIR")).resolve()
     fw = project.parents[1]
     core = fw / "robot_sf"
+    flags = str(env.get("BUILD_FLAGS", ""))
+    defines = env.ParseFlags(env.get("BUILD_FLAGS", "")).get("CPPDEFINES", [])
+    demo = any(define == "AXI_OPENLOOP_DEMO" or
+               (isinstance(define, (list, tuple)) and
+                define[0] == "AXI_OPENLOOP_DEMO" and str(define[1]) == "1")
+               for define in defines)
+    if demo:
+        # Compile no sensor, production navigation, telemetry or flash code.
+        env.Append(CPPPATH=[str(core / "include"),
+                            str(core / "include/motor_control"),
+                            str(project / "include")])
+        env.Replace(SRC_FILTER=["-<*>", "+<main.cpp>", "+<logging/>",
+                                "+<tasks/bup_tasks.cpp>",
+                                "+<tasks/openloop_demo.cpp>",
+                                "+<hal/hal_motor.cpp>", "+<hal/hal_platform.cpp>",
+                                "+<hal/rtt_log.cpp>", "+<hal/newlib_stdio.cpp>"])
+        env.BuildSources("$BUILD_DIR/robot_sf", str(core / "src"),
+                         src_filter=["+<motor_control/wheel_controller.cpp>"])
+        return
     missing = [str(core / "src" / name) for name in CORE_SOURCES
                if not (core / "src" / name).is_file()]
     required = [project / "src/hal/vendor/vl53l0x_class.cpp",
@@ -30,11 +50,10 @@ def configure(env):
                      src_filter=["+<" + name + ">" for name in CORE_SOURCES])
     # Project src/ is compiled by PlatformIO, including vl53l0x_class.cpp,
     # the narrow facade and the polling port. Never add an external ST C core.
-    flags = str(env.get("BUILD_FLAGS", ""))
     embedded = fw.parent / "third_party/EmbeddedProto/src"
     remote = core / "src/remote"
     littlefs = fw.parent / "third_party/littlefs"
-    required_remote = [remote / name for name in ("config.cpp", "codec.cpp", "service.cpp")]
+    required_remote = [remote / name for name in ("config.cpp", "codec.cpp", "service.cpp", "at_cli.cpp")]
     required_remote += [littlefs / "lfs.c", littlefs / "lfs_util.c"]
     required_remote += [core / "include/remote/catalog.hpp", core / "include/remote/schema_blob.hpp"]
     if any(not path.is_file() for path in required_remote):

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 // Board hooks: MPU9250 implementation is provided by hal/mpu9250_hal.cpp.
+#include "hal/i2c_diagnostics.hpp"
 #include "hal/mpu9250_hal.hpp"
 #include "hal/sensors_config.hpp"
 #include "hal/vl53l0x_hal.hpp"
@@ -15,22 +16,19 @@
 #include "telemetry/adapter.hpp"
 #endif
 bool hal_board_sensors_init() {
-  imu::Config config;
-  config.i2c = Wire.getHandle(); // Wire already started by hal_sensors_init().
-  robot_log::write(robot_log::Level::INFO, "imu", "init started");
-  if (!imu::initialize(config)) {
-    robot_log::write(robot_log::Level::ERROR, "imu", "health check failed");
-    return false;
-  }
-  if (!imu::statistics().online || !imu::statistics().magnetometer_online) {
-    robot_log::write(robot_log::Level::ERROR, "imu",
-                     "gyro/magnetometer health check failed");
-    imu::stop();
-    return false;
-  }
-  robot_log::write(robot_log::Level::INFO, "imu", "hw ready");
-  // Reset VL53L0X (0x29) must not share the TCS34725 controller.
   using namespace board::sensors;
+  const i2c_diagnostics::Binding main_bindings[] = {
+      {kMpu9250Address7bit, "MPU9250 accel/gyro"},
+      {kAk8963Address7bit, "AK8963 (needs bypass)"},
+      {kTcs34725Address7bit, "TCS34725 color"}};
+  const i2c_diagnostics::Binding tof_bindings[] = {
+      {kVl53l0xBootAddress7bit, "VL53L0X boot (shared)"},
+      {kTofAddress7bit[0], "VL53L0X left (assigned)"},
+      {kTofAddress7bit[1], "VL53L0X front (assigned)"},
+      {kTofAddress7bit[2], "VL53L0X right (assigned)"}};
+  i2c_diagnostics::scan(Wire.getHandle(), "main", "before IMU init",
+                        main_bindings, 3);
+  // Reset VL53L0X (0x29) must not share the TCS34725 controller.
   if (kTofSdaPin < 0 || kTofSclPin < 0 || kTofXshutPin[0] < 0 ||
       kTofXshutPin[1] < 0 || kTofXshutPin[2] < 0 || kTofSdaPin == kTofSclPin ||
       uint32_t(kTofSdaPin) == kMainSdaPin ||
@@ -52,13 +50,45 @@ bool hal_board_sensors_init() {
     return false;
   }
   robot_log::write(robot_log::Level::INFO, "tof", "bus ready");
+  // Scan both buses before the first device failure can terminate bring-up.
+  // Multiple unassigned ToFs can ACK 0x29; this cannot identify/count them.
+  i2c_diagnostics::scan(tof_wire.getHandle(), "ToF",
+                        "before address assignment", tof_bindings, 4);
+  imu::Config config;
+  config.i2c = Wire.getHandle(); // Wire already started by hal_sensors_init().
+  robot_log::write(robot_log::Level::INFO, "imu", "init started");
+  bool imu_ready = imu::initialize(config);
+  if (!imu_ready) {
+    robot_log::write(robot_log::Level::ERROR, "imu", "health check failed");
+  } else if (!imu::statistics().online || !imu::statistics().magnetometer_online) {
+    robot_log::write(robot_log::Level::ERROR, "imu",
+                     "gyro/magnetometer health check failed");
+    imu::stop();
+    imu_ready = false;
+  }
+  if (!imu_ready) {
+#if AXI_BUP_IMU_DIAGNOSTIC
+    imu::stop();
+    robot_log::write(robot_log::Level::WARN, "bup",
+                     "IMU failure deferred for diagnostics; localization blocked");
+#else
+    return false;
+#endif
+  } else {
+    robot_log::write(robot_log::Level::INFO, "imu", "hw ready");
+  }
+  i2c_diagnostics::scan(Wire.getHandle(), "main", "after IMU init attempt",
+                        main_bindings, 3);
   tof::Config ranges;
   ranges.i2c = tof_wire.getHandle();
   for (unsigned i = 0; i < 3; ++i) {
     ranges.sensors[i].xshut_pin = kTofXshutPin[i];
     ranges.sensors[i].address_7bit = kTofAddress7bit[i];
   }
-  if (!tof::initialize(ranges)) {
+  const bool tof_ready = tof::initialize(ranges);
+  i2c_diagnostics::scan(tof_wire.getHandle(), "ToF", "after ToF init attempt",
+                        tof_bindings, 4);
+  if (!tof_ready) {
     robot_log::write(robot_log::Level::ERROR, "tof", "health check failed");
     return false;
   }

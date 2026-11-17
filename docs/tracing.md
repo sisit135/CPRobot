@@ -34,6 +34,71 @@ Initialization milestones use INFO, including main-bus readiness, IMU health,
 ToF boot/address/calibration/configuration, and TCS setup. DRV8833's milestone
 reports configured outputs only, without claiming power-on feedback.
 
+MPU HAL lifecycle, configuration failures and rejected samples enter this same
+deferred pipeline by default under `imu`, with the HAL error code and message.
+API/configuration errors use ERROR, rejected samples and degraded readiness use
+WARN, and lifecycle events use INFO. The existing HAL error rate limit remains
+in effect. A custom `imu::Config::log` callback overrides this default route.
+Neither path writes USB serial directly from the sensor producer.
+MPU identity reads also emit DEBUG `imu` records with `CHIPID`, the seven-bit
+address, observed `WHO_AM_I`, expected 0x71 and match/mismatch. A failed identity
+read reports HAL status/error instead. These records observe the driver's
+existing transaction, including failures during initialization; no extra probe
+is added and identity validation is unchanged.
+
+### BUP sensor snapshot
+
+After the BUP summary, INFO records under `bup.sample` print a one-shot sensor
+table: acceleration (m/s²), gyro (rad/s), native factory-adjusted AK8963 field
+(µT), TCS raw R/G/B/clear counts and left/front/right ToF ranges (m).
+The magnetic row is diagnostic and does not imply calibrated EKF readiness.
+
+Sampling occurs before application service startup while BUP owns the buses;
+only the retained values are printed afterward. Polling yields and ends after
+500 ms, plus any in-flight HAL calls and scheduling. Failed, skipped, invalid,
+or still-not-ready sensors print `N/A`, rather than a fabricated zero. Even an
+early motor/settings failure prints an unavailable table without sensor I/O.
+
+ToF prints `Inf` when a completed shot reports a distance beyond the configured
+maximum and PAL status is valid (0), signal failure (2) or phase failure (4).
+The latter two include no-return readings beyond the usable optical range.
+Other failures, including sigma, minimum-range and hardware errors, remain
+`N/A`. This is a diagnostic display classification only: navigation's valid
+sample gate, fault isolation and finite-range requirements are unchanged.
+
+### BUP I2C scan tables
+
+Sensor startup emits separate INFO tables per physical controller, labelled
+with controller, logical bus and startup phase. Every table line uses the
+controller's log source (`i2c1`, `i2c2`, or `i2c3`), derived from the actual HAL
+instance rather than assumed pin defaults. An unavailable/unrecognized
+controller uses `i2c`. With default THS wiring, I2C1 is the main sensor bus and
+I2C2 is the isolated ToF bus; their 0x29 bindings remain separate.
+Rows bind seven-bit addresses to configured MPU9250, AK8963, TCS34725 and
+left/front/right VL53L0X devices. ACK means an address responded, not that device
+identity or physical position was verified. `no ACK` means the probe did not
+succeed; `not probed` means the scan ended before reaching that address. Unknown
+responders are labelled `unbound device`, with at most eight extra rows and a
+total unbound count. A final scan result distinguishes completion, unavailable
+bus, deadline, busy controller and timeout.
+
+The HAL probes 0x08–0x77 once with a 2 ms timeout argument, yields one RTOS tick
+per probe, and checks a 400 ms scan deadline before each probe. Busy/timeout
+stops the scan immediately. HAL internal waits and task scheduling can extend
+elapsed time past the deadline; this is not a hard real-time guarantee. Tables
+also yield between device rows for deferred draining. No device registers,
+address assignments or XSHUT pins are changed by the scan itself.
+
+Both buses are scanned before IMU initialization; main is rescanned after IMU
+success (or a deferred failure in diagnostic trace mode), and ToF after its
+initialization attempt. AK8963 at 0x0c may not respond
+before bypass setup. A ToF response at boot address 0x29 may represent several
+devices; assigned 0x30/0x31/0x32 bindings become meaningful after ToF startup.
+Scan findings are diagnostic and do not replace device HAL health checks.
+The temporary trace mode keeps BUP FAILED after diagnostics and blocks all
+application services; see [building](building.md#stm32f411ce-firmware) for its
+flag and restoration instructions.
+
 The `blackpill_f411ce_trace` build enables `AXI_VENDOR_TRACE_ENABLE` and
 `VL53L0X_LOG_ENABLE`. ST function entry/exit and driver messages run at
 `TRACE_LEVEL_ALL`; MPU vendor callbacks bypass the ordinary error rate limiter
@@ -58,7 +123,7 @@ default is false. Invalid-range warnings are rate limited by
 
 The `RTT` sink bit adds a text stream over the existing SWD connection, consumed
 by OpenOCD and shown by Cortex-Debug's **THS logs** RTT terminal. It uses a
-standard RTT control-block layout with one upstream channel, implemented in the
+standard RTT control-block layout with one upstream and one downstream channel, implemented in the
 project HAL without a vendor library. ETM instruction trace and ITM/SWO are
 separate facilities; this sink does not use them or semihosting.
 
@@ -72,17 +137,72 @@ A full ring drops new lines and increments its separate sink-drop counter.
 Other sinks continue receiving the same log record. This does not change the
 existing USB sink's possible wait for transmit space when a host is connected.
 
-The 48-byte ARM control block is exported as `_SEGGER_RTT`; its initialized
+The 72-byte ARM control block is exported as `_SEGGER_RTT`; its initialized
 signature and descriptor are available before bring-up. Unread early lines can
 therefore survive until a later attach, within the ring's 2047-byte usable
-capacity. RTT has no input channel, heap allocation, host-connection gate or
-per-line breakpoint. Removing `AXI_LOG_RTT_ENABLE` removes its buffer/control
+capacity. A separate 512-byte downstream ring receives AT commands on channel 0.
+RTT has no heap allocation, host-connection gate or per-line breakpoint. Removing `AXI_LOG_RTT_ENABLE` removes its buffer/control
 block; the sink enum remains available for a custom callback.
 
 Source: [RTT HAL](../fw/autonomous/STM32_TINYRCP/src/hal/rtt_log.cpp),
 [deferred fanout](../fw/autonomous/STM32_TINYRCP/src/logging/log.cpp).
 Build, deployment prerequisites and host-console commands are maintained in
 [building](building.md#rtt-logs-over-st-link--swd).
+
+## RTT AT commands
+
+Channel 0 is bidirectional: host-to-target command bytes use the RTT **down**
+ring; target-to-host replies share the **up** ring with ordinary log records.
+Use the existing OpenOCD RTT TCP server or a debugger terminal that supports
+RTT input. STM32 profiles retain float formatting support for numeric replies.
+The AT parser runs in the SPI worker after successful bring-up and
+requires `AXI_LOG_RTT_ENABLE` and `AXI_TELEMETRY_SPI_ENABLE` (enabled by normal
+STM32 profiles). It is not an interrupt handler or a new task.
+
+Six uppercase commands are accepted; terminate each with CR, LF or
+CRLF. Send one command at a time and wait for its final `OK` or `ERROR` line.
+Bare `AT`, echo/configuration commands and reset/reboot aliases are not supported.
+
+| Command | Behavior |
+| --- | --- |
+| `AT+VER` | Returns THS firmware version label, AT protocol version, settings format and catalog signature. `THS_FIRMWARE_VERSION` can be supplied at compile time; its fallback is `unversioned`. |
+| `AT+NVLISTITEMS` | Streams every catalog item as `+NVITEM:key,name,type,min,max,default,value,revision`, preceded by `+NVLISTITEMS:count`. Type is 0=float, 1=uint32, 2=bool. An unavailable store reports `nan` values. |
+| `AT+NVLISTITEMSH` | Human-readable listing with a bordered ASCII table: key, group, item name, type, current/factory values, minimum, maximum and per-row revision. Types use names; booleans display `true`/`false`; unavailable values display `n/a`. |
+| `AT+NVGETITEM=<key>` | Returns `+NVGETITEM:key,value,revision` for a decimal catalog key. |
+| `AT+NVSETITEM=<key>,<value>[,<revision>]` | Validates and commits one item, then publishes settings. An explicit revision rejects stale writes; omission uses the current revision while holding the shared mutex. |
+| `AT+FACTORYRESET[=<revision>]` | Atomically restores all catalog factory defaults, including calibration values, using the same optional revision rule. No MCU reboot or filesystem format occurs. |
+
+Successful mutations and the end of a list return `+REV:revision` before `OK`.
+A no-op write/reset does not touch flash or increase the revision. Numeric errors
+use the existing store status codes: 1=INVALID, 2=CONFLICT, 3=BUSY, 4=IO_ERROR,
+5=NOT_FOUND, 6=NOT_READY. Invalid syntax/unknown commands return `ERROR:SYNTAX`;
+invalid input bytes or more than 95 command characters return
+`ERROR:LINE_TOO_LONG` after the next line terminator. Floats must be finite.
+
+Writes and factory reset share the local-key/SPI start mutex and become BUSY
+permanently after first navigation start or a latched stop, even after GOAL or
+cancel. Reads/listing remain available. A command is executed once after a full
+line is received; an output-full condition retains the reply for retry without
+repeating the mutation. List output is paced one item per worker iteration;
+each row includes its own revision because SPI writes may occur between rows.
+`AT+NVLISTITEMSH` uses the same pacing and backpressure handling, including its
+header and border lines, and ends with `+REV:revision` followed by `OK`.
+Log lines may appear between AT response lines.
+
+The input parser uses a 96-byte command buffer and a 256-byte response buffer;
+the RTT input ring is 512 bytes. Polling and output writes are bounded and do
+not wait for a debugger. Ordinary logger overflow still drops log lines, while
+AT responses retry without incrementing the lost-log counter. Flash commits use
+the existing synchronous store path. Disconnecting a host does not stop the
+robot; if its response remains pending, another AT command waits for it.
+
+`AT+FACTORYRESET` requires a healthy current-catalog store and completed bring-up.
+It cannot repair an incompatible old catalog or filesystem that prevented the
+worker from starting. The expanded motor catalog requires deliberate
+reprovisioning of older stores; see [storage architecture](fw_ths_architecture.md#remote-configuration-and-storage).
+Implementation is in [AT parser](../fw/robot_sf/src/remote/at_cli.cpp) and
+[RTT/transport integration](../fw/autonomous/STM32_TINYRCP/src/telemetry/adapter.cpp).
+No tests, build or hardware command execution were performed for this change.
 
 ## Motor command enqueue events
 

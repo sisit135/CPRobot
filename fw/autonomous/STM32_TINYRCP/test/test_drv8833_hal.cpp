@@ -8,6 +8,8 @@
 #include <limits>
 namespace {
 int pwm[64]{}, level[64]{}, resolution = 0;
+int modes[64]{};
+unsigned fault_reads = 0;
 unsigned wake_delay = 0;
 void check_bridge() {
 #ifdef ROBOT_EXAMPLE_MOTOR_PINS
@@ -23,7 +25,10 @@ void stopped() {
 #endif
 }
 } // namespace
-void pinMode(int pin, int) { assert(pin >= 0 && pin < 64); }
+void pinMode(int pin, int mode) {
+  assert(pin >= 0 && pin < 64);
+  modes[pin] = mode;
+}
 void digitalWrite(int pin, int value) {
   assert(pin >= 0 && pin < 64);
   level[pin] = value;
@@ -34,6 +39,7 @@ void digitalWrite(int pin, int value) {
 }
 int digitalRead(int pin) {
   assert(pin >= 0 && pin < 64);
+  ++fault_reads;
   return level[pin];
 }
 void analogWrite(int pin, int value) {
@@ -49,8 +55,9 @@ void delayMicroseconds(unsigned int us) {
 int main() {
   assert(!hal_motor_set_duty(.5f, .5f));
 #ifdef ROBOT_EXAMPLE_MOTOR_PINS
-  level[board::nfault_gpio] = HIGH;
+  level[board::nfault_gpio] = LOW; // Disconnected nFAULT must not block init.
   assert(hal_motor_init() && resolution == 8 && wake_delay == 1000);
+  assert(modes[board::nfault_gpio] == INPUT_PULLUP);
   assert(level[board::nsleep_gpio] == HIGH);
   stopped();
   assert(hal_motor_set_duty(.5f, -.25f));
@@ -68,17 +75,16 @@ int main() {
   stopped();
   assert(hal_motor_set_duty(.5f, .5f));
   level[board::nfault_gpio] = LOW;
-  assert(!hal_motor_set_duty(.5f, .5f));
-  stopped();
-  assert(level[board::nsleep_gpio] == LOW);
+  assert(hal_motor_set_duty(.5f, .5f));
+  assert(level[board::nsleep_gpio] == HIGH);
   level[board::nfault_gpio] = HIGH;
-  assert(!hal_motor_set_duty(.5f, .5f));
-  stopped(); // Fault stays latched.
+  assert(hal_motor_set_duty(.5f, .5f));
+  assert(fault_reads == 0); // Bypass must not sample the disconnected input.
   assert(hal_motor_init());
   stopped();
   assert(hal_motor_set_duty(.5f, .5f));
   std::puts("PASS DRV8833 PWM polarity, coast, reversal writes, wake delay, "
-            "invalid duty and latched nFAULT");
+            "invalid duty and disconnected nFAULT bypass");
 #else
   assert(!hal_motor_init());
   stopped();

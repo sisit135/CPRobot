@@ -202,6 +202,18 @@ void failures() {
     sample_all();
     assert(tof::statistics(loc::TofId::LEFT).rejected == 1);
   }
+  for (const auto status : {0, 1, 2, 3, 4, 5, 255}) {
+    reset();
+    assert(tof::initialize(config()));
+    range_status = static_cast<uint8_t>(status);
+    range_mm = 8190;
+    sample_all();
+    clock_us += 33000;
+    sample_all();
+    const auto stats = tof::statistics(loc::TofId::LEFT);
+    assert(stats.rejected == 1 && stats.valid == 0);
+    assert(stats.last_out_of_range == (status == 0 || status == 2 || status == 4));
+  }
   reset();
   assert(tof::initialize(config()));
   float value = 7;

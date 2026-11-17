@@ -56,10 +56,39 @@ foreach(mode success motor settings sensors services)
     add_test(NAME robot_bup_${mode} COMMAND robot_bup_tests ${mode})
 endforeach()
 add_test(NAME robot_bup_summary_info COMMAND robot_bup_tests success info)
+# Intentionally link no production core/remote/sensor implementation: the demo
+# must work with only its DRV HAL, clock, logger and explicit PWM converter.
+add_executable(robot_openloop_demo_tests test_openloop_demo.cpp
+    ../src/main.cpp ../src/tasks/bup_tasks.cpp ../src/tasks/openloop_demo.cpp
+    ../../../robot_sf/src/motor_control/wheel_controller.cpp)
+target_include_directories(robot_openloop_demo_tests PRIVATE fakes ../include
+    ../../../robot_sf/include)
+target_compile_definitions(robot_openloop_demo_tests PRIVATE AXI_OPENLOOP_DEMO=1
+    AXI_LOC_KEY_PIN=PB1 AXI_BUP_IMU_DIAGNOSTIC=1 AXI_TELEMETRY_SPI_ENABLE)
+target_compile_options(robot_openloop_demo_tests PRIVATE -UNDEBUG -Wall -Wextra -Wpedantic)
+foreach(mode success bup_pending bup_failed init_fault driver_fault timing_fault)
+    add_test(NAME robot_openloop_demo_${mode} COMMAND robot_openloop_demo_tests ${mode})
+endforeach()
+add_executable(robot_bup_imu_diagnostic_tests test_bup_imu_diagnostic.cpp
+    ../src/tasks/bup_tasks.cpp ../src/hal/board_hooks.cpp ../src/hal/hal_sensors.cpp)
+target_link_libraries(robot_bup_imu_diagnostic_tests PRIVATE robot_core robot_fake_rtos)
+target_compile_definitions(robot_bup_imu_diagnostic_tests PRIVATE AXI_BUP_IMU_DIAGNOSTIC=1)
+target_compile_options(robot_bup_imu_diagnostic_tests PRIVATE -UNDEBUG -Wall -Wextra -Wpedantic)
+foreach(mode imu mag healthy tof tcs)
+    add_test(NAME robot_bup_diagnostic_${mode} COMMAND robot_bup_imu_diagnostic_tests ${mode})
+endforeach()
 add_executable(robot_boot_logging_tests test_boot_logging.cpp ../src/logging/log.cpp)
 target_link_libraries(robot_boot_logging_tests PRIVATE robot_core robot_fake_rtos)
 target_compile_options(robot_boot_logging_tests PRIVATE -UNDEBUG -Wall -Wextra -Wpedantic)
 add_test(NAME robot_boot_logging COMMAND robot_boot_logging_tests)
+add_executable(robot_boot_sensor_sample_tests test_boot_sensor_sample.cpp
+    ../src/hal/boot_sensor_sample.cpp)
+target_include_directories(robot_boot_sensor_sample_tests PRIVATE fakes ../include)
+target_link_libraries(robot_boot_sensor_sample_tests PRIVATE robot_core)
+target_compile_options(robot_boot_sensor_sample_tests PRIVATE -UNDEBUG -Wall -Wextra -Wpedantic)
+foreach(mode failed pending healthy mixed)
+    add_test(NAME robot_boot_sensor_sample_${mode} COMMAND robot_boot_sensor_sample_tests ${mode})
+endforeach()
 add_executable(robot_rtt_logging_tests test_rtt_logging.cpp
     ../src/logging/log.cpp ../src/hal/rtt_log.cpp)
 target_link_libraries(robot_rtt_logging_tests PRIVATE robot_core robot_fake_rtos)
@@ -97,6 +126,12 @@ target_include_directories(robot_tof_hal_tests PRIVATE fakes ../include ../src/h
 target_link_libraries(robot_tof_hal_tests PRIVATE robot_core)
 target_compile_options(robot_tof_hal_tests PRIVATE -UNDEBUG -Wall -Wextra -Wpedantic)
 add_test(NAME robot_tof_hal COMMAND robot_tof_hal_tests)
+
+add_executable(robot_i2c_diagnostics_tests test_i2c_diagnostics.cpp
+    ../src/hal/i2c_diagnostics.cpp)
+target_include_directories(robot_i2c_diagnostics_tests PRIVATE fakes ../include)
+target_compile_options(robot_i2c_diagnostics_tests PRIVATE -UNDEBUG -Wall -Wextra -Wpedantic)
+add_test(NAME robot_i2c_diagnostics COMMAND robot_i2c_diagnostics_tests)
 
 add_executable(robot_tof_vendor_tests test_tof_vendor.cpp
     ../src/hal/vl53l0x_hal.cpp ../src/hal/vl53l0x_platform.cpp

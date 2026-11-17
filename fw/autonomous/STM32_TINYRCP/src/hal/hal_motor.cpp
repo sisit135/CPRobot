@@ -31,11 +31,22 @@ void drive(int a, int b, float duty) {
 /** @brief Latch an observed driver fault and disable both channels.
  * @returns No value.
  */
-void shutdown() {
+[[maybe_unused]] void shutdown() {
   fault_latched = true;
   hal_motor_stop();
   if (board::nsleep_gpio >= 0)
     digitalWrite(board::nsleep_gpio, LOW);
+}
+bool driver_fault_clear() {
+  // Temporary bench bypass: nFAULT is not connected. Keep its pin configured.
+  return true;
+  /*
+  if (board::nfault_gpio >= 0 && digitalRead(board::nfault_gpio) == LOW) {
+    shutdown();
+    return false;
+  }
+  return !fault_latched;
+  */
 }
 } // namespace
 bool hal_motor_init() {
@@ -75,8 +86,7 @@ bool hal_motor_init() {
     digitalWrite(nsleep_gpio, HIGH);
   delayMicroseconds(
       1000); // TI DRV8833 Rev. E tWAKE; also works before scheduler.
-  if (nfault_gpio >= 0 && digitalRead(nfault_gpio) == LOW) {
-    shutdown();
+  if (!driver_fault_clear()) {
     return false;
   }
   return true;
@@ -89,12 +99,11 @@ bool hal_motor_set_duty(float left, float right) {
     hal_motor_stop();
     return false;
   }
-  if (nfault_gpio >= 0 && digitalRead(nfault_gpio) == LOW) {
-    shutdown();
+  if (!driver_fault_clear()) {
     return false;
   }
-  drive(ain1_gpio, ain2_gpio, invert_left_motor ? -left : left);
-  drive(bin1_gpio, bin2_gpio, invert_right_motor ? -right : right);
+  drive(ain1_gpio, ain2_gpio, left);
+  drive(bin1_gpio, bin2_gpio, right);
   return true;
 }
 void hal_motor_stop() {

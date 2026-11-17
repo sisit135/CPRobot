@@ -76,6 +76,7 @@ bool hal_sensors_init() {
                    "hw configured; power settling");
   return true;
 }
+bool hal_tcs34725_initialized() { return phase != Phase::FAULT; }
 bool hal_tcs34725_read(loc::RgbcSample *out, int64_t *stamp) {
   if (!out || !stamp || phase == Phase::FAULT || hal_time_us() < ready_us)
     return false;

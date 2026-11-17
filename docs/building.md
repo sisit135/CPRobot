@@ -153,17 +153,6 @@ Lifecycle logs print the selected dimensions, front-ToF mounting coordinates,
 track width, and rear envelope before motion. Native validation is simulation;
 it does not qualify physical sensor visibility or board operation.
 
-## Validation figures (Jupyter)
-
-The [turn timing notebook](validation_figures/feature_rhr_time_vs_path_length.ipynb)
-requires Python 3, NumPy and Matplotlib; use a Jupyter Python kernel to edit and
-run its cells. Open it from within this repository and choose Run All. It reads
-the retained comparison/retry archives, checks log hashes, and writes PNG/SVG,
-turn-observation CSV, fit CSV and extraction audit beside the notebook. It does
-not launch mission binaries. The saved notebook includes executed output.
-Filters and the sampled-pose path-length definition are documented in its first
-cells and [figure notes](validation_figures/README.md).
-
 ## Architecture diagrams
 
 The [THS RTOS diagram generator](diagrams/ths_rtos_data_flow.py) requires only
@@ -273,7 +262,7 @@ python3 fw/autonomous/STM32_TINYRCP/test/lifecycle/run_motion_comparison.py \
 The driver exits successfully when all 40 trial records are valid and paired.
 GOAL, collision and timeout counts are separate outcomes in `summary.json`;
 completion of the experiment does not qualify the motion policy. See the
-[recorded comparison](validation/v2_rolling_max_2026-11-15.md).
+recorded comparison (internal record).
 
 ### Native non-stop-only comparison
 
@@ -298,7 +287,7 @@ python3 fw/autonomous/STM32_TINYRCP/test/lifecycle/run_motion_comparison.py \
   --output-dir build/nonstop-turn/comparison
 ```
 
-See the [non-stop-only results](validation/v2_nonstop_turn_2026-11-15.md).
+See the non-stop-only results (internal record).
 
 ## Interactive FEATURE lifecycle test (Linux)
 
@@ -322,7 +311,7 @@ and, if needed, `-DVulkan_LIBRARY=/absolute/path/to/libvulkan.so`.
 
 The end goal is hardcoded to Q1 cell `(0,0)` and transformed with the selected
 map rotation: Q2 `(4,0)`, Q3 `(4,4)`, Q4 `(0,4)`. The
-[relocation record](validation/platform_v2_end_00_2026-11-15.md) records the GUI
+relocation record (internal record) records the GUI
 result and the four failing checks with the new end. Startup draws an entrance and one of all four cardinal headings
 independently from the run seed, including headings beyond a legacy POI mask.
 The supplied Q1 maze and its rotations are selected by default. Before starting
@@ -332,7 +321,7 @@ rerolled. Startup-only and bounded RHR fixtures do not require a goal route.
 Q1 POIs are ordered `(0,4)`, `(4,4)`, `(4,0)` (IDs 0, 1, 2); other quadrants
 rotate the same list. All three have known-open routes to the fixed goal, though
 sensor signatures can still be unresolved. See the
-[POI reconfiguration record](validation/q1_start_pois_2026-11-09.md).
+POI reconfiguration record (internal record).
 Focused diagnostic fixtures
 can override the goal/entrance/heading; those are not qualification campaigns.
 Examples preserving the earlier short-route fixture and a negative tape case:
@@ -352,11 +341,11 @@ ctest --test-dir build/lifecycle -R '^robot_lifecycle_feature_boundary_prefix_q[
 ```
 
 This diagnostic prefix is separate from the fixed-end qualification campaign.
-The [FEATURE stall investigation](validation/feature_waypoint3_stall_trace.md)
+The FEATURE stall investigation (internal record)
 retains debugger stacks captured after more than five simulated seconds of
 zero-command pauses, reproduction details, and post-fix results.
 
-The subsequent [TT90 timeout report](validation/tt90_timeout_e2e.md) records
+The subsequent TT90 timeout report (internal record) records
 headless/GUI replays with the current motor calibration, the full five-run
 campaign, and private timing/speed diagnostics. Those diagnostics do not count
 as fixed-goal qualification passes.
@@ -376,7 +365,7 @@ ctest --test-dir build/lifecycle -R '^robot_lifecycle_resolver_e2e$' --output-on
 ```
 
 Startup-only resolver results and the interactive GUI attempt are recorded in
-[resolver E2E validation](validation/feature_resolver_e2e.md).
+resolver E2E validation (internal record).
 
 The native lifecycle executable supports a host-test-only `--force-rhr` flag.
 It bypasses FEATURE pose qualification to enter the existing right-hand fallback
@@ -413,33 +402,7 @@ build/lifecycle/autonomous/STM32_TINYRCP/test/lifecycle/robot_feature_lifecycle 
 ```
 
 The forced-RHR lifecycle results and GUI runs are recorded in
-[forced RHR validation](validation/forced_rhr_e2e.md).
-
-The exhaustive FEATURE/forced-RHR timing diagnostic runs all four rotations,
-both entrances, all four Q1-frame headings, five fixed seeds, and configured
-versus blind map search (640 fresh processes). It uses full missions, the fixed
-end, and the default whiteboard surface. Build `robot_feature_lifecycle` as
-above, then run:
-
-```sh
-python3 docs/validation/artifacts/feature_rhr_timing_2026-11-04/run_comparison.py \
-  build/lifecycle/autonomous/STM32_TINYRCP/test/lifecycle/robot_feature_lifecycle \
-  --output-dir build/lifecycle/feature-rhr-timing --jobs 4
-```
-
-The runner retains child exit codes, per-run timings, and compressed full logs.
-Its exit 0 means the experiment completed with valid scenario metadata; consult
-`all_passed` and each child's result in `summary.json` for mission success.
-Controlled start overrides make this a diagnostic matrix, separate from the
-random-start qualification below. Timing definitions, every paired result, and
-the source manifest are in the [timing report](validation/feature_rhr_timing_2026-11-04.md).
-Add `--modes rhr` to retry only RHR (320 runs); use a new output directory to
-retain the baseline. To retry only the failures from a previous batch, also pass
-`--retry-failures path/to/previous/summary.json`. The runner matches the complete
-scenario key and excludes previous successes. The
-[RHR GDB follow-up](validation/rhr_gdb_fixes_2026-11-04.md) records the passing
-single-mission gates and the restricted retries; FEATURE was not rerun in that
-earlier follow-up.
+forced RHR validation (internal record).
 
 ### Large reliability campaign
 
@@ -481,7 +444,7 @@ cmake -S fw -B build/reliability -DCMAKE_BUILD_TYPE=Release -DROBOT_LIFECYCLE_GU
 cmake --build build/reliability --target robot_feature_lifecycle --parallel 4
 python3 fw/autonomous/STM32_TINYRCP/test/lifecycle/run_reliability.py \
   build/reliability/autonomous/STM32_TINYRCP/test/lifecycle/robot_feature_lifecycle \
-  --samples 512 --jobs 12 --output-dir docs/validation/artifacts/reliability-new
+  --samples 512 --jobs 12 --output-dir build/lifecycle/reliability-new
 ```
 
 Each FEATURE process draws an RDSEED seed and its RHR partner replays it.
@@ -502,7 +465,7 @@ resume even after local build files are removed.
 
 After completion, the runner saves every command, hardware seed, outcome,
 physical check and raw output in compressed JSONL plus CSV and summaries.
-The [reliability report](validation/reliability_index_2026-11-04.md) defines
+The reliability report (internal record) defines
 the index and Wilson intervals; its linked Matplotlib notebook renders the
 new charts and retains the earlier turn scatter. The report generator reads
 only completed data and independently verifies each output hash.
@@ -527,7 +490,7 @@ its supplied-map failure must remain a failure until every draw succeeds.
 The open campaign and the historical short-route cases exercise the harness and
 components, and do not establish supplied-map qualification. Latest per-test
 PASS/FAIL results live in the separate
-[interactive E2E report](validation/interactive_e2e_results_2026-11-02.md).
+interactive E2E report (internal record).
 
 Use `--headless` to run without a desktop, `--seed N` to replay noise and the
 startup draws, `--entrance 0|1|2` or `--heading 0..3` for diagnostic overrides
@@ -569,11 +532,10 @@ tar -xzf lc_gui_snapshot.tar.gz
 ./lc_gui_snapshot/run.sh
 ```
 
-`validation/results.json` records relocated, source-hidden FEATURE/RHR headless
-missions, GUI missions on both Wayland and X11, and a headless mission with the
-host `/usr/lib` hidden. These are build-host checks, not a claim that a second
-Linux machine or every Vulkan driver was tested. Rebuild with the GUI commands
-above when changing source; this folder is a frozen binary snapshot.
+The standalone package is a frozen binary snapshot. Rebuild with the GUI
+commands above when changing source. Internal validation logs are excluded from
+the public runtime package; source/build identity metadata and library notices
+remain included.
 
 ### Turn-guard component only
 
@@ -589,7 +551,7 @@ ctest --test-dir build/turn-guard -R '^robot_turn_guard_' --output-on-failure
 
 The seed-specific full-mission regression for the stopped-arrival livelock is
 `ctest --test-dir build/lifecycle -R '^robot_lifecycle_settled_corner_livelock$' --output-on-failure`.
-Its [validation report](validation/settled_corner_livelock_2026-11-04.md) retains
+Its validation report (internal record) retains
 the exact failing trace and GDB evidence. `robot_navigation` covers the isolated
 clearance-wait behavior and unchanged drift/deadline gates.
 
@@ -598,7 +560,7 @@ to unsafe clearance, followed by the original pivot and a physical stop. They
 also exercise stale/invalid inputs, unknown map clearance, cancellation, the
 15-second correction bound and the compiled-out passthrough. These are component
 fixtures with measured pose supplied directly; they do not qualify resolver,
-RHR or lifecycle interaction. See [turn-guard validation](validation/turn_guard_component.md).
+RHR or lifecycle interaction. See turn-guard validation (internal record).
 
 GUI keys: **R** toggles rays, **P** toggles the reference path and actual trail,
 **D** toggles diagnostics, **Space** pauses simulation time, **N** steps 10 ms
@@ -626,6 +588,53 @@ LittleFS). Every profile defaults to TRACE with USB CDC serial diagnostics confi
 before the bring-up task. The interactive builder also exposes `_trace` as
 option 9 (`--component ths-trace`).
 
+The trace profile currently sets the temporary bench flag
+`AXI_BUP_IMU_DIAGNOSTIC=1`. IMU/magnetometer failure is logged but sensor setup
+continues through ToF, its post-initialization address scan and TCS (unless
+those steps fail). BUP remains FAILED with motors stopped and skips all
+application services, including localization, navigation and telemetry, even
+if the IMU passes. Set this trace-only flag to `0` to restore normal startup.
+Other profiles keep the normal IMU failure gate.
+
+### Open-loop motor demo
+
+The separate `blackpill_f411ce_openloop_demo` profile inherits the tracing
+profile's USB CDC/RTT logging and selects `AXI_OPENLOOP_DEMO=1`:
+
+```sh
+pio run -d fw/autonomous/STM32_TINYRCP -e blackpill_f411ce_openloop_demo
+```
+
+One debounced active-low LOC press starts repeating nominal 1 m forward legs
+at 0.20 m/s, each followed by a clockwise 90-degree pivot powered for 1 second.
+There is one motor-control tick at zero output between phases. The single
+`openloop_demo` task owns key sampling and DRV initialization/output. The demo
+uses factory open-loop calibration, 65 mm wheel diameter and the selected track
+width, including the normal request slew. Distance and angle are timed nominal
+estimates; no sensor or encoder feedback corrects load, slip or coast.
+
+Bring-up still runs as an inert logging task. It does not initialize/read
+sensors, probe I2C, mount settings, capture boot samples, invoke services or
+touch DRV. Its allocation/result does not gate the demo. The source filter
+excludes production localization/navigation/motor tasks, sensor drivers,
+telemetry, remote settings and their libraries. The demo repeats until reset or
+a detected driver/converter timing fault; it has no production 86-second run
+deadline and later key presses do not re-arm it. Production profiles keep their
+normal startup and required settings.
+
+Focused native checks cover actual demo startup/task bodies, LOC bounce,
+nominal leg distance/turn timing, fault stops and pending/failed BUP isolation:
+
+```sh
+cmake -S fw -B /tmp/cprobot-openloop-tests -DCMAKE_BUILD_TYPE=Debug
+cmake --build /tmp/cprobot-openloop-tests --target robot_openloop_demo_tests --parallel 4
+ctest --test-dir /tmp/cprobot-openloop-tests -R '^robot_(openloop_demo_|build_sources$)' --output-on-failure
+```
+
+These checks and a target build do not qualify physical distance or turn angle.
+
+### Clock and bring-up checks
+
 The monotonic clock reserves TIM5 at 1 MHz through STM32 LL/CMSIS. Focused host
 checks cover APB prescaler/TIMPRE selection, initialization, counter wrap and
 interrupt-mask preservation:
@@ -638,6 +647,14 @@ ctest --test-dir /tmp/cprobot-clock-tests -R '^robot_(monotonic_clock_|arduino_h
 
 These use host register doubles; a deployed STM32 image is required to qualify
 timer frequency, debug halt behavior and deadline behavior on the board.
+
+Focused BUP snapshot/ordering and ToF range-classification checks use the same
+native build:
+
+```sh
+cmake --build /tmp/cprobot-clock-tests --target robot_boot_sensor_sample_tests robot_bup_tests robot_bup_imu_diagnostic_tests robot_tof_hal_tests --parallel 4
+ctest --test-dir /tmp/cprobot-clock-tests -R '^robot_(boot_sensor_sample_|bup_|tof_hal$)' --output-on-failure
+```
 
 All STM32 profiles inherit `PIO_FRAMEWORK_ARDUINO_ENABLE_CDC` from the base
 profile. STM32duino maps `Serial` to `SerialUSB`, so the existing serial log
@@ -656,7 +673,8 @@ upload protocol; the default remains ST-Link. USB D−/D+ use PA11/PA12.
 
 Choose the profile required by the change. These commands compile/link only.
 Remote configuration, LittleFS, and SPI service support are required in every
-profile. `blackpill_f411ce` is the default; the `_telemetry` and `_remote` names
+production profile; the explicit open-loop demo above excludes them.
+`blackpill_f411ce` is the default; the `_telemetry` and `_remote` names
 are compatibility aliases with the same required services. Navigation waits
 for the local key or a start command, allowing configuration before motion.
 Review [hardware wiring](hardware_wiring.md) before any separate flash operation.
@@ -676,7 +694,7 @@ bundled ST vendor, facade, and port once. Do not add an external ST C core.
 The CMSIS profile requires a CMSIS-DSP checkout at `third_party/CMSIS-DSP`, or
 `custom_cmsis_dsp_root` in the selected PlatformIO environment pointing to one.
 The current script compiles only multiplication and transpose kernels; it does
-not automatically obtain `framework-cmsis-dsp`. All profiles require
+not automatically obtain `framework-cmsis-dsp`. All production profiles require
 `fw/robot_sf/src/remote/{config,codec,service}.cpp`, generated catalog/schema
 assets, EmbeddedProto, and LittleFS; preflight fails when they are missing.
 The linker/application size limit is 262144 bytes. Flash sectors 6–7 hold the
@@ -776,7 +794,9 @@ monitor rtt start
 monitor rtt server start 19021 0
 ```
 
-Connect a host TCP client to `localhost:19021` to read the text stream. This is
+Connect a host TCP client to `localhost:19021` to read the text stream and send
+[RTT AT commands](tracing.md#rtt-at-commands) on channel 0. The host writes into
+the RTT downstream ring; replies share the upstream log stream. This is
 a separate log stream managed by the same debug server, not GDB's command
 console. Use one consumer for the upstream channel. Firmware stores complete
 lines in a 2048-byte ring (2047 usable); a full ring drops new lines and never
@@ -921,17 +941,26 @@ generic_field_tool/android/gradlew -p fw/manual/field_tool_provider testDebugUni
 
 For firmware-only boot/optional-telemetry changes, the host suite above needs
 only standard Python (no protobuf or Android SDK). Its active cases include native
-speed API calls, synchronized gripper/pitch angle ramps and shoot sequencing,
-boot zero ordering, stop/freshness rules,
-disabled catapult/field-tool runtime and a simulated stuck display call.
+speed API calls, independent atomic beam moves, L2/R2 step selection and LCD
+feedback, pitch clamping, swept beam clearance using last commanded poses,
+fire-and-forget servo dispatch without getters/retries, boot zero ordering, stop/freshness rules,
+disabled legacy catapult/field-tool runtime, the timestamped pitch/grip shot
+scheduler and a simulated stuck display call. Shot fixtures use synthetic
+calibration and do not qualify physical release accuracy.
 Upload `fw/manual/main.py` through the existing CyberPi upload-mode
 workflow; select the host/USB console to inspect `[ADL boot]` progress markers.
 The current ADR commissioning profile comments out field-tool and catapult
-runtime wiring and uses onboard PID through `mbot2.drive_speed`, capped at
-±100 RPM. Neutral-stick Start arms; no deadman hold is required.
+runtime wiring and uses onboard PID through `mbot2.drive_speed`, bounded by
+`MAX_RPM`. Neutral-stick Start arms; no deadman hold is required.
 To bypass PID, set `PID_BYPASS = True` near the top of `fw/manual/main.py`
 before upload; this selects `drive_power` and the separate `MAX_DRIVE_POWER`
 percent limit (default 100%). `False` retains onboard PID and `MAX_RPM`.
+N1 requests a shot; N2 selects vertical (+Z, 0°) or last-manual-angle release.
+The current automatic shot profile is inhibited: fill `LAUNCH_MECHANICS` travel
+limits and `LAUNCH_CALIBRATION` from physical measurements before deployment.
+Keep the fixed `PITCH_*` MECDS-150 manufacturer specifications unchanged. See
+[launcher architecture and calibration meanings](fw_adr_architecture.md#n1-shoot-sequence)
+for required values, estimated-state limits and acceptance still needed.
 Restoring the field tool requires restoring its commented implementation and
 wiring, not toggling a runtime flag. These markers do not diagnose errors before the file begins executing.
 
@@ -996,7 +1025,7 @@ factory values, source references, and runtime bindings. The generator produces
 `proto/flash_settings.proto`, the C++ catalog/bindings, Android `robot.desc`, and
 firmware schema/source blobs. It also keeps the bridge's proto mirrors current.
 Generated compile-time checks detect factory-default drift in FEATURE/RHR
-headers. Native tests check descriptor/catalog agreement, malformed manifests,
+and open-loop motor configuration headers. Native tests check descriptor/catalog agreement, malformed manifests,
 all field pages, chunk bounds, flash round trips, and power-cut recovery.
 
 The EmbeddedProto helper reuses `third_party/EmbeddedProto` without changing

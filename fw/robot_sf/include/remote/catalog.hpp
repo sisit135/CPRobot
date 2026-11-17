@@ -4,8 +4,8 @@
 #include <array>
 #include <cstddef>
 namespace remote {
-inline constexpr std::size_t kFields = 55;
-inline constexpr uint32_t kCatalogSignature = 0xff69bf28u;
+inline constexpr std::size_t kFields = 72;
+inline constexpr uint32_t kCatalogSignature = 0x891788c7u;
 inline constexpr std::array<Spec, kFields> kCatalog{{
   {100, "legacy_color_0_enabled", "Legacy color", 2, 0.0f, 1.0f, 0.0f, "motor_control/localization/color_tracker.hpp", 5},
   {101, "legacy_color_0_red", "Legacy color", 0, 0.0f, 1.0f, 0.333333343f, "motor_control/localization/color_tracker.hpp", 5},
@@ -62,5 +62,22 @@ inline constexpr std::array<Spec, kFields> kCatalog{{
   {240, "tape_black_max", "End tape", 1, 0.0f, 65535.0f, 0.0f, "navigation/end_cell.hpp", 3},
   {241, "tape_white_min", "End tape", 1, 0.0f, 65535.0f, 0.0f, "navigation/end_cell.hpp", 3},
   {250, "gyro_zero_rps", "IMU", 0, -0.200000003f, 0.200000003f, 0.0f, "remote/settings.hpp", 4},
+  {300, "motor_invert_left_motor", "Motor open-loop", 2, 0.0f, 1.0f, 0.0f, "motor_control/config.hpp", 6},
+  {301, "motor_invert_right_motor", "Motor open-loop", 2, 0.0f, 1.0f, 0.0f, "motor_control/config.hpp", 6},
+  {302, "motor_max_duty", "Motor open-loop", 0, 0.00999999978f, 1.0f, 1.0f, "motor_control/config.hpp", 6},
+  {303, "motor_max_wheel_rad_s", "Motor open-loop", 0, 0.100000001f, 100.0f, 12.4825945f, "motor_control/config.hpp", 6},
+  {304, "motor_max_accel_rad_s2", "Motor open-loop", 0, 0.100000001f, 1000.0f, 20.0f, "motor_control/config.hpp", 6},
+  {305, "motor_left_pwm_forward_duty_per_rad_s", "Motor open-loop", 0, 9.99999975e-05f, 10.0f, 0.0716197267f, "motor_control/config.hpp", 6},
+  {306, "motor_left_pwm_reverse_duty_per_rad_s", "Motor open-loop", 0, 9.99999975e-05f, 10.0f, 0.0716197267f, "motor_control/config.hpp", 6},
+  {307, "motor_left_pwm_forward_offset", "Motor open-loop", 0, 0.0f, 0.99000001f, 0.106000006f, "motor_control/config.hpp", 6},
+  {308, "motor_left_pwm_reverse_offset", "Motor open-loop", 0, 0.0f, 0.99000001f, 0.106000006f, "motor_control/config.hpp", 6},
+  {309, "motor_right_pwm_forward_duty_per_rad_s", "Motor open-loop", 0, 9.99999975e-05f, 10.0f, 0.0716197267f, "motor_control/config.hpp", 6},
+  {310, "motor_right_pwm_reverse_duty_per_rad_s", "Motor open-loop", 0, 9.99999975e-05f, 10.0f, 0.0716197267f, "motor_control/config.hpp", 6},
+  {311, "motor_right_pwm_forward_offset", "Motor open-loop", 0, 0.0f, 0.99000001f, 0.106000006f, "motor_control/config.hpp", 6},
+  {312, "motor_right_pwm_reverse_offset", "Motor open-loop", 0, 0.0f, 0.99000001f, 0.106000006f, "motor_control/config.hpp", 6},
+  {313, "motor_control_period_ms", "Motor open-loop", 1, 1.0f, 100.0f, 10.0f, "motor_control/config.hpp", 6},
+  {314, "motor_command_timeout_us", "Motor open-loop", 1, 1000.0f, 2000000.0f, 300000.0f, "motor_control/config.hpp", 6},
+  {315, "motor_min_dt_s", "Motor open-loop", 0, 9.99999975e-05f, 0.100000001f, 0.00100000005f, "motor_control/config.hpp", 6},
+  {316, "motor_max_dt_s", "Motor open-loop", 0, 0.00100000005f, 0.5f, 0.0500000007f, "motor_control/config.hpp", 6},
 }};
 } // namespace remote

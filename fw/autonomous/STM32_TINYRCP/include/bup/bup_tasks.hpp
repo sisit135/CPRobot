@@ -14,6 +14,8 @@ enum class BupStatus : uint8_t { NOT_STARTED, RUNNING, SUCCEEDED, FAILED };
  * FAILED without starting subsequent steps.
  * @returns true when the task was created; false on allocation failure or a
  * repeated start.
+ * AXI_OPENLOOP_DEMO builds run an inert logging task: no HAL/settings access,
+ * callback invocation or motor stop. Demo motor ownership is independent.
  */
 bool bup_task_start(bool (*start_services)() = nullptr);
 
