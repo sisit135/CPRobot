@@ -4,6 +4,7 @@
 #include "localization/localization.hpp"
 #include "logging/log.hpp"
 #include "navigation/navigation.hpp"
+#include "platform/hal_platform.hpp"
 #include "platform/rtos.hpp"
 #include "remote/board_store.hpp"
 #include "remote/settings.hpp"
@@ -29,6 +30,8 @@ extern "C" bool robot_application_start() {
 #endif
 }
 void setup() {
+  if (!hal_time_init())
+    return;
   if (!robot_log::start())
     return;
   if (!bup::bup_task_start(robot_application_start))

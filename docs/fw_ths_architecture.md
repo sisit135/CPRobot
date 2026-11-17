@@ -56,6 +56,31 @@ only after every hardware step succeeds. The existing Arduino entry point
 creates startup tasks and starts the scheduler; hardware initialization runs
 inside the bring-up task.
 
+Before logger/task startup, `hal_time_init()` reserves TIM5 as a free-running
+32-bit counter at 1 MHz. STM32 RCC HAL queries select the APB1 timer frequency,
+including TIMPRE, and STM32 LL configures/reads TIM5 directly. This path uses
+no Arduino `micros()`, `HardwareTimer`, MSP callback or SysTick-derived phase.
+TIM5 has no GPIO or interrupt, does not share motor PWM's TIM1/TIM4, and must
+not be assigned to another feature. Initialization is idempotent and rejects
+clock trees that cannot generate exact microsecond ticks; startup stops on
+failure. Counter reads and 64-bit extension run in a brief CMSIS interrupt-mask
+section that preserves the incoming PRIMASK. TIM5 freezes during debugger
+halts, so paused CPU time does not consume sensor deadlines. These register
+operations belong to the [clock HAL](../fw/autonomous/STM32_TINYRCP/src/hal/hal_platform.cpp).
+Timer characteristics and clock multipliers are specified in
+[STM32F411 RM0383](https://www.st.com/resource/en/reference_manual/dm00119316.pdf),
+the RCC and TIM2–TIM5 chapters.
+
+This replaces a SysTick/`micros()` wrap-extension failure observed while tracing
+the ToF vendor HAL: RTOS time was about 822 ms, but the extended clock had
+gained 2^32 microseconds (about 71.6 minutes). A small backward source-clock
+sample was interpreted as a full wrap, putting the clock beyond the ToF
+initialization deadline. The captured failure propagated `-7` from
+`VL53L0X_device_read_strobe()` through `StaticInit` with no retained I2C error.
+Using one free-running hardware counter removes the SysTick/sub-tick sampling
+dependency; actual counter rollover still uses unsigned 32-bit deltas. It does
+not change vendor polling limits or suppress genuine I2C/deadline timeouts.
+
 ```mermaid
 flowchart TD
   boot["STM32 Arduino setup()"] --> logging["TRACE logger + boot_log created before bring-up"]
@@ -1104,8 +1129,8 @@ The source pin map has no shared active GPIO assignments; physical board wiring
 and behavior remain unqualified.
 
 The clock domain is `hal_time_us()`; hooks must return bounded acquisition times.
-Its 64-bit wrap extension must be serviced at least once per 32-bit `micros()`
-wrap (about 71 minutes). Actual sensor latency, scheduling, RAM, PWM frequency,
+Its 64-bit extension must be serviced at least once per 32-bit TIM5 counter
+wrap (2^32 microseconds, about 71.6 minutes). Actual sensor latency, scheduling, RAM, PWM frequency,
 driver faults and physical stopping accuracy require board validation.
 
 [White-field validation](validation/white_field_end_tape.md) records 27/27 native

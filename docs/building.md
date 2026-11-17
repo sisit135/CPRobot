@@ -626,6 +626,19 @@ LittleFS). Every profile defaults to TRACE with USB CDC serial diagnostics confi
 before the bring-up task. The interactive builder also exposes `_trace` as
 option 9 (`--component ths-trace`).
 
+The monotonic clock reserves TIM5 at 1 MHz through STM32 LL/CMSIS. Focused host
+checks cover APB prescaler/TIMPRE selection, initialization, counter wrap and
+interrupt-mask preservation:
+
+```sh
+cmake -S fw -B /tmp/cprobot-clock-tests -DCMAKE_BUILD_TYPE=Debug
+cmake --build /tmp/cprobot-clock-tests --target robot_monotonic_clock_tests robot_arduino_hal_tests --parallel 4
+ctest --test-dir /tmp/cprobot-clock-tests -R '^robot_(monotonic_clock_|arduino_hal$)' --output-on-failure
+```
+
+These use host register doubles; a deployed STM32 image is required to qualify
+timer frequency, debug halt behavior and deadline behavior on the board.
+
 All STM32 profiles inherit `PIO_FRAMEWORK_ARDUINO_ENABLE_CDC` from the base
 profile. STM32duino maps `Serial` to `SerialUSB`, so the existing serial log
 sink and deferred stdout/stderr output use the Black Pill's native USB port.

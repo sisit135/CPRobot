@@ -7,6 +7,11 @@ collector paths. Component ownership is documented in
 `fw/autonomous/STM32_TINYRCP/src/logging/log.cpp` and the STM32 telemetry
 adapter.
 
+Vendor `clock()` tracing uses the same TIM5-based `hal_time_us()` domain as
+sensor deadlines through the newlib `_times` hook. The outer record timestamp
+uses FreeRTOS ticks. TIM5 is configured before logger/task startup and freezes
+on debugger halt; it does not derive sub-tick time from Arduino `micros()`.
+
 ## Log levels and current producers
 
 `robot_log::Level` values are ordered from least to most verbose:
