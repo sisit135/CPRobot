@@ -12,6 +12,21 @@ uses `import cyberpi, gamepad` and `gamepad.is_key_pressed(name)`. Its
 uses `gamepad.get_joystick(name)` with `Lx`, `Ly`, `Rx`, `Ry`. Those examples do
 not establish a connection-status method.
 
+ADR reads `Lx` / `Rx` with `get_joystick` to control the left/right direct-drive
+beams independently. Ly/Ry continue to drive the wheels in default tank mode;
+L1/R1 are boolean pitch raise/lower inputs. Beam-axis values use the same signed
+±100 input convention as the retained joystick sample. Beyond the dead zone,
+only the sign selects a single atomic angle increment; center the axis before
+another move. L2/R2 select the previous/next increment from 1°, 2°, 5°, 15°,
+30°, 60° once per press, and the ready screen shows that selection. Stick clicks
+are unused. N1 starts one pitch/grip shot; N2 toggles release at vertical
+(+Z, 0°) versus the last manually commanded pitch angle. Both grip release
+targets are 90°. Holding N1 cannot repeat/queue a shot. The shot profile starts
+inhibited until mechanical travel and motion/release calibration are supplied.
+Servo commands use `cpi.mbot2.servo_add` without servo feedback or automatic
+repeat; wheel encoder PID is unchanged. See the
+[manipulator model](fw_adr_architecture.md#manipulators) for clamping and clearance.
+
 `LoaderStub.mblock` declares the `firefly_bluetoothcontroller` extension.
 The [official extension source](https://mblock-extend.oss-cn-shenzhen.aliyuncs.com/extlist/prod/extract/1810855433942863872/3d00cd92-3358-468f-8dd4-48d0b25f2f3b/firefly_bluetoothcontroller/index.js)
 (version 0.0.3) generates those same top-level `gamepad` imports and calls.
@@ -103,15 +118,13 @@ Subsequent work established an unchanged upstream joystick/display baseline and
 a user-confirmed operational EM1 `drive_speed` sample, then integrated that
 native speed-control path into ADR. See the current
 [architecture](fw_adr_architecture.md) and
-[integration validation](validation/adr_native_drive_2026-11-13.md); the captures
+integration validation (internal record); the captures
 below describe the earlier API-correction revision.
 
 Retained captures:
 
-- [Read-only link samples](validation/artifacts/adr_gamepad_api_2026-11-13/read_only_link.txt)
-  and [exact RX hex](validation/artifacts/adr_gamepad_api_2026-11-13/read_only_link.rx.hex).
-- [Corrected application boot](validation/artifacts/adr_gamepad_api_2026-11-13/corrected_boot.txt)
-  and [exact RX hex](validation/artifacts/adr_gamepad_api_2026-11-13/corrected_boot.rx.hex).
+  and exact RX hex (internal record).
+  and exact RX hex (internal record).
 
 The raw RX SHA-256 hashes are respectively
 `c862283cb926a7ae1e817b8a9392499f5d5ff9fa6b84df5598288ab87abce80c`

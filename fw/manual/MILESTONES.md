@@ -13,5 +13,5 @@ required. Select/CyberPi B stops and disarms.
 
 The latest firmware changes passed 26 host checks. No additional hardware run
 was performed for this milestone entry. Earlier device evidence and its tested
-scope are recorded in the [native drive validation](../../docs/validation/adr_native_drive_2026-11-13.md).
+scope are recorded in the native drive validation (internal record).
 See [ADR architecture](../../docs/fw_adr_architecture.md) for current operation.
