@@ -216,6 +216,9 @@ not hardware sample instants or a hard transfer-time guarantee.
 Independent LSM mounting, body acceleration bias and native hard/soft-iron
 calibration live in
 [`lsm303dlhc_config.hpp`](../fw/autonomous/STM32_TINYRCP/include/hal/lsm303dlhc_config.hpp).
+The configured mount has native +X facing left, +Y facing back and +Z facing up.
+Both axis maps are `{-2, 1, 3}`: body forward is native −Y, body left is native
++X, and body up is native +Z.
 The HAL validates proper axis rotations and finite calibration, applies
 hard/soft-iron correction before magnetic axis mapping, then uses acceleration
 for quasi-static tilt compensation. [ST AN3192](https://www.st.com/resource/en/application_note/an3192-using-lsm303dlh-for-a-tilt-compensated-electronic-compass-stmicroelectronics.pdf)

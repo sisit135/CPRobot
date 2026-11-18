@@ -520,8 +520,9 @@ nav::BootstrapFrame sample() {
 #ifdef ROBOT_LIFECYCLE_LSM303DLHC
     // The HAL receives only independent ACCEL/MAG samples, quantized to the
     // configured silicon formats. The simulator's gyro never enters this path.
-    const float a[] = {f.imu.ax_mps2, f.imu.ay_mps2, f.imu.az_mps2};
-    const float m[] = {f.mag.mx_uT, f.mag.my_uT, f.mag.mz_uT};
+    // Rotate body vectors into the installed native +X left / +Y back / +Z up.
+    const float a[] = {f.imu.ay_mps2, -f.imu.ax_mps2, f.imu.az_mps2};
+    const float m[] = {f.mag.my_uT, -f.mag.mx_uT, f.mag.mz_uT};
     lsm_fake::device.sample(stamp, a, m);
 #endif
     const auto &opt = lifecycle::active->options;

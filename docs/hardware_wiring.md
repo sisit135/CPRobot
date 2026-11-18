@@ -101,6 +101,8 @@ or AK8963 bypass. Build selection and calibration live in the
 [sensor operation](fw_ths_architecture.md#selectable-motion-sensor-hal) describes
 the MAG + ACCEL heading/rate contract. Verify the installed module's supply,
 pull-ups and separate acceleration/magnetic mounting axes.
+The configured LSM mount has +X facing left, +Y facing back and +Z facing up;
+both sensor maps select native `{-Y, +X, +Z}` for body forward/left/up.
 
 ### Breadboard buses and power
 

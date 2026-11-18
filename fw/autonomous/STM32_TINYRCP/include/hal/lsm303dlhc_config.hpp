@@ -15,10 +15,10 @@ namespace board {
 namespace lsm303dlhc {
 constexpr uint8_t kAccelAddress7bit = 0x19, kMagAddress7bit = 0x1E;
 // Independent mounting/calibration from the MPU/AK8963. Signed, one-based
-// source axes map to body [+X forward, +Y left, +Z up]. Verify both on
-// hardware.
-constexpr int8_t kAccelBodyAxes[3] = {1, 2, 3};
-constexpr int8_t kMagBodyAxes[3] = {1, 2, 3};
+// source axes map to body [+X forward, +Y left, +Z up]. Installed sensor:
+// native +X faces left, +Y faces back, +Z faces up. Verify both on hardware.
+constexpr int8_t kAccelBodyAxes[3] = {-2, 1, 3};
+constexpr int8_t kMagBodyAxes[3] = {-2, 1, 3};
 constexpr float kAccelBiasMps2[3] = {0, 0, 0};
 constexpr float kMagHardIronUt[3] = {0, 0, 0};
 constexpr float kMagSoftIron[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};

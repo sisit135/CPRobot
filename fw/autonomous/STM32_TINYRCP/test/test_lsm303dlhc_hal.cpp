@@ -34,8 +34,9 @@ void frame(float heading = 0, float roll = 0, float pitch = 0) {
   const float bx = cp * x - sp * z;
   const float by = sp * sr * x + cr * y + cp * sr * z;
   const float bz = sp * cr * x - sr * y + cp * cr * z;
-  device.acceleration(-9.80665f * sp, 9.80665f * cp * sr, 9.80665f * cp * cr);
-  device.magnetic(bx, by, bz);
+  // Mount native +X left / +Y back / +Z up: native = [body Y, -body X, body Z].
+  device.acceleration(9.80665f * cp * sr, 9.80665f * sp, 9.80665f * cp * cr);
+  device.magnetic(by, -bx, bz);
 }
 void raw() {
   reset();
@@ -48,7 +49,7 @@ void raw() {
   loc::MagSample m{};
   int64_t stamp = -1;
   assert(lsm303dlhc::read_acceleration(&a, &stamp) && stamp == now);
-  assert(close(a.ax_mps2, -1.96133f) && close(a.ay_mps2, .980665f));
+  assert(close(a.ax_mps2, -.980665f) && close(a.ay_mps2, -1.96133f));
   assert(close(a.az_mps2, 9.80665f) && a.gz_rps == 0);
   assert(!lsm303dlhc::read_acceleration(&a, &stamp)); // DRDY consumed.
   assert(imu::read_magnetic_native(&m, &stamp));
