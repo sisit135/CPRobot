@@ -2,6 +2,7 @@
 
 #include "telemetry/adapter.hpp"
 #ifdef AXI_TELEMETRY_SPI_ENABLE
+#include "hal/imu_selection.hpp"
 #include "../../../../../generic_field_tool/common/telemetry_codec.h"
 #include "../../../../telemetry_bridge/common/wire.h"
 #include "localization/localization.hpp"
@@ -56,6 +57,10 @@ bool at_reply(const char *bytes, std::size_t count) {
 }
 #endif
 bool calibrate_gyro(float *out) {
+#if AXI_IMU_LSM303DLHC
+  (void)out;
+  return false; // A compass-derived yaw rate has no gyro zero to calibrate.
+#else
   // The sensor task owns I2C; only consume its fresh, published samples.
   float sum = 0, squares = 0;
   unsigned count = 0;
@@ -87,6 +92,7 @@ bool calibrate_gyro(float *out) {
     return false;
   *out = sum / 64.0f + remote::gyro_zero();
   return true;
+#endif
 }
 uint8_t calibrate_color(uint8_t color_id) {
   if (color_id >= 4)

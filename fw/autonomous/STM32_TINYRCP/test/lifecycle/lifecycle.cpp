@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "lifecycle.hpp"
 #include "bup/bup_tasks.hpp"
+#include "hal/boot_sensor_sample.hpp"
 #include "localization/config.hpp"
 #include "localization/hal_sensors.hpp"
 #include "localization/localization.hpp"
@@ -11,6 +12,10 @@
 #include "remote/settings.hpp"
 #include "scheduler.hpp"
 #include "start_validation.hpp"
+#ifdef ROBOT_LIFECYCLE_LSM303DLHC
+#include "hal/lsm303dlhc_hal.hpp"
+#include "lsm303dlhc_device.hpp"
+#endif
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -460,6 +465,12 @@ void Session::tick() {
 }
 } // namespace lifecycle
 int64_t hal_time_us() { return lifecycle::now_us(); }
+// The lifecycle observes sensor-task snapshots; the boot display is exercised
+// separately by robot_boot_sensor_sample. Keep its BUP hooks linkable here.
+namespace boot_sensors {
+void capture(Snapshot &out) { out = {}; }
+void print(const Snapshot &) {}
+} // namespace boot_sensors
 #ifdef ROBOT_LIFECYCLE_TEST
 namespace nav {
 bool lifecycle_force_rhr() {
@@ -484,7 +495,21 @@ bool hal_motor_set_duty(float l, float r) {
   return true;
 }
 void hal_motor_stop() { hal_motor_set_duty(0, 0); }
+#ifdef ROBOT_LIFECYCLE_LSM303DLHC
+namespace {
+void update_lsm_device();
+}
+bool hal_sensors_init() {
+  lsm_fake::device.reset();
+  lsm_fake::device.before_transfer = update_lsm_device;
+  imu::Config config;
+  config.i2c = &lsm_fake::device.bus;
+  std::puts("SENSOR_BACKEND LSM303DLHC raw registers -> ST BSP/HAL -> MAG+ACCEL; no gyro");
+  return imu::initialize(config);
+}
+#else
 bool hal_sensors_init() { return true; }
+#endif
 namespace {
 nav::BootstrapFrame sample() {
   static int64_t stamp = 0;
@@ -492,13 +517,24 @@ nav::BootstrapFrame sample() {
   if (stamp != hal_time_us()) {
     stamp = hal_time_us();
     f = lifecycle::active->robot->sensors(stamp, 1);
+#ifdef ROBOT_LIFECYCLE_LSM303DLHC
+    // The HAL receives only independent ACCEL/MAG samples, quantized to the
+    // configured silicon formats. The simulator's gyro never enters this path.
+    const float a[] = {f.imu.ax_mps2, f.imu.ay_mps2, f.imu.az_mps2};
+    const float m[] = {f.mag.mx_uT, f.mag.my_uT, f.mag.mz_uT};
+    lsm_fake::device.sample(stamp, a, m);
+#endif
     const auto &opt = lifecycle::active->options;
     if (opt.range_override >= 0)
       f.range_m[opt.range_override] = opt.range_override_m;
   }
   return f;
 }
+#ifdef ROBOT_LIFECYCLE_LSM303DLHC
+void update_lsm_device() { (void)sample(); }
+#endif
 } // namespace
+#ifndef ROBOT_LIFECYCLE_LSM303DLHC
 bool hal_imu_read(loc::ImuSample *v, int64_t *t) {
   auto f = sample();
   *v = f.imu;
@@ -511,7 +547,14 @@ bool hal_mag_read(loc::MagSample *v, int64_t *t) {
   *t = f.mag_us;
   return true;
 }
-bool hal_magnetic_clean() { return sample().magnetic_clean; }
+#endif
+bool hal_magnetic_clean() {
+#ifdef ROBOT_LIFECYCLE_LSM303DLHC
+  return lsm303dlhc::magnetic_heading_usable();
+#else
+  return sample().magnetic_clean;
+#endif
+}
 bool hal_tof_red_distance_corrected(loc::TofId id, float *v, int64_t *t) {
   auto f = sample();
   *v = f.range_m[unsigned(id)];

@@ -4,3 +4,9 @@
 [submodule "third_party/EmbeddedProto"]
 	path = third_party/EmbeddedProto
 	url = https://github.com/Embedded-AMS/EmbeddedProto
+[submodule "third_party/stm32-lsm303dlhc"]
+	path = third_party/stm32-lsm303dlhc
+	url = https://github.com/STMicroelectronics/stm32-lsm303dlhc.git
+[submodule "third_party/stm32-bsp-common"]
+	path = third_party/stm32-bsp-common
+	url = https://github.com/STMicroelectronics/stm32-bsp-common.git

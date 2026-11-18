@@ -22,9 +22,9 @@ bool hal_tcs34725_initialized();
  * @returns true when board sensor initialization succeeds.
  */
 bool hal_board_sensors_init();
-/** @brief Read a fresh calibrated body gyro frame.
- * @param[out] out Non-null destination; gz is rad/s; acceleration is
- * diagnostic.
+/** @brief Read a fresh body acceleration and planar yaw-rate frame.
+ * @param[out] out Non-null destination; gz is rad/s (MPU gyro or the selected
+ * LSM303DLHC MAG+ACCEL compass derivative); acceleration is diagnostic to EKF.
  * @param[out] timestamp_us Acquisition time, or zero for read completion.
  * @returns true for a new valid body frame; false while not ready or faulted.
  */
@@ -36,10 +36,11 @@ bool hal_imu_read(loc::ImuSample *out, int64_t *timestamp_us);
  * calibration.
  */
 bool hal_mag_read(loc::MagSample *out, int64_t *timestamp_us);
-/** @brief Check that motor current is off and the magnetic field has settled.
+/** @brief Check that the board has qualified the magnetic field for heading.
  * @returns true only when a magnetic measurement is usable; default false.
- * @note A zero command alone does not prove either magnetic cleanliness or
- * rest.
+ * @note A zero command alone does not prove magnetic cleanliness or rest.
+ * The gyro-free LSM backend requires a separately verified magnetic environment
+ * during motion; otherwise it publishes no navigation measurements.
  */
 bool hal_magnetic_clean();
 /** @brief Poll one corrected physical-wall range.

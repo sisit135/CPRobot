@@ -1,5 +1,7 @@
  // SPDX-License-Identifier: GPL-3.0-only
 
+#include "hal/imu_selection.hpp"
+#if AXI_IMU_MPU9250
 #include "hal/mpu9250_hal.hpp"
 #include "hal/sensors_config.hpp"
 #include "logging/log.hpp"
@@ -537,3 +539,5 @@ bool hal_imu_read(loc::ImuSample *out, int64_t *stamp) {
 bool hal_mag_read(loc::MagSample *out, int64_t *stamp) {
   return imu::read_magnetic(out, stamp);
 }
+
+#endif // AXI_IMU_MPU9250

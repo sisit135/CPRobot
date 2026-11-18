@@ -76,6 +76,8 @@ All addresses below are **7-bit**, not shifted wire bytes.
 |---|---|---|---|
 | I2C1 | MPU9250 | `0x68` | CS to module VDDIO; AD0 to module GND; override permits `0x69` with AD0 high |
 | I2C1 | AK8963 inside MPU9250 | `0x0C` | Accessed through MPU bypass; no separate external wires |
+| I2C1 | LSM303DLHC acceleration (alternative build) | `0x19` | Replaces MPU9250/AK8963; same PB7 SDA / PB6 SCL; interrupts unused |
+| I2C1 | LSM303DLHC magnetic field (alternative build) | `0x1E` | Same package/bus as its accelerometer; fixed silicon address |
 | I2C1 | TCS34725 | `0x29` | INT unused; LED configuration is module-local |
 | I2C2 | VL53L0X left | boot `0x29` → `0x30` | PA1 to XSHUT |
 | I2C2 | VL53L0X front | boot `0x29` → `0x31` | PA2 to XSHUT |
@@ -91,6 +93,14 @@ open-drain: retain/add a pull-up to the **module-permitted logic rail**, commonl
 its local 2.8 V rail on [VL53L0X carriers](https://www.pololu.com/product/2490); do not automatically pull a bare
 XSHUT pin to 3.3 V. Multiple modules' onboard I2C pull-ups appear in parallel;
 choose the resulting resistance for the actual wiring and 100 kHz bus.
+
+The breadboard drawing depicts the default MPU9250 wiring. For the LSM303DLHC
+build, substitute its module on the main bus; it has no gyro, MPU CS/AD0 straps,
+or AK8963 bypass. Build selection and calibration live in the
+[build guide](building.md#mutually-exclusive-ths-sensor-backends), and its
+[sensor operation](fw_ths_architecture.md#selectable-motion-sensor-hal) describes
+the MAG + ACCEL heading/rate contract. Verify the installed module's supply,
+pull-ups and separate acceleration/magnetic mounting axes.
 
 ### Breadboard buses and power
 

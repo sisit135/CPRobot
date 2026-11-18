@@ -596,6 +596,55 @@ application services, including localization, navigation and telemetry, even
 if the IMU passes. Set this trace-only flag to `0` to restore normal startup.
 Other profiles keep the normal IMU failure gate.
 
+### Mutually exclusive THS sensor backends
+
+Existing profiles select MPU9250/AK8963. The LSM303DLHC profile replaces both
+with MAG + ACCEL, without a gyro. Initialize the pinned ST driver and its common
+BSP headers before building:
+
+```sh
+git submodule update --init third_party/stm32-lsm303dlhc third_party/stm32-bsp-common
+pio run -d fw/autonomous/STM32_TINYRCP -e blackpill_f411ce_lsm303dlhc
+```
+
+`AXI_IMU_LSM303DLHC=1` selects the new backend and defaults
+`AXI_IMU_MPU9250` to `0`; existing builds default to the reverse. Both build
+configuration and preprocessing reject selecting both, neither, or nonboolean
+values. The PlatformIO source filter excludes the inactive HAL and excludes
+`LibDriver_MPU9250` from LSM builds. Only LSM builds compile ST's linked vendor C.
+The sensor-free open-loop demo excludes both backends.
+
+Set the independent mounting, bias and magnetic calibration in
+`include/hal/lsm303dlhc_config.hpp` under the THS project. Only after measuring
+the installation, enable `SENSORS_LSM303DLHC_CALIBRATED=1` and
+`SENSORS_LSM303DLHC_MAGNETIC_ENVIRONMENT_VERIFIED=1` as build flags. The latter
+requires verifying heading with the driver/motors operating, since this backend
+uses magnetic measurements during motion. Defaults permit raw boot diagnostics
+but publish no navigation heading/rate. The boot table shows Gyroscope as N/A.
+See the [THS sensor operation](fw_ths_architecture.md#selectable-motion-sensor-hal)
+for timing, conversion and qualification limits.
+
+Run the full native suite with the real ST BSP and LSM HAL in the lifecycle
+executable, alongside the existing suite for comparison:
+
+```sh
+cmake -S fw -B build/lsm303dlhc -DCMAKE_BUILD_TYPE=Debug -DROBOT_LIFECYCLE_LSM303DLHC=ON
+cmake --build build/lsm303dlhc --parallel 4
+ctest --test-dir build/lsm303dlhc --output-on-failure
+cmake -S fw -B build/imu-baseline -DCMAKE_BUILD_TYPE=Debug
+cmake --build build/imu-baseline --parallel 4
+ctest --test-dir build/imu-baseline --output-on-failure
+```
+
+Use the Python interpreter with protobuf described under [native tests](#native-firmware-tests).
+For focused driver checks use `ctest --test-dir build/lsm303dlhc -R robot_lsm303dlhc --output-on-failure`.
+The lifecycle option changes only that host executable: its register model
+quantizes simulated ACCEL/MAG values, models ready/lock and configured data
+rates, and calls the production HAL. It never supplies simulated gyro readings
+to the LSM backend. The simulated installation explicitly enables both
+qualification flags; it does not qualify the physical board or prove all
+navigation campaigns succeed.
+
 ### Open-loop motor demo
 
 The separate `blackpill_f411ce_openloop_demo` profile inherits the tracing

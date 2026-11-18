@@ -12,6 +12,22 @@ target_link_libraries(robot_feature_lifecycle PRIVATE robot_sim)
 target_compile_definitions(robot_feature_lifecycle PRIVATE ROBOT_LIFECYCLE_TEST)
 target_compile_options(robot_feature_lifecycle PRIVATE -Wall -Wextra -Wpedantic)
 
+# Reuse every lifecycle scenario/campaign with real ST/HAL register processing.
+# Qualification flags apply only to the modeled environment, never firmware.
+option(ROBOT_LIFECYCLE_LSM303DLHC "Run lifecycle through LSM303DLHC MAG+ACCEL HAL" OFF)
+if(ROBOT_LIFECYCLE_LSM303DLHC)
+    target_sources(robot_feature_lifecycle PRIVATE
+        ../../src/hal/lsm303dlhc_hal.cpp
+        ../../src/hal/vendor/lsm303dlhc/lsm303dlhc.c
+        ../support/lsm303dlhc_device.cpp)
+    target_include_directories(robot_feature_lifecycle PRIVATE
+        ../support ../../src/hal/vendor)
+    target_compile_definitions(robot_feature_lifecycle PRIVATE
+        ROBOT_LIFECYCLE_LSM303DLHC AXI_IMU_LSM303DLHC=1
+        SENSORS_LSM303DLHC_CALIBRATED=1
+        SENSORS_LSM303DLHC_MAGNETIC_ENVIRONMENT_VERIFIED=1)
+endif()
+
 add_executable(robot_lifecycle_start_validation_tests test_start_validation.cpp)
 target_link_libraries(robot_lifecycle_start_validation_tests PRIVATE robot_core)
 target_compile_options(robot_lifecycle_start_validation_tests PRIVATE

@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-// Board hooks: MPU9250 implementation is provided by hal/mpu9250_hal.cpp.
+// Board hooks use the single sensor backend selected at build time.
 #include "hal/i2c_diagnostics.hpp"
-#include "hal/mpu9250_hal.hpp"
+#include "hal/imu_hal.hpp"
+#if AXI_IMU_LSM303DLHC
+#include "hal/lsm303dlhc_hal.hpp"
+#include "hal/lsm303dlhc_config.hpp"
+#endif
 #include "hal/sensors_config.hpp"
 #include "hal/vl53l0x_hal.hpp"
 #include "localization/hal_sensors.hpp"
@@ -18,8 +22,13 @@
 bool hal_board_sensors_init() {
   using namespace board::sensors;
   const i2c_diagnostics::Binding main_bindings[] = {
+#if AXI_IMU_LSM303DLHC
+      {board::lsm303dlhc::kAccelAddress7bit, "LSM303DLHC accel"},
+      {board::lsm303dlhc::kMagAddress7bit, "LSM303DLHC mag"},
+#else
       {kMpu9250Address7bit, "MPU9250 accel/gyro"},
       {kAk8963Address7bit, "AK8963 (needs bypass)"},
+#endif
       {kTcs34725Address7bit, "TCS34725 color"}};
   const i2c_diagnostics::Binding tof_bindings[] = {
       {kVl53l0xBootAddress7bit, "VL53L0X boot (shared)"},
@@ -62,7 +71,7 @@ bool hal_board_sensors_init() {
     robot_log::write(robot_log::Level::ERROR, "imu", "health check failed");
   } else if (!imu::statistics().online || !imu::statistics().magnetometer_online) {
     robot_log::write(robot_log::Level::ERROR, "imu",
-                     "gyro/magnetometer health check failed");
+                     "motion sensor/magnetometer health check failed");
     imu::stop();
     imu_ready = false;
   }
@@ -95,7 +104,13 @@ bool hal_board_sensors_init() {
   robot_log::write(robot_log::Level::INFO, "tof", "hw ready");
   return true;
 }
-bool hal_magnetic_clean() { return false; }
+bool hal_magnetic_clean() {
+#if AXI_IMU_LSM303DLHC
+  return lsm303dlhc::magnetic_heading_usable();
+#else
+  return false;
+#endif
+}
 const loc::ColorReference *hal_color_references(std::size_t *count) {
   if (count)
     *count = 0;

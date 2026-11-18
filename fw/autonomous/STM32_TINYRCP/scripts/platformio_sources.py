@@ -36,6 +36,33 @@ def configure(env):
         env.BuildSources("$BUILD_DIR/robot_sf", str(core / "src"),
                          src_filter=["+<motor_control/wheel_controller.cpp>"])
         return
+    selection = {}
+    for define in defines:
+        name, value = define if isinstance(define, (list, tuple)) else (define, "1")
+        if name in ("AXI_IMU_MPU9250", "AXI_IMU_LSM303DLHC"):
+            if str(value) not in ("0", "1"):
+                raise RuntimeError("IMU backend flags must be 0 or 1")
+            selection[name] = int(value)
+    lsm = selection.get("AXI_IMU_LSM303DLHC", 0)
+    mpu = selection.get("AXI_IMU_MPU9250", 1 - lsm)
+    if lsm + mpu != 1:
+        raise RuntimeError("Select exactly one IMU backend")
+    if lsm:
+        vendor = project / "src/hal/vendor"
+        required_lsm = [vendor / "lsm303dlhc/lsm303dlhc.c",
+                        vendor / "lsm303dlhc/lsm303dlhc.h",
+                        vendor / "Common/accelero.h"]
+        if not all(path.is_file() for path in required_lsm):
+            raise RuntimeError("Missing ST LSM303DLHC/Common submodules; run git submodule update --init")
+        env.Replace(SRC_FILTER=["+<*>", "-<hal/mpu9250_hal.cpp>"])
+        # Also honor direct build-flag selection outside the named profile.
+        ignored = list(env.GetProjectOption("lib_ignore", []))
+        if "LibDriver_MPU9250" not in ignored:
+            env.GetProjectConfig().set("env:" + env["PIOENV"], "lib_ignore",
+                                       ignored + ["LibDriver_MPU9250"])
+    else:
+        env.Replace(SRC_FILTER=["+<*>", "-<hal/lsm303dlhc_hal.cpp>",
+                                "-<hal/vendor/lsm303dlhc/>"])
     missing = [str(core / "src" / name) for name in CORE_SOURCES
                if not (core / "src" / name).is_file()]
     required = [project / "src/hal/vendor/vl53l0x_class.cpp",

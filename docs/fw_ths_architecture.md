@@ -168,6 +168,101 @@ Source evidence: [THS entry](../fw/autonomous/STM32_TINYRCP/src/main.cpp),
 [bring-up](../fw/autonomous/STM32_TINYRCP/src/tasks/bup_tasks.cpp),
 and [telemetry start/key](../fw/autonomous/STM32_TINYRCP/src/telemetry/adapter.cpp).
 
+## Selectable motion sensor HAL
+
+The sourcing rationale for the LSM303DLHC alternative is the MPU9250's EOL and
+difficulty obtaining parts. Existing profiles retain MPU9250/AK8963; the new
+profile selects LSM303DLHC MAG + ACCEL exclusively. Build flags and commands
+live in the [build guide](building.md#mutually-exclusive-ths-sensor-backends).
+The LSM303DLHC contains no gyro. Its HAL provides real acceleration and magnetic
+measurements, then adapts magnetic heading changes to the existing planar
+yaw-rate input. FEATURE, RHR and the frozen EKF algorithms are unchanged; the
+EKF's existing gyro-oriented noise model has not been retuned for compass rate.
+
+[`imu_hal.hpp`](../fw/autonomous/STM32_TINYRCP/include/hal/imu_hal.hpp) owns the
+common interface; `mpu9250_hal.hpp` remains a compatibility include. Exactly one
+backend defines the common functions and sensor-task hooks. The existing BUP
+owner initializes the bus/HAL and captures raw boot readings, then the existing
+100 Hz sensor task owns all reads. This adds no tasks, interrupts or heap
+allocation. The LSM backend reports Gyroscope as N/A at boot and rejects the
+remote gyro-zero calibration operation; stored MPU gyro-zero settings do not
+affect compass-derived rate.
+
+[`lsm303dlhc_hal.cpp`](../fw/autonomous/STM32_TINYRCP/src/hal/lsm303dlhc_hal.cpp)
+uses the unmodified [ST BSP driver](https://github.com/STMicroelectronics/stm32-lsm303dlhc)
+for acceleration identity/initialization and preserves its IO callback signatures.
+The pinned common BSP supplies its required `accelero.h` ABI. Relative links
+expose both through the HAL's `vendor/` directory; pins/provenance live in
+[`third_party/README.md`](../third_party/README.md). The BSP has no magnetic
+acquisition API, no transfer-status return in its IO callbacks, and reads
+acceleration bytes separately. HAL extensions therefore latch callback errors,
+check all three magnetic identity bytes (`H43`), verify configuration readbacks,
+and use coherent bounded bursts for acquisition/conversion. No service task
+accesses registers.
+
+The implementation follows the [LSM303DLHC datasheet, DocID018771 Rev 2](https://www.st.com/resource/en/datasheet/lsm303dlhc.pdf),
+sections 5 and 7: fixed 7-bit addresses `0x19` (ACCEL) / `0x1E` (MAG), left-shifted
+once for STM32 HAL; 100 Hz high-resolution acceleration at ±4 g with BDU,
+little-endian signed 12-bit output at 2 mg/LSB; and continuous 220 Hz magnetic
+conversion at ±1.3 gauss. The magnetic burst is big-endian X/Z/Y and converts
+using 1100 LSB/gauss for X/Y and 980 for Z. The HAL checks ready status, drains
+locked magnetic output, rejects clipping/overflow, and disables FIFO, interrupt
+and high-pass paths. Polling may skip magnetic conversions; it never waits for
+one or replays a consumed frame. Timestamps are monotonic read completion,
+not hardware sample instants or a hard transfer-time guarantee.
+
+Independent LSM mounting, body acceleration bias and native hard/soft-iron
+calibration live in
+[`lsm303dlhc_config.hpp`](../fw/autonomous/STM32_TINYRCP/include/hal/lsm303dlhc_config.hpp).
+The HAL validates proper axis rotations and finite calibration, applies
+hard/soft-iron correction before magnetic axis mapping, then uses acceleration
+for quasi-static tilt compensation. [ST AN3192](https://www.st.com/resource/en/application_note/an3192-using-lsm303dlh-for-a-tilt-compensated-electronic-compass-stmicroelectronics.pdf)
+provides the calibration/tilt method; its older LSM303DLH register settings are
+not used for DLHC. Acceleration must be at most 30 ms old and near gravity;
+field magnitude and horizontal projection must be usable. Acceleration alone
+cannot distinguish gravity from all translational acceleration, and magnetic
+norm checks cannot detect every heading disturbance.
+
+Two qualified fields establish a wrapped heading difference. The HAL divides
+that difference by elapsed time and applies a first-order 40 ms rate filter.
+The legacy `gz_rps` channel carries this MAG-derived planar rate;
+`gx_rps`/`gy_rps` are zero placeholders, never physical gyro observations. The
+pending calibrated, levelled magnetic field is delivered once after the rate
+read. Gaps over 50 ms, bad data, implausible heading changes or transfer failures
+invalidate heading history; recovery needs two valid fields, rather than a
+fabricated zero-rate sample. False reads leave caller outputs unchanged.
+
+Both `SENSORS_LSM303DLHC_CALIBRATED` and
+`SENSORS_LSM303DLHC_MAGNETIC_ENVIRONMENT_VERIFIED` default to false. Until the
+installed axes/calibration and magnetic environment with operating motors are
+verified, the HAL permits raw diagnostics but publishes no navigation rate or
+heading. When explicitly qualified, `hal_magnetic_clean()` accepts a fresh
+usable LSM field, including during motion: gyro-free heading depends on that
+verification. A zero motor command does not establish it. The MPU backend
+retains its existing tilt/cleanliness gates.
+
+The optional native lifecycle mode feeds quantized independent ACCEL/MAG
+samples through a register model, the real ST BSP, and the production HAL before
+the normal sensor, FEATURE/RHR and motor tasks. Simulated gyro is excluded from
+this path. Driver fixtures cover byte order, distinct gains, signed conversion,
+tilt, heading wrap/rate, readiness/one-time delivery, every initialization
+transfer failure, lock/overflow, timestamps and qualification gates. Full
+lifecycle campaigns remain required validation; the source option alone is not
+a claim of navigation or hardware qualification.
+
+Implementation checks on 2026-11-18 compiled both STM32 profiles and confirmed
+by linked symbols that each contains only its selected driver. All six LSM
+driver/boot fixtures and eight source-selection checks passed. The complete
+Debug host suite passed 97/127 with LSM register processing and 109/127 with the
+existing simulated gyro path. Both passed the six fixed open-arena goal runs;
+both failed the supplied-map and open-arena campaigns. LSM added twelve failures:
+the four `robot_lifecycle_q*` routes, four feature-boundary prefixes, resolver
+E2E, and the tape/Q1-alias/unconfigured-alias evidence cases. The other eighteen
+failures also occurred with the existing path (turn/clearance, stale wiring
+drawing and lifecycle cases). Thus the driver/build contract is tested, but the
+gyro-free navigation integration remains experimental and is not qualified by
+this full lifecycle run. The qualification flags remain disabled by default.
+
 ## Compile-time open-loop demo
 
 `AXI_OPENLOOP_DEMO=1` replaces the production application at compilation. The
@@ -234,7 +329,7 @@ flowchart TB
     key["loc_key / debounced start request"]
     bup["bup_task / HAL init and fail-stop"]
   end
-  hw["MPU9250 + MAG / VL53L0X x3 / TCS34725 HAL"] --> sensor
+  hw["MPU9250 + MAG or LSM303DLHC MAG+ACCEL / VL53L0X x3 / TCS34725 HAL"] --> sensor
   sensor --> frame --> feature --> fs --> path
   sensor -->|"Only after fusion starts"| events --> fusion --> pose
   pose -.->|"Explicit EKF mode"| path
@@ -1244,7 +1339,8 @@ to PB12/PB13, and ToF shutdown to PA1/PA2/PA3. ToF uses isolated I2C2
 (PB3/PB10), while MPU/TCS use I2C1 (PB7/PB6), avoiding the reset-address
 collision. The [wiring sketch](hardware_wiring.md) reserves SPI1, USB and SWD
 and requires the optional on-board SPI flash to be absent or isolated. Tape
-thresholds remain disabled and `hal_magnetic_clean()` currently returns false. A clean calibrated heading hook,
+thresholds remain disabled. `hal_magnetic_clean()` defaults to false for MPU
+and requires explicit calibration/environment qualification for LSM. A clean calibrated heading hook,
 real sensor mounts, map variants, wheel geometry, per-direction PWM gains,
 magnetic offsets and measured coast behavior are required before useful operation.
 The source pin map has no shared active GPIO assignments; physical board wiring

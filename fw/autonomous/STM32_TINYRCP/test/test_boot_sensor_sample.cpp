@@ -40,6 +40,15 @@ bool read_magnetic_native(loc::MagSample *out, int64_t *) {
   return true;
 }
 } // namespace imu
+#if AXI_IMU_LSM303DLHC
+namespace lsm303dlhc {
+bool read_acceleration(loc::ImuSample *out, int64_t *stamp) {
+  const bool valid = imu::read(out, stamp);
+  out->gx_rps = out->gy_rps = out->gz_rps = 0;
+  return valid;
+}
+} // namespace lsm303dlhc
+#endif
 bool hal_tcs34725_initialized() { return !failed(); }
 bool hal_tcs34725_read(loc::RgbcSample *out, int64_t *) {
   ++color_reads;
@@ -104,6 +113,11 @@ int main(int argc, char **argv) {
   boot_sensors::print(snapshot);
   assert(before == imu_reads + mag_reads + color_reads + tof_reads);
   assert(output.find("ToF left") != std::string::npos);
+#if AXI_IMU_LSM303DLHC
+  const auto gyro = output.substr(output.find("Gyroscope"), 80);
+  assert(gyro.find("N/A") != std::string::npos);
+  assert(gyro.find("rad/s") == std::string::npos);
+#endif
   assert((output.find("Inf") != std::string::npos) == (mode == "mixed"));
   if (mode == "healthy" || mode == "mixed") {
     assert(output.find("z=9.807") != std::string::npos);

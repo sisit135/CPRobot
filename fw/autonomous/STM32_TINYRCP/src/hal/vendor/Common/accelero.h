@@ -1,0 +1,1 @@
+../../../../../../../third_party/stm32-bsp-common/accelero.h

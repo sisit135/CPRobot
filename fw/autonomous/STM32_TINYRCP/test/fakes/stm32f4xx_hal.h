@@ -17,6 +17,7 @@ enum HAL_StatusTypeDef {
   HAL_TIMEOUT = 3
 };
 constexpr uint16_t I2C_MEMADD_SIZE_8BIT = 1;
+uint32_t HAL_I2C_GetError(I2C_HandleTypeDef *);
 HAL_StatusTypeDef HAL_I2C_IsDeviceReady(I2C_HandleTypeDef *, uint16_t, uint32_t,
                                         uint32_t);
 HAL_StatusTypeDef HAL_I2C_Mem_Write(I2C_HandleTypeDef *, uint16_t, uint16_t,

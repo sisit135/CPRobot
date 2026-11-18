@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "hal/boot_sensor_sample.hpp"
-#include "hal/mpu9250_hal.hpp"
+#include "hal/imu_hal.hpp"
+#if AXI_IMU_LSM303DLHC
+#include "hal/lsm303dlhc_hal.hpp"
+#endif
 #include "hal/vl53l0x_hal.hpp"
 #include "localization/hal_sensors.hpp"
 #include "logging/log.hpp"
@@ -19,7 +22,11 @@ void capture(Snapshot &out) {
   while (hal_time_us() < deadline) {
     int64_t stamp = 0;
     if (!imu_done) {
+#if AXI_IMU_LSM303DLHC
+      out.imu_valid = lsm303dlhc::read_acceleration(&out.imu, &stamp);
+#else
       out.imu_valid = imu::read(&out.imu, &stamp);
+#endif
       imu_done = out.imu_valid || !imu::statistics().online;
     }
     if (!mag_done) {
@@ -88,7 +95,7 @@ void print(const Snapshot &sample) {
                    "                   |");
   vector_row("Acceleration", sample.imu_valid, sample.imu.ax_mps2,
              sample.imu.ay_mps2, sample.imu.az_mps2, "m/s^2");
-  vector_row("Gyroscope", sample.imu_valid, sample.imu.gx_rps,
+  vector_row("Gyroscope", sample.imu_valid && imu::kHasGyroscope, sample.imu.gx_rps,
              sample.imu.gy_rps, sample.imu.gz_rps, "rad/s");
   vector_row("Mag native", sample.mag_valid, sample.mag.mx_uT, sample.mag.my_uT,
              sample.mag.mz_uT, "uT");

@@ -89,6 +89,13 @@ target_compile_options(robot_boot_sensor_sample_tests PRIVATE -UNDEBUG -Wall -We
 foreach(mode failed pending healthy mixed)
     add_test(NAME robot_boot_sensor_sample_${mode} COMMAND robot_boot_sensor_sample_tests ${mode})
 endforeach()
+add_executable(robot_lsm303dlhc_boot_sample_tests test_boot_sensor_sample.cpp
+    ../src/hal/boot_sensor_sample.cpp)
+target_include_directories(robot_lsm303dlhc_boot_sample_tests PRIVATE fakes ../include)
+target_link_libraries(robot_lsm303dlhc_boot_sample_tests PRIVATE robot_core)
+target_compile_definitions(robot_lsm303dlhc_boot_sample_tests PRIVATE AXI_IMU_LSM303DLHC=1)
+target_compile_options(robot_lsm303dlhc_boot_sample_tests PRIVATE -UNDEBUG -Wall -Wextra -Wpedantic)
+add_test(NAME robot_lsm303dlhc_boot_sample COMMAND robot_lsm303dlhc_boot_sample_tests healthy)
 add_executable(robot_rtt_logging_tests test_rtt_logging.cpp
     ../src/logging/log.cpp ../src/hal/rtt_log.cpp)
 target_link_libraries(robot_rtt_logging_tests PRIVATE robot_core robot_fake_rtos)
@@ -126,6 +133,34 @@ target_include_directories(robot_tof_hal_tests PRIVATE fakes ../include ../src/h
 target_link_libraries(robot_tof_hal_tests PRIVATE robot_core)
 target_compile_options(robot_tof_hal_tests PRIVATE -UNDEBUG -Wall -Wextra -Wpedantic)
 add_test(NAME robot_tof_hal COMMAND robot_tof_hal_tests)
+
+foreach(mode qualified uncalibrated unverified)
+    add_executable(robot_lsm303dlhc_${mode}_tests test_lsm303dlhc_hal.cpp
+        ../src/hal/lsm303dlhc_hal.cpp ../src/hal/vendor/lsm303dlhc/lsm303dlhc.c
+        support/lsm303dlhc_device.cpp)
+    target_include_directories(robot_lsm303dlhc_${mode}_tests PRIVATE
+        fakes ../include ../src/hal/vendor support)
+    target_link_libraries(robot_lsm303dlhc_${mode}_tests PRIVATE robot_core)
+    target_compile_definitions(robot_lsm303dlhc_${mode}_tests PRIVATE AXI_IMU_LSM303DLHC=1)
+    target_compile_options(robot_lsm303dlhc_${mode}_tests PRIVATE -UNDEBUG -Wall -Wextra)
+    if(NOT mode STREQUAL "uncalibrated")
+        target_compile_definitions(robot_lsm303dlhc_${mode}_tests PRIVATE
+            SENSORS_LSM303DLHC_CALIBRATED=1)
+    endif()
+    if(NOT mode STREQUAL "unverified")
+        target_compile_definitions(robot_lsm303dlhc_${mode}_tests PRIVATE
+            SENSORS_LSM303DLHC_MAGNETIC_ENVIRONMENT_VERIFIED=1)
+    endif()
+    if(mode STREQUAL "qualified")
+        foreach(scenario raw compass faults)
+            add_test(NAME robot_lsm303dlhc_${scenario}
+                COMMAND robot_lsm303dlhc_${mode}_tests ${scenario})
+        endforeach()
+    else()
+        add_test(NAME robot_lsm303dlhc_${mode}
+            COMMAND robot_lsm303dlhc_${mode}_tests unqualified)
+    endif()
+endforeach()
 
 add_executable(robot_i2c_diagnostics_tests test_i2c_diagnostics.cpp
     ../src/hal/i2c_diagnostics.cpp)
