@@ -70,12 +70,22 @@ foreach(mode success bup_pending bup_failed init_fault driver_fault timing_fault
     add_test(NAME robot_openloop_demo_${mode} COMMAND robot_openloop_demo_tests ${mode})
 endforeach()
 add_executable(robot_bup_imu_diagnostic_tests test_bup_imu_diagnostic.cpp
-    ../src/tasks/bup_tasks.cpp ../src/hal/board_hooks.cpp ../src/hal/hal_sensors.cpp)
+    ../src/tasks/bup_tasks.cpp ../src/hal/board_hooks.cpp ../src/hal/hal_sensors.cpp
+    support/tcs_i2c.cpp)
 target_link_libraries(robot_bup_imu_diagnostic_tests PRIVATE robot_core robot_fake_rtos)
 target_compile_definitions(robot_bup_imu_diagnostic_tests PRIVATE AXI_BUP_IMU_DIAGNOSTIC=1)
 target_compile_options(robot_bup_imu_diagnostic_tests PRIVATE -UNDEBUG -Wall -Wextra -Wpedantic)
 foreach(mode imu mag healthy tof tcs)
     add_test(NAME robot_bup_diagnostic_${mode} COMMAND robot_bup_imu_diagnostic_tests ${mode})
+endforeach()
+add_executable(robot_i2c_isolation_tests test_i2c_isolation.cpp
+    ../src/tasks/bup_tasks.cpp ../src/tasks/i2c_isolation.cpp)
+target_link_libraries(robot_i2c_isolation_tests PRIVATE robot_core robot_fake_rtos)
+target_compile_definitions(robot_i2c_isolation_tests PRIVATE AXI_BUP_I2C_ISOLATION=1
+    AXI_BUP_IMU_DIAGNOSTIC=1 AXI_IMU_LSM303DLHC=1)
+target_compile_options(robot_i2c_isolation_tests PRIVATE -UNDEBUG -Wall -Wextra -Wpedantic)
+foreach(mode RANGE 0 13)
+    add_test(NAME robot_i2c_isolation_${mode} COMMAND robot_i2c_isolation_tests ${mode})
 endforeach()
 add_executable(robot_boot_logging_tests test_boot_logging.cpp ../src/logging/log.cpp)
 target_link_libraries(robot_boot_logging_tests PRIVATE robot_core robot_fake_rtos)
@@ -189,7 +199,8 @@ foreach(prescaler 0 4 5 6 7)
     endforeach()
 endforeach()
 
-add_executable(robot_arduino_hal_tests test_arduino_hal.cpp ../src/hal/hal_sensors.cpp ../src/hal/hal_platform.cpp)
+add_executable(robot_arduino_hal_tests test_arduino_hal.cpp ../src/hal/hal_sensors.cpp
+    ../src/hal/hal_platform.cpp support/tcs_i2c.cpp)
 target_include_directories(robot_arduino_hal_tests BEFORE PRIVATE fakes/clock)
 target_include_directories(robot_arduino_hal_tests PRIVATE fakes ../include)
 target_link_libraries(robot_arduino_hal_tests PRIVATE robot_core robot_fake_clock)

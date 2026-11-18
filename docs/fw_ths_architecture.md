@@ -171,6 +171,24 @@ before halting BUP.
 The [I2C diagnostics HAL](../fw/autonomous/STM32_TINYRCP/src/hal/i2c_diagnostics.cpp)
 owns probes and table formatting; no service task reads sensor registers for
 diagnostics. Probe bounds and log interpretation live in [tracing](tracing.md).
+The separate I2C isolation bench profile replaces production BUP with one
+selected startup case. Main/ToF controller preparation and IMU, ToF and TCS
+initialization are independent startup-owner HAL primitives. Cases can exclude
+inventories, the other controller, other sensors, motor outputs and settings.
+Results are logged before a final inventory; default TCS-only startup leaves
+all other initialization uncalled. All cases block the application callback and
+leave BUP FAILED. Case selection is a volatile RAM value restored on reset.
+See [building](building.md#i2c-initialization-isolation) for the case table and
+selection commands. This profile logically isolates initialization; attached
+sensor modules retain power/state across debugger resets.
+
+TCS register transfers use bounded STM32 HAL polling calls on the main
+controller, matching the IMU's transport ownership. They do not use Arduino
+Wire's interrupt transaction API. In the installed STM32 Arduino core, a
+master error callback can enable slave LISTEN mode after a TCS NACK, leaving
+physical lines idle while subsequent IMU polling calls return BUSY. Polling
+avoids that callback path. TCS identity and initialization failures still fail
+the normal hardware gate; unexpected identities are logged and rejected.
 Both navigation engines bootstrap from the feature task. Initial ambiguity does
 not cause autonomous scanning or motion. Motor task readiness and selected EKF
 initialization stages have a two-second timeout. No goal is selected at boot.

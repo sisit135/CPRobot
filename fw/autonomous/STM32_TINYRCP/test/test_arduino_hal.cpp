@@ -93,6 +93,9 @@ int main() {
   const int64_t before = hal_time_us();
   fake_us = 0x20;
   assert(hal_time_us() - before == 48); // 32-bit clock wrap.
+  Wire.registers[0x12] = 0x4d;
+  assert(hal_sensors_init()); // Documented TCS34727 member of TCS3472 family.
+  assert(Wire.registers[1] == 0xF6 && Wire.registers[0x0F] == 1);
   Wire.registers[0x12] = 0;
   assert(!hal_sensors_init()); // Wrong device ID.
   std::puts("PASS Arduino TCS register flow, byte order, conversion freshness, "

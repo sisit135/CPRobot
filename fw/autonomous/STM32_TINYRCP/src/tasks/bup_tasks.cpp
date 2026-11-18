@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "bup/bup_tasks.hpp"
+#include "bup/i2c_isolation.hpp"
 #include "openloop_demo/openloop_demo.hpp"
 #if !AXI_OPENLOOP_DEMO
 #include "hal/boot_sensor_sample.hpp"
@@ -16,7 +17,13 @@ namespace bup {
 namespace {
 std::atomic<BupStatus> bup_status{BupStatus::NOT_STARTED};
 bool bup_started = false;
-#if !AXI_OPENLOOP_DEMO
+#if AXI_BUP_I2C_ISOLATION && !AXI_OPENLOOP_DEMO
+void bup_task_entry(void *) {
+  run_i2c_isolation();
+  bup_status.store(BupStatus::FAILED, std::memory_order_release);
+  vTaskDelete(nullptr);
+}
+#elif !AXI_OPENLOOP_DEMO
 bool (*start_services)() = nullptr;
 enum class Step : uint8_t { SKIPPED, READY, FAILED, DIAGNOSTIC };
 struct Summary {
@@ -148,7 +155,7 @@ bool bup_task_start(bool (*services)()) {
     return false;
 
   bup_started = true;
-#if AXI_OPENLOOP_DEMO
+#if AXI_OPENLOOP_DEMO || AXI_BUP_I2C_ISOLATION
   (void)services;
 #else
   start_services = services;
@@ -162,7 +169,7 @@ bool bup_task_start(bool (*services)()) {
       pdPASS) {
     bup_status.store(BupStatus::FAILED, std::memory_order_release);
     bup_started = false;
-#if !AXI_OPENLOOP_DEMO
+#if !AXI_OPENLOOP_DEMO && !AXI_BUP_I2C_ISOLATION
     hal_motor_stop();
 #endif
     robot_log::write(robot_log::Level::ERROR, "bup",

@@ -18,6 +18,13 @@ bool hal_sensors_init();
 // BUP calls this before motor/settings/device HAL initialization. Idempotent:
 // probes GPIO first, then prepares and inventories both hardware controllers.
 bool hal_board_sensor_buses_init();
+// Startup-owner primitives for independent bench initialization. No inventory
+// or other device initialization is performed by these functions.
+bool hal_board_main_bus_init(bool configure_clock = true);
+bool hal_board_tof_bus_init();
+bool hal_board_imu_init();
+bool hal_board_tof_init();
+bool hal_tcs34725_init(); // Requires the main controller already prepared.
 // True while the TCS driver is initialized, including power/integration waits.
 // No bus access; use only from the startup/sensor owner.
 bool hal_tcs34725_initialized();

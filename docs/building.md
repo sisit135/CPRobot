@@ -597,6 +597,63 @@ application services, including localization, navigation and telemetry, even
 if the IMU passes. Set this trace-only flag to `0` to restore normal startup.
 Other profiles keep the normal IMU failure gate.
 
+### I2C initialization isolation
+
+The bench-only `blackpill_f411ce_i2c_isolation` profile selects LSM303DLHC and
+sets `AXI_BUP_I2C_ISOLATION=1` with diagnostic bring-up. Build it with the
+same PlatformIO prerequisites and output-directory overrides as other THS
+profiles:
+
+```sh
+pio run -d fw/autonomous/STM32_TINYRCP -e blackpill_f411ce_i2c_isolation
+```
+
+It replaces normal BUP with one independent startup experiment. Application
+services never start and BUP remains FAILED. Default case 1 prepares only the
+main controller and attempts TCS initialization: no GPIO inventory, IMU, ToF
+controller/device, motor or settings initialization precedes it. Address
+inventory runs after the experiment. Only cases selecting motor initialization
+configure/stop motor outputs. No case commands motion.
+
+Select another case in RAM while stopped at `main()`, after C/C++ data
+initialization, before resuming. For a matching deployed ELF and the OpenOCD
+server described below, a GDB session can use:
+
+```gdb
+monitor reset halt
+thbreak main
+continue
+set var ths_i2c_isolation_case = 1
+continue
+```
+
+Every reset restores case 1; selection does not write settings/flash. These
+debugger resets do not reset powered sensor modules and do not constitute POR
+qualification. Physically powered devices remain connected in all cases.
+
+| Case | Initialization before the final main-bus inventory |
+| --- | --- |
+| 0 | Main controller only; no sensor initialization |
+| 1 | Main controller, TCS only (default) |
+| 2 | Main controller, IMU, TCS |
+| 3 | Main controller, ToF controller, TCS |
+| 4 | ToF controller, main controller, TCS |
+| 5 | Main/ToF controllers, ToF devices, TCS |
+| 6 | Stopped motor outputs, main controller, TCS |
+| 7 | Main controller, settings, TCS |
+| 8 | Main/ToF controllers, stopped motor outputs, settings, IMU, ToF, TCS |
+| 9 | Initial GPIO/hardware inventories, then case 8 device order |
+| 10 | Main `Wire.begin()` without the subsequent `setClock()`, then TCS |
+| 11 | Main controller and IMU only |
+| 12 | ToF controller/devices only; no main controller or main inventory |
+
+Invalid case numbers perform no HAL work. Cases 0-8 and 10-12 have no GPIO
+probes or address inventory before their device initialization. Results use
+`i2c.iso` log records; the controller snapshots preserve failure state before
+the final inventory. The [THS architecture](fw_ths_architecture.md) and
+[live isolation report](validation/ths_i2c_isolation_2026-11-19.md) describe the
+implementation and observed limits.
+
 ### Mutually exclusive THS sensor backends
 
 The base profile selects MPU9250/AK8963. The LSM303DLHC, `_trace` and `_prod`

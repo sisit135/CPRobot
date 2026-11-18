@@ -20,35 +20,31 @@ enum class Phase { FAULT, POWER_WAIT, INTEGRATING, IDLE_WAIT };
 Phase phase = Phase::FAULT;
 nav::EndTapeDetector tape({board::sensors::kTapeBlackMaxClear,
                            board::sensors::kTapeWhiteMinClear});
-/** @brief Write one TCS34725 register using the Arduino I2C adapter.
- * @param[in] reg Register address.
- * @param[in] value Byte value.
- * @returns true if the bus acknowledged the transaction.
- */
-bool write_reg(uint8_t reg, uint8_t value) {
-  Wire.beginTransmission(address);
-  Wire.write(uint8_t(0x80 | reg));
-  Wire.write(value);
-  return Wire.endTransmission() == 0;
+// Keep the shared controller in polling master mode. Arduino Wire's interrupt
+// error callback can put a master into LISTEN after a NACK, preventing later
+// IMU transfers even when SDA/SCL and the peripheral BUSY flag are idle.
+bool transfer_result(HAL_StatusTypeDef status, uint8_t reg) {
+  if (status == HAL_OK)
+    return true;
+  robot_log::write(
+      robot_log::Level::ERROR, "tcs",
+      "transfer reg=0x%02x status=%u error=%08lx", reg, unsigned(status),
+      static_cast<unsigned long>(HAL_I2C_GetError(Wire.getHandle())));
+  return false;
 }
-/** @brief Read auto-incrementing bytes from the TCS34725.
- * @param[in] reg First register.
- * @param[out] data Destination with room for count bytes.
- * @param[in] count Number of bytes, at most eight.
- * @returns true on a complete transaction.
- */
+bool write_reg(uint8_t reg, uint8_t value) {
+  return transfer_result(
+      HAL_I2C_Mem_Write(Wire.getHandle(), uint16_t(address) << 1,
+                        uint8_t(0x80 | reg), I2C_MEMADD_SIZE_8BIT, &value, 1,
+                        board::sensors::kI2cTimeoutMs),
+      reg);
+}
 bool read_regs(uint8_t reg, uint8_t *data, uint8_t count) {
-  Wire.beginTransmission(address);
-  Wire.write(uint8_t(0xA0 | reg));
-  if (Wire.endTransmission(false) != 0 ||
-      Wire.requestFrom(address, count) != count)
-    return false;
-  for (uint8_t i = 0; i < count; ++i) {
-    if (!Wire.available())
-      return false;
-    data[i] = static_cast<uint8_t>(Wire.read());
-  }
-  return true;
+  return transfer_result(
+      HAL_I2C_Mem_Read(Wire.getHandle(), uint16_t(address) << 1,
+                       uint8_t(0xA0 | reg), I2C_MEMADD_SIZE_8BIT, data, count,
+                       board::sensors::kI2cTimeoutMs),
+      reg);
 }
 } // namespace
 bool hal_sensors_init() {
@@ -59,9 +55,21 @@ bool hal_sensors_init() {
     return false;
   if (!hal_board_sensors_init())
     return false;
+  return hal_tcs34725_init();
+}
+
+bool hal_tcs34725_init() {
+  phase = Phase::FAULT;
   robot_log::write(robot_log::Level::INFO, "tcs", "init started");
   uint8_t id = 0;
-  if (!read_regs(0x12, &id, 1) || id != 0x44 || !write_reg(0x00, 0) ||
+  if (!read_regs(0x12, &id, 1)) {
+    robot_log::write(robot_log::Level::ERROR, "tcs",
+                     "identity transfer failed");
+    return false;
+  }
+  robot_log::write(robot_log::Level::INFO, "tcs", "identity=0x%02x", id);
+  // TCS3472 family: TCS34725=0x44, TCS34727=0x4d (DS000390, ID register).
+  if ((id != 0x44 && id != 0x4d) || !write_reg(0x00, 0) ||
       !write_reg(0x01, atime) || !write_reg(0x0F, 1) || !write_reg(0x00, 1)) {
     robot_log::write(robot_log::Level::ERROR, "tcs",
                      "health check/init failed id=0x%02x", id);
