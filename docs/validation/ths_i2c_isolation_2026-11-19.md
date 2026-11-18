@@ -209,3 +209,61 @@ Post-fix local evidence:
 The polling fix prevents the observed TCS NACK from disabling the shared
 controller and IMU. Reliable TCS communication, effective ToF reset through
 XSHUT, repeated POR behavior, and qualified navigation remain unresolved.
+
+## Retry with TCS physically disconnected
+
+The user subsequently removed TCS completely from the bus. The same isolation
+and trace binaries above were reused without firmware changes. Seventeen
+software-reset isolation trials ran in this order:
+`9, 0, 10, 11, 12, 2, 3, 4, 5, 6, 7, 8, 9, 1, 11, 12, 1`.
+Starting with case 9 captured both GPIO inventories before any device HAL.
+
+| Check with TCS removed | Result |
+| --- | --- |
+| Main GPIO inventory before Wire/device HALs | LSM `0x19`/`0x1e` ACK; TCS `0x29` no ACK |
+| Initial ToF GPIO inventory | Previously assigned `0x30`/`0x31`/`0x32` all ACK |
+| IMU initialization | 6/6 PASS |
+| All-three-ToF initialization | 6/6 PASS, including both ToF-only trials |
+| TCS attempts | 12/12 fail identity transfer with AF/NACK, expected for the absent device |
+| All address inventories | Complete; no bus-busy result |
+| Controller snapshots | READY; no LISTEN state |
+
+ToF initialization now resets and reassigns all three powered devices
+successfully despite their previous addresses being present before the HAL
+starts. This differs from the left-ToF boot timeout observed with TCS still
+connected. The improvement occurred with identical firmware; no initialization
+order change or missing-device bypass was introduced for this comparison.
+
+Three further normal trace bring-up runs completed. The harness verified BUP
+FAILED directly in RAM after each run, avoiding dependence on snapshot rows
+lost under vendor trace traffic. Each reached the expected absent-TCS identity
+failure after ToF initialization. Final read-only flash/RAM capture confirmed
+the deployed image matched the trace binary above byte-for-byte and showed:
+
+- IMU and magnetometer online, zero bus errors; cached acceleration
+  `(-3.373, 7.885, -5.904) m/s²`.
+- All three ToFs online, zero API errors and zero timeouts. Front/right each
+  had one accepted sample; left had one rejected out-of-range sample
+  (`RangeStatus=4`), rather than an initialization failure.
+- I2C1 READY (`0x20`), error code zero after boot snapshot processing.
+- TCS phase FAULT and BUP FAILED; application services remain blocked.
+
+Settings sectors remained byte-identical, with the same SHA-256 recorded above.
+VS Code reacquired ST-Link after the trace trials. The final capture used its
+existing OpenOCD server without halting, resetting, or consuming RTT output.
+The target still matched the diagnostic trace image. No additional physical
+power cycle was performed for this disconnected-TCS comparison.
+
+The observations point toward a condition associated with the connected TCS
+module, cabling, or power as a contributor to the intermittent behavior. They
+do not distinguish those causes or establish POR reliability. The earlier
+software-reset ToF failure is no longer reproducing in these trials with TCS
+removed. Normal bring-up still requires the color sensor, so its absence
+deliberately blocks service startup.
+
+Local evidence: `/tmp/ths-no-tcs-summary.log`,
+`/tmp/ths-no-tcs-results.json`, their seventeen per-case logs,
+`/tmp/ths-no-tcs-trace-repeat-summary.log`,
+`/tmp/ths-no-tcs-trace-repeat-results.json`, the three per-run trace logs,
+and `/tmp/ths-no-tcs-final-state.json` decoded from the matching flash/RAM
+captures. The first full inventory is in `/tmp/ths-no-tcs-00-case-9.log`.
