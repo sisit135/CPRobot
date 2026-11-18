@@ -22,6 +22,10 @@ bool services() {
   return failure != "services";
 }
 } // namespace
+bool hal_board_sensor_buses_init() {
+  steps.push_back("buses");
+  return failure != "buses";
+}
 bool hal_motor_init() {
   steps.push_back("motor");
   return failure != "motor";
@@ -74,22 +78,25 @@ int main(int argc, char **argv) {
   assert(steps.empty()); // HAL work happens in the task, not the creator.
   assert(!bup::bup_task_start(services));
   fake::run("bup_task", [] { assert(false); });
-  const std::vector<std::string> all{"motor", "settings", "sensors",
+  const std::vector<std::string> all{"buses", "motor", "settings", "sensors",
                                      "services"};
-  size_t expected = 4;
-  if (failure == "motor")
-    expected = 1;
-  if (failure == "settings")
+  size_t expected = 5;
+  if (failure == "motor" || failure == "buses")
     expected = 2;
-  if (failure == "sensors")
+  if (failure == "settings")
     expected = 3;
+  if (failure == "sensors")
+    expected = 4;
   assert(steps ==
          std::vector<std::string>(all.begin(), all.begin() + expected));
   const bool success = failure == "success";
   assert(bup::bup_task_get_status() ==
          (success ? bup::BupStatus::SUCCEEDED : bup::BupStatus::FAILED));
   assert(stopped == !success);
-  assert(captures == (failure == "motor" || failure == "settings" ? 0u : 1u));
+  assert(captures ==
+         (failure == "motor" || failure == "settings" || failure == "buses"
+              ? 0u
+              : 1u));
   assert(prints == 1);
   assert(errors.empty() == success);
   if (!success)

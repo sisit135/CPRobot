@@ -10,6 +10,7 @@
 FakeWire Wire;
 uint32_t &fake_us = fake_clock::timer.CNT;
 bool hal_board_sensors_init() { return true; }
+bool hal_board_sensor_buses_init() { return true; }
 namespace robot_log {
 bool write(Level, const char *, const char *, ...) { return true; }
 } // namespace robot_log

@@ -74,7 +74,8 @@ controller's log source (`i2c1`, `i2c2`, or `i2c3`), derived from the actual HAL
 instance rather than assumed pin defaults. An unavailable/unrecognized
 controller uses `i2c`. With default THS wiring, I2C1 is the main sensor bus and
 I2C2 is the isolated ToF bus; their 0x29 bindings remain separate.
-Rows bind seven-bit addresses to configured MPU9250, AK8963, TCS34725 and
+Rows bind seven-bit addresses to the selected IMU (LSM303DLHC ACCEL/MAG or
+MPU9250/AK8963), TCS34725 and
 left/front/right VL53L0X devices. ACK means an address responded, not that device
 identity or physical position was verified. `no ACK` means the probe did not
 succeed; `not probed` means the scan ended before reaching that address. Unknown
@@ -89,7 +90,29 @@ elapsed time past the deadline; this is not a hard real-time guarantee. Tables
 also yield between device rows for deferred draining. No device registers,
 address assignments or XSHUT pins are changed by the scan itself.
 
-Both buses are scanned before IMU initialization; main is rescanned after IMU
+Before motor/settings/device HAL initialization, both buses receive GPIO
+address-only probes, labelled `GPIO / main` and `GPIO / ToF`, before either
+`Wire.begin()`. These probes release open-drain outputs, require external
+pull-ups, use at least 5 microseconds per clock phase, and bound each clock
+stretch to 1 ms. A low idle line stops that inventory without recovery pulses.
+GPIO clocks are enabled in input mode before logging idle levels and preloading
+the open-drain outputs. Pins return to inputs afterward. The first bus failing does not suppress the
+second inventory. No XSHUT state is changed, so absent/sharing ToFs cannot be
+identified or counted at this stage.
+
+Hardware-controller scans follow, still before device HALs. The GPIO and
+hardware inventories can reveal a failure introduced by controller setup.
+`reset CSR` preserves STM32 reset-cause flags without clearing them (flags can
+accumulate; a software reset is not a POR). Line-level and controller snapshots
+are emitted after each bus setup, after motor/settings HALs, and after device
+initialization. `SR2` BUSY is bit 1; HAL state/error, CR1/CR2, CCR and TRISE are
+reported. GPIO levels indicate digital thresholds, not measured voltage or
+rise time. Startup prepares each controller once; sensor initialization reuses
+it. Probes do not automatically reset or recover a failing controller. The
+Arduino core's subsequent `Wire.begin()` retains its existing bus-recovery
+behavior; the GPIO inventory records the bus before that can run.
+
+Main is rescanned after IMU
 success (or a deferred failure in diagnostic trace mode), and ToF after its
 initialization attempt. AK8963 at 0x0c may not respond
 before bypass setup. A ToF response at boot address 0x29 may represent several

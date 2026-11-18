@@ -15,7 +15,8 @@ struct FakeWire {
   uint8_t registers[256]{}, pointer = 0, command = 0;
   unsigned written = 0, remaining = 0;
   bool fail = false;
-  void begin() {}
+  unsigned begin_calls = 0;
+  void begin() { ++begin_calls; }
   void setSDA(uint32_t) {}
   void setSCL(uint32_t) {}
   void setClock(uint32_t) {}

@@ -2,6 +2,7 @@
 #include "hal/i2c_diagnostics.hpp"
 #include "logging/log.hpp"
 #include "platform/rtos.hpp"
+#include <Arduino.h>
 #include <cassert>
 #include <cstdarg>
 #include <cstdio>
@@ -15,6 +16,12 @@ HAL_StatusTypeDef failure = HAL_ERROR;
 std::vector<unsigned> addresses;
 std::string output;
 bool all_ack = false;
+constexpr int sda = 10, scl = 11;
+bool data_high = true, clock_high = true, active = false;
+bool stuck_data = false, stretch = false;
+unsigned bits = 0, byte = 0, starts = 0, stops = 0, clock_edges = 0;
+int modes[2] = {INPUT, INPUT};
+std::vector<unsigned> gpio_addresses;
 std::string expected_source = "i2c1";
 void reset() {
   now = 1;
@@ -23,8 +30,58 @@ void reset() {
   all_ack = false;
   addresses.clear();
   output.clear();
+  data_high = clock_high = true;
+  active = stuck_data = stretch = false;
+  bits = byte = starts = stops = clock_edges = 0;
+  gpio_addresses.clear();
 }
 } // namespace
+void pinMode(int pin, int mode) {
+  assert(pin == sda || pin == scl);
+  assert(mode == INPUT || mode == OUTPUT_OPEN_DRAIN);
+  modes[pin == sda ? 0 : 1] = mode;
+}
+void delayMicroseconds(unsigned int us) { now += us; }
+int digitalRead(int pin) {
+  assert(pin == sda || pin == scl);
+  if (pin == scl)
+    return clock_high && !(stretch && active);
+  if (stuck_data)
+    return LOW;
+  // The ninth clock is ACK only for 0x19 and 0x1e.
+  if (active && bits == 9)
+    return byte == (0x19 << 1) || byte == (0x1e << 1) ? LOW : HIGH;
+  return data_high;
+}
+void digitalWrite(int pin, int value) {
+  assert(pin == sda || pin == scl);
+  if (pin == sda) {
+    if (clock_high && !(stretch && active) && data_high && value == LOW) {
+      assert(!active);
+      active = true;
+      bits = byte = 0;
+      ++starts;
+    } else if (clock_high && !stretch && !data_high && value == HIGH &&
+               active) {
+      assert(bits == 10); // Eight address clocks, ACK, STOP clock.
+      active = false;
+      ++stops;
+    }
+    data_high = value;
+  } else {
+    if (!clock_high && value == HIGH && active) {
+      ++clock_edges;
+      if (++bits <= 8)
+        byte = (byte << 1) | unsigned(data_high);
+      if (bits == 9) {
+        assert(data_high); // Master releases ACK; it never drives this bit.
+        assert((byte & 1) == 0); // Address-only write, never read device data.
+        gpio_addresses.push_back(byte >> 1);
+      }
+    }
+    clock_high = value;
+  }
+}
 int64_t hal_time_us() { return now; }
 void vTaskDelay(TickType_t ticks) { now += ticks * 1000; }
 HAL_StatusTypeDef HAL_I2C_IsDeviceReady(I2C_HandleTypeDef *, uint16_t address,
@@ -106,4 +163,30 @@ int main() {
   i2c_diagnostics::scan(nullptr, "main", "unavailable", bindings, 2);
   assert(addresses.empty());
   assert(output.find("0/112 probed") != std::string::npos);
+
+  reset();
+  const i2c_diagnostics::Binding lsm[] = {{0x19, "LSM303DLHC accel"},
+                                          {0x1e, "LSM303DLHC mag"}};
+  i2c_diagnostics::scan_gpio(sda, scl, "main", lsm, 2);
+  assert(addresses.empty()); // No STM32 HAL transaction before Wire.begin.
+  assert(starts == 112 && stops == 112 && gpio_addresses.size() == 112);
+  for (unsigned i = 0; i < 112; ++i)
+    assert(gpio_addresses[i] == i + 8);
+  assert(output.find("112/112 probed; 2 ACK; 0 unbound") != std::string::npos);
+  assert(data_high && clock_high && modes[0] == INPUT && modes[1] == INPUT);
+
+  reset();
+  stuck_data = true;
+  i2c_diagnostics::scan_gpio(sda, scl, "main", lsm, 2);
+  assert(starts == 0 && clock_edges == 0); // Do not recover/mask stuck SDA.
+  assert(output.find("Scan result: bus busy") != std::string::npos);
+  assert(data_high && clock_high && modes[0] == INPUT && modes[1] == INPUT);
+
+  reset();
+  stretch = true;
+  i2c_diagnostics::scan_gpio(sda, scl, "main", lsm, 2);
+  assert(starts == 1 && clock_edges == 1 && gpio_addresses.empty());
+  assert(output.find("Scan result: probe timeout") != std::string::npos);
+  assert(now < 10000); // Bound clock stretching even without a HAL timeout.
+  assert(data_high && clock_high && modes[0] == INPUT && modes[1] == INPUT);
 }

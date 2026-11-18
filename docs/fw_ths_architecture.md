@@ -50,7 +50,8 @@ sensor/plant doubles, not the STM32 scheduler or its interrupt implementation.
 
 STM32 currently enters through Arduino `setup()`, not ESP-IDF `app_main()`.
 It configures TRACE logging and the early USB CDC serial drain task, creates `bup_task`,
-then starts FreeRTOS. Bring-up alone initializes motor outputs, validates the
+then starts FreeRTOS. Bring-up alone inventories and prepares both sensor buses,
+initializes motor outputs, validates the
 required remote store, initializes sensor HALs, and starts application services
 only after every hardware step succeeds. The existing Arduino entry point
 creates startup tasks and starts the scheduler; hardware initialization runs
@@ -145,8 +146,13 @@ application-start callback is never called in this mode, even with a healthy
 IMU: localization, navigation, sensor polling, telemetry and motor service tasks
 remain blocked. The [build guide](building.md#stm32f411ce-firmware) owns the flag
 and restoration instructions.
-During sensor HAL startup, BUP first prepares the main and isolated ToF buses
-and runs address-only I2C scans before initializing the IMU. Separate INFO
+Before motor, settings or sensor device HAL initialization, BUP inventories both
+buses using an open-drain GPIO address probe, before either `Wire.begin()`.
+It then prepares and inventories the main and isolated ToF hardware controllers.
+GPIO probing sends only a write address and STOP, uses external pull-ups,
+bounds clock stretching, and leaves a stuck bus unrecovered for diagnosis.
+Bus preparation is idempotent: sensor HAL startup does not restart controllers.
+Separate INFO
 tables and log sources identify the actual I2C controller (`i2c1`/`i2c2` with
 default wiring), logical bus and scan phase. Tables show
 configured device bindings, ACK/no-ACK results and unknown responders, so an IMU
@@ -155,7 +161,13 @@ is scanned again after the IMU attempt when startup continues, and the ToF bus a
 initialization attempt. An ACK is not an identity check: AK8963 may be hidden
 until MPU bypass is enabled; multiple unassigned ToFs can share boot address
 0x29. Device HAL initialization remains authoritative and scan results do not
-override bring-up gates. Invalid isolated-bus wiring now fails before IMU init.
+override bring-up gates. Invalid isolated-bus wiring fails before probing.
+Line levels, reset-cause flags and STM32 controller status are logged around
+controller setup, motor/settings startup and device initialization. These
+snapshots distinguish missing responders from stuck lines or BUSY controllers;
+they do not establish electrical integrity. Both inventories run even when the
+first bus is stuck. Bus-setup failure still configures stopped motor outputs
+before halting BUP.
 The [I2C diagnostics HAL](../fw/autonomous/STM32_TINYRCP/src/hal/i2c_diagnostics.cpp)
 owns probes and table formatting; no service task reads sensor registers for
 diagnostics. Probe bounds and log interpretation live in [tracing](tracing.md).

@@ -55,11 +55,8 @@ bool hal_sensors_init() {
   tape = nav::EndTapeDetector(
       {board::sensors::kTapeBlackMaxClear, board::sensors::kTapeWhiteMinClear});
   phase = Phase::FAULT;
-  Wire.setSDA(board::sensors::kMainSdaPin);
-  Wire.setSCL(board::sensors::kMainSclPin);
-  Wire.begin();
-  Wire.setClock(board::sensors::kMainI2cHz);
-  robot_log::write(robot_log::Level::INFO, "i2c", "main bus ready");
+  if (!hal_board_sensor_buses_init())
+    return false;
   if (!hal_board_sensors_init())
     return false;
   robot_log::write(robot_log::Level::INFO, "tcs", "init started");

@@ -23,14 +23,20 @@ bool start_services() {
   return false;
 }
 } // namespace
-bool hal_motor_init() { return true; }
+bool hal_motor_init() {
+  assert(scans.size() == 4); // Both GPIO and hardware inventories precede HALs.
+  return true;
+}
 void hal_motor_stop() { motor_stopped = true; }
 int64_t hal_time_us() { return 1; }
 namespace remote {
 bool board_init() { return true; }
 } // namespace remote
 namespace imu {
-bool initialize(const Config &) { return mode != "imu"; }
+bool initialize(const Config &) {
+  assert(Wire.begin_calls == 1); // Preparing sensors must not reset the bus.
+  return mode != "imu";
+}
 Statistics statistics() {
   Statistics result;
   result.online = true;
@@ -52,6 +58,12 @@ void i2c_diagnostics::scan(I2C_HandleTypeDef *, const char *name,
                            const char *phase, const Binding *, std::size_t) {
   scans.push_back(std::string(name) + ":" + phase);
 }
+void i2c_diagnostics::scan_gpio(int, int, const char *name, const Binding *,
+                                std::size_t) {
+  assert(Wire.begin_calls == 0); // Neither controller/device has started yet.
+  scans.push_back(std::string(name) + ":GPIO");
+}
+void i2c_diagnostics::state(I2C_HandleTypeDef *, int, int, const char *) {}
 robot_log::Level robot_log::minimum_level() { return Level::TRACE; }
 bool robot_log::write(Level, const char *, const char *format, ...) {
   char text[128];
@@ -76,7 +88,10 @@ int main(int argc, char **argv) {
   assert(bup::bup_task_start(start_services));
   fake::run("bup_task", [] { assert(false); });
   assert(tof_attempted);
-  assert(scans.size() == 4);
+  assert(scans.size() == 6);
+  assert(scans[0] == "main:GPIO" && scans[1] == "ToF:GPIO");
+  assert(scans[2] == "main:before device HALs");
+  assert(scans[3] == "ToF:before device HALs");
   assert(scans.back() == "ToF:after ToF init attempt");
   assert(motor_stopped);
   assert(bup::bup_task_get_status() == bup::BupStatus::FAILED);

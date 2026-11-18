@@ -29,6 +29,8 @@ struct Summary {
 
 bool initialize(Summary &summary) {
   robot_log::write(robot_log::Level::INFO, "bup", "bring-up started");
+  // Inventory both buses before an unrelated HAL can alter pins or halt BUP.
+  const bool buses_ready = hal_board_sensor_buses_init();
   summary.motor = Step::FAILED;
   if (!hal_motor_init()) {
     robot_log::write(robot_log::Level::ERROR, "drv",
@@ -39,6 +41,12 @@ bool initialize(Summary &summary) {
   // DRV8833 provides no power-on feedback. This only confirms GPIO setup.
   robot_log::write(robot_log::Level::INFO, "drv",
                    "outputs configured; stopped");
+  if (!buses_ready) {
+    summary.sensors = Step::FAILED;
+    robot_log::write(robot_log::Level::ERROR, "bup",
+                     "sensor bus setup failed; halted");
+    return false;
+  }
   summary.settings = Step::FAILED;
   if (!remote::board_init()) {
     robot_log::write(robot_log::Level::ERROR, "remote",
