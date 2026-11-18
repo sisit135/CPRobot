@@ -107,6 +107,105 @@ Initial local evidence:
 - `/tmp/ths-isolation-settings-before.bin` / `ths-isolation-settings-after.bin`:
   settings preservation across the initial matrix.
 
-Live comparison of the polling fix is pending exclusive ST-Link access; a VS
-Code Cortex-Debug session acquired the probe before deployment. No post-fix
-hardware success or cold-start qualification is asserted by the host results.
+## Post-fix live comparison
+
+After the VS Code debugger released ST-Link, the isolation and trace images
+from `3a22d62` were programmed and verified on the target. They include only
+the local motor-pin override described above in addition to that revision.
+
+The same seventeen-case software-reset matrix completed after the polling
+change:
+
+| Check | Result |
+| --- | --- |
+| TCS initialization | 1 PASS, 11 FAIL across 12 attempts |
+| TCS-only, case 1 | All three attempts still NACK |
+| IMU then TCS, case 2 | IMU PASS; TCS ID `0x4d` accepted; configuration writes PASS |
+| I2C1 after every failed TCS attempt | READY (`0x20`), AF error `0x04`, physical lines high, BUSY clear |
+| Address inventory after every failed TCS attempt | Completes; LSM `0x19` and `0x1e` ACK |
+| IMU initialization | All five attempts PASS |
+| ToF initialization | All five attempts time out on left (`id=0`) at boot stage, error `-7` |
+| Application services | Blocked in every case |
+
+Representative TCS-only result:
+
+```text
+1 0 tcs: transfer reg=0x12 status=1 error=00000004
+1 0 tcs: identity transfer failed
+1 2 i2c1: isolation result: SDA=1 SCL=1
+1 2 i2c1: CR1=0401 CR2=0030 SR1=0000 SR2=0000
+1 2 i2c1: state=20 error=00000004 CCR=00f0 TRISE=31
+```
+
+The controller no longer enters LISTEN after the NACK. Subsequent main-bus
+scans finish rather than returning HAL_BUSY. This validates containment of
+the shared-controller failure; it does **not** fix the underlying TCS NACK.
+The single successful TCS initialization also does not establish reliable
+RGBC acquisition.
+
+Three further normal trace bring-up captures completed after software reset.
+Each initialized the IMU, timed out on the left ToF at boot, and halted before
+TCS initialization. Acceleration and native magnetic readings were available
+in the bring-up snapshot; gyro remained N/A. A powered ToF still ACKed at its
+previously assigned `0x30` after the failed reset/boot sequence. The cause of
+that retained address has not been established. ToF-only case 12 reproduces
+the failure without calling TCS, so it cannot be attributed to a failing TCS
+transaction in the same boot.
+
+## Post-fix full power cycle
+
+The user then fully power-cycled the robot and sensor supply with the trace
+diagnostic image installed. RTT captured a fresh boot, reset CSR `0x0e000000`,
+and GPIO inventories before controller/device initialization. Main-bus
+`0x19`, `0x1e` and `0x29` ACKed via GPIO; the hardware-controller inventory
+still reported no ACK at main `0x29`.
+
+All three ToFs initialized on this cold start. Their assigned addresses
+`0x30`, `0x31` and `0x32` ACKed. Normal bring-up reached TCS, which again
+failed its identity transfer with AF/NACK. Later boot-snapshot processing
+successfully read the IMU and ToFs. Final debugger reads, taken after the
+transactions completed, confirmed:
+
+- I2C1 `HAL_I2C_STATE_READY`, error code zero after subsequent IMU transfers;
+  CR2 `0x0030`, SR1/SR2 zero, with no slave-listening interrupt enable bits.
+- IMU and magnetometer online, zero bus errors; cached acceleration
+  `(-3.354, 7.924, -5.806) m/s²`, acceleration timestamp `2139046 µs` and
+  magnetic timestamp `2140290 µs`, both after the failed TCS read at 2136 ms.
+- All three ToFs online with zero API errors/timeouts. Front and right each
+  produced one accepted sample (66 mm and 18 mm); left produced one rejected
+  out-of-range sample (`RangeStatus=4`, 8190 mm).
+- TCS phase FAULT and BUP status FAILED. Application services remain blocked.
+
+Vendor trace traffic and SWD reconnection caused omissions in RTT output;
+the final HAL/BUP/ToF state above was read directly rather than inferred from
+missing log lines. This is one observed cold start, not POR qualification.
+The target is left running the trace diagnostic image with bring-up halted.
+
+## Artifacts and limits
+
+Settings sectors `0x08040000..0x0807ffff` matched byte-for-byte before/after
+the post-fix matrix, trace repetitions and full power cycle. Their SHA-256 is
+`6b02ca41debc2f6be2ae2f7875e2da089ab08c49df503ae27dc3b278cb19ca77`.
+
+| Programmed binary | SHA-256 |
+| --- | --- |
+| `blackpill_f411ce_i2c_isolation/firmware.bin` | `9431f2dfa9446fb67b5bf7ab066a4309633631cb8e4b5cf5be83c00e5c31365a` |
+| `blackpill_f411ce_trace/firmware.bin` | `56974a35019398a0503141d7d5bfe8f76d3b27c1e25ed8b8f36dfba2fda3851f` |
+
+Post-fix local evidence:
+
+- `/tmp/ths-isolation-polling-matrix-summary.log`,
+  `/tmp/ths-isolation-polling-results.json` and the per-case logs.
+- `/tmp/ths-isolation-polling-00-case-1.log`: NACK leaves I2C1 READY and LSMs
+  addressable; `/tmp/ths-isolation-polling-05-case-2.log`: accepted `0x4d` ID
+  and successful TCS configuration.
+- `/tmp/ths-trace-polling-repeat-summary.log` and three per-run logs:
+  normal bring-up after software reset.
+- `/tmp/ths-trace-polling-cold.log` and
+  `/tmp/ths-trace-polling-cold-openocd.log`: user-performed power cycle.
+- `/tmp/ths-trace-polling-cold-state.log` and
+  `/tmp/ths-trace-polling-cold-imu.log`: final controller, sensor and BUP state.
+
+The polling fix prevents the observed TCS NACK from disabling the shared
+controller and IMU. Reliable TCS communication, effective ToF reset through
+XSHUT, repeated POR behavior, and qualified navigation remain unresolved.
