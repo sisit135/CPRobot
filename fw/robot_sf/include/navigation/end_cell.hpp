@@ -38,6 +38,8 @@ public:
   bool observe(const loc::MazeMap &, const BootstrapFrame &,
                const loc::PoseSnapshot &, int64_t now);
   bool at_center(const loc::PoseSnapshot &, int64_t now) const;
+  // Current terminal policy: fresh independent pose, no optical cue required.
+  bool pose_at_center(const loc::PoseSnapshot &, int64_t now) const;
   bool latched() const { return latched_; }
 
 private:

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "Wire.h"
+#include "hal/color_selection.hpp"
+#include "localization/hal_sensors.hpp"
 #include "bup/bup_tasks.hpp"
 #include "hal/boot_sensor_sample.hpp"
 #include "hal/i2c_diagnostics.hpp"
@@ -85,6 +87,15 @@ int main(int argc, char **argv) {
   assert(argc == 2);
   mode = argv[1];
   Wire.registers[0x12] = mode == "tcs" ? 0 : 0x44;
+#if !AXI_TCS3472_ENABLE
+  loc::RgbcSample color{};
+  nav::EndTapeEvent tape{};
+  int64_t stamp = 123;
+  assert(!hal_tcs34725_init() && !hal_tcs34725_initialized());
+  assert(!hal_tcs34725_read(&color, &stamp));
+  assert(!hal_end_tape_classify(color, stamp, &tape));
+  assert(stamp == 123 && color.sequence == 0 && tape.id == 0);
+#endif
   assert(bup::bup_task_start(start_services));
   fake::run("bup_task", [] { assert(false); });
   assert(tof_attempted);
@@ -96,8 +107,13 @@ int main(int argc, char **argv) {
   assert(motor_stopped);
   assert(bup::bup_task_get_status() == bup::BupStatus::FAILED);
   assert(imu_stopped == (mode == "imu" || mode == "mag"));
-  if (mode == "imu" || mode == "mag" || mode == "healthy") {
+  if (mode == "imu" || mode == "mag" || mode == "healthy" ||
+      (!AXI_TCS3472_ENABLE && mode == "tcs")) {
+#if AXI_TCS3472_ENABLE
     assert(Wire.registers[1] == 0xF6);
+#else
+    assert(Wire.registers[1] == 0 && Wire.registers[0] == 0);
+#endif
     assert(logs.find("sensor diagnostics complete") != std::string::npos);
   } else {
     assert(logs.find("sensor init failed") != std::string::npos);

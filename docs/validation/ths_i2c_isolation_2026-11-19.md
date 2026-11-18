@@ -3,6 +3,8 @@
 ## Scope
 
 This follows the [early POR investigation](ths_i2c_por_2026-11-19.md).
+The later [pose-only/color-disabled validation](ths_pose_only_2026-11-19.md)
+records the requested firmware policy change and further ToF re-checks.
 The dedicated isolation profile runs one selected initialization case, replacing
 normal bring-up and blocking all application services. Default case 1 prepares
 only I2C1 and initializes TCS. Each software reset restores C/C++ state and

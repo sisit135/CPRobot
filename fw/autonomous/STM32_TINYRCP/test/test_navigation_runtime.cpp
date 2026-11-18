@@ -43,7 +43,6 @@ bool localization_get_bootstrap(nav::BootstrapFrame *f) {
   if (goal_marker) {
     if (!tape_time)
       tape_time = fake::now;
-    f->end_tape = {1, tape_time, tape_time};
   }
   return true;
 }

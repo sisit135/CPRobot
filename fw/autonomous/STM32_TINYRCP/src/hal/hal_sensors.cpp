@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "localization/hal_sensors.hpp"
+#include "hal/color_selection.hpp"
+#include "logging/log.hpp"
+#if AXI_TCS3472_ENABLE
 #include "Arduino.h"
 #include "Wire.h"
 #include "hal/sensors_config.hpp"
-#include "logging/log.hpp"
 #include "platform/hal_platform.hpp"
 #include "remote/settings.hpp"
 #include <algorithm>
@@ -47,19 +49,10 @@ bool read_regs(uint8_t reg, uint8_t *data, uint8_t count) {
       reg);
 }
 } // namespace
-bool hal_sensors_init() {
-  tape = nav::EndTapeDetector(
-      {board::sensors::kTapeBlackMaxClear, board::sensors::kTapeWhiteMinClear});
-  phase = Phase::FAULT;
-  if (!hal_board_sensor_buses_init())
-    return false;
-  if (!hal_board_sensors_init())
-    return false;
-  return hal_tcs34725_init();
-}
-
 bool hal_tcs34725_init() {
   phase = Phase::FAULT;
+  tape = nav::EndTapeDetector(
+      {board::sensors::kTapeBlackMaxClear, board::sensors::kTapeWhiteMinClear});
   robot_log::write(robot_log::Level::INFO, "tcs", "init started");
   uint8_t id = 0;
   if (!read_regs(0x12, &id, 1)) {
@@ -153,4 +146,32 @@ bool hal_end_tape_classify(const loc::RgbcSample &raw, int64_t stamp,
     tape = nav::EndTapeDetector({black, white}); // Sole sensor-task owner.
   }
   return tape.process(raw, stamp, out);
+}
+#else
+// Compatibility hooks remain callable without touching Wire or a device.
+bool hal_tcs34725_init() { return false; }
+bool hal_tcs34725_initialized() { return false; }
+bool hal_tcs34725_read(loc::RgbcSample *, int64_t *) { return false; }
+bool hal_color_marker_read(loc::MarkerSample *, int64_t *) { return false; }
+bool hal_color_classify(const loc::RgbcSample &, loc::MarkerSample *) {
+  return false;
+}
+bool hal_end_tape_classify(const loc::RgbcSample &, int64_t,
+                           nav::EndTapeEvent *) {
+  return false;
+}
+#endif
+
+bool hal_sensors_init() {
+#if AXI_TCS3472_ENABLE
+  phase = Phase::FAULT;
+#endif
+  if (!hal_board_sensor_buses_init() || !hal_board_sensors_init())
+    return false;
+#if AXI_TCS3472_ENABLE
+  return hal_tcs34725_init();
+#else
+  robot_log::write(robot_log::Level::INFO, "sensors", "color HAL disabled");
+  return true;
+#endif
 }

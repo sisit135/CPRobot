@@ -102,7 +102,8 @@ int main(int argc, char **argv) {
     assert(clock_us >= 500001 && clock_us <= 502001);
     assert(!snapshot.imu_valid && !snapshot.mag_valid && !snapshot.color_valid);
   } else {
-    assert(snapshot.imu_valid && snapshot.mag_valid && snapshot.color_valid);
+    assert(snapshot.imu_valid && snapshot.mag_valid && !snapshot.color_valid);
+    assert(color_reads == 0); // Disabled HAL path is never polled.
     assert(snapshot.range_state[0] == boot_sensors::RangeState::VALID);
     if (mode == "mixed") {
       assert(snapshot.range_state[1] == boot_sensors::RangeState::OUT_OF_RANGE);
@@ -121,7 +122,7 @@ int main(int argc, char **argv) {
   assert((output.find("Inf") != std::string::npos) == (mode == "mixed"));
   if (mode == "healthy" || mode == "mixed") {
     assert(output.find("z=9.807") != std::string::npos);
-    assert(output.find("R=123") != std::string::npos);
+    assert(output.find("R=123") == std::string::npos);
     assert(output.find("0.375 m") != std::string::npos);
   } else {
     assert(output.find("N/A") != std::string::npos);

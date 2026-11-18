@@ -69,8 +69,13 @@ foreach(entrance RANGE 0 2)
     endforeach()
 endforeach()
 add_test(NAME robot_lifecycle_no_tape COMMAND robot_feature_lifecycle --headless
-    --seed 1234 --entrance 2 --heading 2 --goal 4 2 --no-tape --expect-failure)
+    --seed 1234 --entrance 2 --heading 2 --goal 4 2 --no-tape)
 set_tests_properties(robot_lifecycle_no_tape PROPERTIES TIMEOUT 30)
+add_test(NAME robot_lifecycle_open_no_tape COMMAND robot_feature_lifecycle --headless
+    --map open --seed 1234 --entrance 0 --heading 0 --goal 2 2 --no-tape)
+set_tests_properties(robot_lifecycle_open_no_tape PROPERTIES TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "PASS: end cell reached AND loc/run GOAL"
+    FAIL_REGULAR_EXPRESSION "tape=1")
 
 add_test(NAME robot_lifecycle_resolver_e2e COMMAND ${Python3_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/run_resolver_e2e.py $<TARGET_FILE:robot_feature_lifecycle>

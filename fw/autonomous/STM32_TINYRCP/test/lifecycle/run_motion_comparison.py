@@ -56,7 +56,7 @@ def run(executable, profile, arena, mode, seed, variant, log, baseline_guard, ex
         if (int(x), int(y)) != rotate(Q1_STARTS[int(entrance)], variant):
             errors.append("start POI mismatch")
     passed = bool(result.returncode == 0 and final and final[1] == "PASS" and final[6] == "GOAL")
-    if passed and (physical.get("tape") != "1" or physical.get("zero_pwm") != "1" or
+    if passed and (physical.get("zero_pwm") != "1" or
                    physical.get("stopped") != "1" or physical.get("motor_goal") != "1" or
                    physical.get("collision") != "0" or float(physical["end_error_m"]) > .025001):
         errors.append("successful result lacks physical goal/stop proof")

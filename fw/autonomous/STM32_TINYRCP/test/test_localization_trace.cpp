@@ -39,7 +39,10 @@ bool hal_tof_red_distance_corrected(loc::TofId id, float *distance_m,
   ++tof_reads;
   return true;
 }
-bool hal_tcs34725_read(loc::RgbcSample *, int64_t *) { return false; }
+bool hal_tcs34725_read(loc::RgbcSample *, int64_t *) {
+  assert(false && "disabled TCS path must never be polled");
+  return false;
+}
 bool hal_end_tape_classify(const loc::RgbcSample &, int64_t,
                            nav::EndTapeEvent *) {
   return false;

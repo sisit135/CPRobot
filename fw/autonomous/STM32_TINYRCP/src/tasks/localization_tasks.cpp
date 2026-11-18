@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "localization/config.hpp"
+#include "hal/color_selection.hpp"
 #include "localization/fusion_engine.hpp"
 #include "localization/hal_sensors.hpp"
 #include "localization/localization.hpp"
@@ -47,7 +48,10 @@ void sensor_task(void *context) {
   wait_for_start();
   nav::BootstrapFrame frame{};
   TickType_t wake = xTaskGetTickCount();
-  int64_t next_tof = 0, next_marker = 0;
+  int64_t next_tof = 0;
+#if AXI_TCS3472_ENABLE
+  int64_t next_marker = 0;
+#endif
   unsigned sensor_updates = 0;
   for (;;) {
     if (s_halted.load(std::memory_order_acquire)) {
@@ -93,6 +97,7 @@ void sensor_task(void *context) {
         }
       }
     }
+#if AXI_TCS3472_ENABLE
     if (now >= next_marker) {
       next_marker = now + cfg::marker_period_us;
       e = {};
@@ -102,6 +107,7 @@ void sensor_task(void *context) {
         hal_end_tape_classify(frame.color, frame.color_us, &frame.end_tape);
       }
     }
+#endif
     // Sensor acquisition runs at 100 Hz. Keep a compact snapshot at TRACE
     // once per five updates (20 Hz), including the latest held ToF readings.
     if (++sensor_updates == 5) {

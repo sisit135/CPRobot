@@ -235,13 +235,11 @@ int main(int argc, char **argv) {
       assert(log_count("FEATURE contradiction latched",
                        robot_log::Level::WARN) == 1);
       if (scenario == "fallback_tape") {
-        // A cue without a matching independent pose must pause RHR, rather
-        // than claim a goal from tape alone.
+        // Optical cues have no terminal authority in the pose-only policy.
         tape = {1, fake::now, fake::now};
-        if (s.end_tape_unresolved) {
-          assert(linear == 0 && angular == 0 && !s.end_tape_seen);
-          fake::now = end;
-        }
+        assert(!s.end_tape_unresolved && !s.end_tape_seen &&
+               s.startup != nav::StartupStatus::DONE);
+        fake::now = end;
       } else {
         mismatch = false;
         recovered = recovered || s.feature.pose.tracking;
@@ -290,14 +288,7 @@ int main(int argc, char **argv) {
              std::hypot(x - .3f, y - (scenario == "turn" ? .3f : .1f)) <=
                  .012f);
     }
-    if (scenario == "bad_tape" && s.end_tape_unresolved) {
-      assert(linear == 0 && !s.end_tape_seen);
-      fake::now = end;
-    }
-    if (scenario == "no_tape" && sent && x > .289f && linear == 0) {
-      assert(s.startup != nav::StartupStatus::DONE && !s.end_tape_seen);
-      fake::now = end;
-    }
+    assert(!s.end_tape_seen && !s.end_tape_unresolved);
     if (moved && scenario == "timeout")
       fake::now = end;
     if (scenario == "leg_timeout") {
@@ -338,9 +329,13 @@ int main(int argc, char **argv) {
                                 s.startup == nav::StartupStatus::TIMEOUT)) {
       assert(sent && moved && halted && feature_halted && linear == 0);
       assert(s.startup == ((scenario == "goal" || scenario == "turn" ||
+                            scenario == "no_tape" || scenario == "bad_tape" ||
                             scenario == "fallback_goal")
                                ? nav::StartupStatus::DONE
                                : nav::StartupStatus::TIMEOUT));
+      if (s.startup == nav::StartupStatus::DONE)
+        assert(std::hypot(x - .3f, y - (scenario == "turn" ? .3f : .1f)) <=
+               .012f);
       if (scenario == "stale")
         assert(saw_stale);
       if (scenario == "leg_timeout")

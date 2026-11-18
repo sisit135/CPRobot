@@ -324,16 +324,16 @@ sensor signatures can still be unresolved. See the
 POI reconfiguration record (internal record).
 Focused diagnostic fixtures
 can override the goal/entrance/heading; those are not qualification campaigns.
-Examples preserving the earlier short-route fixture and a negative tape case:
+Examples preserving the earlier short-route fixture and a pose-only completion case:
 
 ```sh
 build/lifecycle/autonomous/STM32_TINYRCP/test/lifecycle/robot_feature_lifecycle --seed 1234 --entrance 2 --heading 2 --goal 4 2
-build/lifecycle/autonomous/STM32_TINYRCP/test/lifecycle/robot_feature_lifecycle --headless --seed 1234 --entrance 2 --heading 2 --goal 4 2 --no-tape --expect-failure
+build/lifecycle/autonomous/STM32_TINYRCP/test/lifecycle/robot_feature_lifecycle --headless --map open --seed 1234 --entrance 0 --heading 0 --goal 2 2 --no-tape
 ```
 
 The FEATURE boundary regression uses the diagnostic Q1 goal `(2,4)`, rotated
 with each arena. It crosses both previously stalled corridor boundaries and
-turns at `(2,3)`, then requires physical goal/tape proof and a safe stop within
+turns at `(2,3)`, then requires physical goal/pose proof and a safe stop within
 the unchanged 86-second budget. Run all four rotations with:
 
 ```sh
@@ -591,8 +591,8 @@ option 9 (`--component ths-trace`).
 
 The trace profile currently sets the temporary bench flag
 `AXI_BUP_IMU_DIAGNOSTIC=1`. IMU/magnetometer failure is logged but sensor setup
-continues through ToF, its post-initialization address scan and TCS (unless
-those steps fail). BUP remains FAILED with motors stopped and skips all
+continues through ToF and its post-initialization address scan (unless those
+steps fail). Color acquisition is disabled by default. BUP remains FAILED with motors stopped and skips all
 application services, including localization, navigation and telemetry, even
 if the IMU passes. Set this trace-only flag to `0` to restore normal startup.
 Other profiles keep the normal IMU failure gate.
@@ -646,13 +646,35 @@ qualification. Physically powered devices remain connected in all cases.
 | 10 | Main `Wire.begin()` without the subsequent `setClock()`, then TCS |
 | 11 | Main controller and IMU only |
 | 12 | ToF controller/devices only; no main controller or main inventory |
+| 13 | Both bus inventories, IMU + ToF initialization, then 30 s of raw IMU and sequential ranging; no TCS calls |
 
-Invalid case numbers perform no HAL work. Cases 0-8 and 10-12 have no GPIO
+Case 13 requires at least 100 acceleration and magnetic acquisitions and 50
+completed measurements per ToF, with all devices online and no bus/API errors
+or timeouts. Optical out-of-range results count as completed measurements,
+not valid navigation ranges. This checks sustained transport progress rather
+than optical calibration or repeated POR. Invalid case numbers perform no HAL
+work. Cases 0-8 and 10-12 have no GPIO
 probes or address inventory before their device initialization. Results use
 `i2c.iso` log records; the controller snapshots preserve failure state before
 the final inventory. The [THS architecture](fw_ths_architecture.md) and
 [live isolation report](validation/ths_i2c_isolation_2026-11-19.md) describe the
 implementation and observed limits.
+
+### Color acquisition and arrival confirmation
+
+TCS register access is disabled by default (`AXI_TCS3472_ENABLE=0` in
+`hal/color_selection.hpp`) in every firmware profile. Normal bring-up skips
+color initialization; boot/sensor tasks do not poll it, and compatibility hooks
+return false without touching the bus. Legacy color-driver fixtures explicitly
+set `AXI_TCS3472_ENABLE=1`; setting that flag restores the color health gate.
+Isolation cases that select TCS call the disabled stub unless explicitly
+rebuilt with that opt-in. Generic address inventories still probe all addresses.
+
+Navigation completes from a fresh independent pose within 12 mm of the goal
+center after executor settling; optical tape neither authorizes nor blocks
+arrival. The run deadline, turn-clearance checks, compass qualification and
+trace profile's service/motion block remain enabled. The native open-arena
+`robot_lifecycle_open_no_tape` test checks pose-only completion and physical stop.
 
 ### Mutually exclusive THS sensor backends
 

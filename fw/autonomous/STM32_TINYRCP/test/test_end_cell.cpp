@@ -126,6 +126,26 @@ void gate() {
   // A valid pose with the wrong geometry consumes the cue immediately.
   assert(!far.observe(m, f, pose(.1f, .18f, loc::kPi / 2, 1230000), 1230000));
 }
+void pose_only_goal() {
+  nav::EndCellGate gate;
+  gate.begin({2, 2}, 1000000);
+  auto p = pose(.5f, .5f, .7f, 1100000);
+  assert(!gate.latched() && !gate.at_center(p, 1100000));
+  assert(gate.pose_at_center(p, 1100000)); // No tape or entrance heading.
+  p.x_m += .013f;
+  assert(!gate.pose_at_center(p, 1100000));
+  p.x_m = .5f;
+  p.tracking = false;
+  assert(!gate.pose_at_center(p, 1100000));
+  p.tracking = true;
+  assert(!gate.pose_at_center(p, 1250001)); // Stale independent pose.
+  assert(!gate.pose_at_center(p, 1099999)); // Future pose.
+  p.timestamp_us = 999999;
+  assert(!gate.pose_at_center(p, 1100000)); // Before this goal was requested.
+  gate.begin({}, 1000000);
+  p.timestamp_us = 1100000;
+  assert(!gate.pose_at_center(p, 1100000)); // No valid goal.
+}
 void continuous_tape_pose_recovery() {
   nav::EndTapeDetector detector({150, 800});
   nav::EndCellGate gate;
@@ -213,6 +233,7 @@ void headings() {
 int main() {
   detector();
   gate();
+  pose_only_goal();
   continuous_tape_pose_recovery();
   headings();
   std::puts("PASS end tape debounce, mapped entrance, center-only completion, "

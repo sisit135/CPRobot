@@ -2,6 +2,7 @@
 
 // Board hooks use the single sensor backend selected at build time.
 #include "hal/i2c_diagnostics.hpp"
+#include "hal/color_selection.hpp"
 #include "hal/imu_hal.hpp"
 #if AXI_IMU_LSM303DLHC
 #include "hal/lsm303dlhc_config.hpp"
@@ -29,7 +30,8 @@ const i2c_diagnostics::Binding main_bindings[] = {
     {kMpu9250Address7bit, "MPU9250 accel/gyro"},
     {kAk8963Address7bit, "AK8963 (needs bypass)"},
 #endif
-    {kTcs34725Address7bit, "TCS3472 color"}};
+    {kTcs34725Address7bit,
+     AXI_TCS3472_ENABLE ? "TCS3472 color" : "Color disabled"}};
 const i2c_diagnostics::Binding tof_bindings[] = {
     {kVl53l0xBootAddress7bit, "VL53L0X boot (shared)"},
     {kTofAddress7bit[0], "VL53L0X left (assigned)"},

@@ -264,7 +264,7 @@ void path_task(void *) {
   int64_t stage_us = 0, goal_us = 0;
   loc::Cell goal{};
   bool active = false, using_fallback = false, fallback_latched = false,
-       ending = false, end_unresolved = false;
+       ending = false;
   FallbackPhase reported_phase = FallbackPhase::IDLE;
   ExecuteStatus inactive_status = ExecuteStatus::IDLE;
   ExecuteFault inactive_fault = ExecuteFault::NONE;
@@ -350,7 +350,7 @@ void path_task(void *) {
     if (forced_rhr) {
       state.resolver = state.feature.resolution.status;
       // RHR needs only raw ranges/gyro. A later real feature resolution may
-      // establish the map used by the existing end-tape proof and EKF observer.
+      // establish the map used by goal-pose confirmation and the EKF observer.
       // Never seed either from the simulator's physical map or true pose.
       if (state.kind == loc::MapKind::UNKNOWN &&
           state.feature.resolution.status == ResolveStatus::RESOLVED &&
@@ -520,7 +520,6 @@ void path_task(void *) {
         active = false;
         using_fallback = false;
         ending = false;
-        end_unresolved = false;
         inactive_status = ExecuteStatus::IDLE;
         inactive_fault = ExecuteFault::NONE;
         failure_reported = false;
@@ -591,9 +590,10 @@ void path_task(void *) {
         // including a zero TURN/PAUSED command. Startup/idle stops do not arm.
         if (!motor::motor_begin_run())
           continue;
-        if (!ending && end.observe(map, frame, state.feature.pose, now)) {
-          // The tape is before the entrance: replan a measured final
-          // approach, including when the legacy EKF is in fallback.
+        if (!ending && using_fallback &&
+            end.pose_at_center(state.feature.pose, now)) {
+          // A fresh independent goal pose ends RHR exploration. The executor
+          // still owns the final stopped/gyro/pose dwell before GOAL.
 #if NAV_TURN_GUARD
           turn_guard.cancel();
           turn_relocation.cancel();
@@ -602,28 +602,15 @@ void path_task(void *) {
           fallback.cancel();
           motor::motor_stop();
           ending = true;
-          end_unresolved = false;
           using_fallback = false;
           robot_log::write(
               robot_log::Level::INFO, TAG,
-              "end tape associated; planning final center approach");
+              "goal pose reached; settling final center approach");
           const bool planned =
               executor.begin(map, goal, state.feature.pose, now);
           log_route(executor, state.feature.pose, goal, planned);
           if (!planned)
             active = false;
-        }
-        const auto &tape = frame.end_tape;
-        if (!ending && tape.id && tape.first_us >= goal_us &&
-            tape.first_us > 0 && tape.confirmed_us >= tape.first_us &&
-            tape.confirmed_us <= now && now - tape.confirmed_us <= 150000 &&
-            !end_unresolved) {
-          end_unresolved =
-              true; // Never drive blindly past an unassociated end cue.
-          robot_log::write(
-              robot_log::Level::WARN, TAG,
-              "end tape unassociated id=%lu; stopping for pose/map proof",
-              static_cast<unsigned long>(tape.id));
         }
         if (ending)
           p = state.feature.pose;
@@ -665,12 +652,8 @@ void path_task(void *) {
                                   false
 #endif
                     );
-        if (end_unresolved) {
-          drive = {};
-          drive.status = ExecuteStatus::PAUSED;
-        }
 #if NAV_TURN_GUARD
-        if (end_unresolved || !active)
+        if (!active)
           turn_relocation.cancel();
         if (turn_relocation.busy()) {
           drive =
@@ -679,7 +662,7 @@ void path_task(void *) {
           if (!using_fallback || fallback.phase() != FallbackPhase::TURN)
             rhr_startup_turn_authorized = false;
           if (!rhr_startup_turn_authorized && using_fallback && active &&
-              !end_unresolved && !state.feature.pose.tracking &&
+              !state.feature.pose.tracking &&
               fallback.phase() == FallbackPhase::TURN &&
               drive.angular_rad_s != 0 &&
               startup_wall_turn_allowed(config, state.feature, frame, now)) {
@@ -691,7 +674,7 @@ void path_task(void *) {
             robot_log::write(robot_log::Level::INFO, TAG,
                              "RHR startup U-turn: all hypotheses clear");
           }
-          if (end_unresolved || !active ||
+          if (!active ||
               drive.status == ExecuteStatus::FAULT ||
               drive.status == ExecuteStatus::BLOCKED) {
             rhr_startup_turn_authorized = false;
@@ -732,7 +715,7 @@ void path_task(void *) {
             reported_guard = turn_guard.phase();
           }
 
-          if (active && !end_unresolved && turn_guard.needs_relocation(now) &&
+          if (active && turn_guard.needs_relocation(now) &&
               turn_relocation.begin(map, state.feature.pose, goal, now)) {
             const auto &recovery = turn_relocation.plan();
             robot_log::write(
@@ -772,19 +755,17 @@ void path_task(void *) {
           turn_relocation.finish();
         }
 #endif
-        const bool end_wait =
-            drive.status == ExecuteStatus::DONE &&
-            (!ending || !end.at_center(state.feature.pose, now));
+        const bool end_wait = drive.status == ExecuteStatus::DONE &&
+                              !end.pose_at_center(state.feature.pose, now);
         if (end_wait && !path_log.end_wait)
           robot_log::write(
               robot_log::Level::INFO, TAG,
-              "route done; waiting end proof tape=%u tracking=%u cell=(%d,%d)",
-              unsigned(ending), unsigned(state.feature.pose.tracking),
+              "route done; waiting goal pose tracking=%u cell=(%d,%d)",
+              unsigned(state.feature.pose.tracking),
               state.feature.pose.grid_x, state.feature.pose.grid_y);
         path_log.end_wait = end_wait;
         if (end_wait)
-          drive.status = ExecuteStatus::PAUSED; // No tape or no center proof:
-                                                // never declare success.
+          drive.status = ExecuteStatus::PAUSED;
 #if NAV_TURN_GUARD
         if (turn_relocation.busy())
           feature_task_target(turn_relocation.plan().cell);
@@ -805,7 +786,7 @@ void path_task(void *) {
               drive.linear_m_s > 0 && stop.valid && stop.target == target &&
               stop.timestamp_us > 0 && stop.timestamp_us <= now &&
               now - stop.timestamp_us <= 150000) {
-            // Final tape approach uses the measured front braking distance.
+            // Final center approach uses the measured front braking distance.
             // Corners use PathExecutor's distance approach and swept-circle
             // clearance, followed by the normal pose/gyro/dwell checks.
             const float cap =
@@ -874,8 +855,7 @@ void path_task(void *) {
                          double(m.duty_right), double(frame.range_m[0]),
                          double(frame.range_m[1]), double(frame.range_m[2]));
       }
-      state.end_tape_seen = end.latched();
-      state.end_tape_unresolved = end_unresolved;
+      state.end_tape_seen = state.end_tape_unresolved = false;
       state.execution = static_cast<uint8_t>(drive.status);
       state.execution_fault = static_cast<uint8_t>(drive.fault);
       state.fallback = using_fallback;

@@ -113,7 +113,11 @@ bool EndCellGate::observe(const loc::MazeMap &map, const BootstrapFrame &f,
   return latched_;
 }
 bool EndCellGate::at_center(const loc::PoseSnapshot &p, int64_t now) const {
-  return latched_ && fresh_pose(p, now) &&
+  return latched_ && pose_at_center(p, now);
+}
+bool EndCellGate::pose_at_center(const loc::PoseSnapshot &p, int64_t now) const {
+  return loc::valid_cell(goal_) && p.timestamp_us >= since_ &&
+         fresh_pose(p, now) &&
          std::hypot(p.x_m - (goal_.x + .5f) * loc::kCellM,
                     p.y_m - (goal_.y + .5f) * loc::kCellM) <=
              cfg_.center_tolerance_m;

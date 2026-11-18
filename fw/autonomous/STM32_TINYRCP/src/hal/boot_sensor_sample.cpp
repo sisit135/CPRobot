@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "hal/boot_sensor_sample.hpp"
+#include "hal/color_selection.hpp"
 #include "hal/imu_hal.hpp"
 #if AXI_IMU_LSM303DLHC
 #include "hal/lsm303dlhc_hal.hpp"
@@ -16,7 +17,10 @@ void capture(Snapshot &out) {
   out = {};
   bool imu_done = !imu::statistics().online;
   bool mag_done = !imu::statistics().magnetometer_online;
-  bool color_done = !hal_tcs34725_initialized();
+  bool color_done = true;
+#if AXI_TCS3472_ENABLE
+  color_done = !hal_tcs34725_initialized();
+#endif
   bool range_done[3]{};
   const int64_t deadline = hal_time_us() + 500000;
   while (hal_time_us() < deadline) {
@@ -34,10 +38,12 @@ void capture(Snapshot &out) {
       out.mag_valid = imu::read_magnetic_native(&out.mag, &stamp);
       mag_done = out.mag_valid || !imu::statistics().magnetometer_online;
     }
+#if AXI_TCS3472_ENABLE
     if (!color_done) {
       out.color_valid = hal_tcs34725_read(&out.color, &stamp);
       color_done = out.color_valid || !hal_tcs34725_initialized();
     }
+#endif
     for (unsigned i = 0; i < 3; ++i) {
       if (range_done[i])
         continue;
@@ -107,7 +113,11 @@ void print(const Snapshot &sample) {
                   sample.color.saturated ? " saturated" : "");
   else
     std::snprintf(value, sizeof value, "N/A");
+#if AXI_TCS3472_ENABLE
   row("Color", value);
+#else
+  row("Color", "Disabled");
+#endif
   const char *names[] = {"ToF left", "ToF front", "ToF right"};
   for (unsigned i = 0; i < 3; ++i) {
     if (sample.range_state[i] == RangeState::VALID)

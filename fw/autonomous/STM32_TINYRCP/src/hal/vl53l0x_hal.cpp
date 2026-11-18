@@ -130,6 +130,23 @@ void isolate(unsigned id) {
   channels[id].stats.online = false;
   channels[id].fresh = false;
 }
+#if defined(AXI_BUP_I2C_ISOLATION) && AXI_BUP_I2C_ISOLATION
+void shutdown_diagnostic() {
+  unsigned levels = 0, acknowledgements = 0;
+  for (unsigned i = 0; i < 3; ++i)
+    levels |= unsigned(digitalRead(cfg.sensors[i].xshut_pin) != LOW) << i;
+  const uint8_t addresses[] = {0x29, cfg.sensors[0].address_7bit,
+                                cfg.sensors[1].address_7bit,
+                                cfg.sensors[2].address_7bit};
+  for (unsigned i = 0; i < 4; ++i)
+    if (HAL_I2C_IsDeviceReady(cfg.i2c, uint16_t(addresses[i]) << 1, 1,
+                             cfg.i2c_timeout_ms) == HAL_OK)
+      acknowledgements |= 1u << i;
+  robot_log::write(robot_log::Level::INFO, "tof",
+                   "all XSHUT low: GPIO mask=%x ACK mask=%x (29/30/31/32)",
+                   levels, acknowledgements);
+}
+#endif
 void fault(unsigned id, VL53L0X_Error error, Stage stage) {
   auto &c = channels[id];
   c.stats.last_api_error = error;
@@ -191,6 +208,11 @@ bool setup_one(unsigned i) {
   digitalWrite(cfg.sensors[i].xshut_pin,
                HIGH); // Open-drain release, never drive XSHUT high.
   delayMicroseconds(2000);
+#if defined(AXI_BUP_I2C_ISOLATION) && AXI_BUP_I2C_ISOLATION
+  robot_log::write(robot_log::Level::INFO, "tof",
+                   "id=%u XSHUT released: GPIO=%u", i,
+                   unsigned(digitalRead(cfg.sensors[i].xshut_pin)));
+#endif
   const int64_t boot_end = hal_time_us() + 100000;
   bool booted = false;
   do {
@@ -202,6 +224,15 @@ bool setup_one(unsigned i) {
     delayMicroseconds(1000);
   } while (hal_time_us() < boot_end && hal_time_us() < d.deadline_us);
   if (!booted) {
+#if defined(AXI_BUP_I2C_ISOLATION) && AXI_BUP_I2C_ISOLATION
+    uint8_t model = 0;
+    const auto result = HAL_I2C_Mem_Read(
+        cfg.i2c, d.I2cDevAddr, 0xc0, I2C_MEMADD_SIZE_8BIT, &model, 1,
+        cfg.i2c_timeout_ms);
+    robot_log::write(robot_log::Level::INFO, "tof",
+                     "id=%u boot probe failed: model read HAL=%u value=%02x",
+                     i, unsigned(result), unsigned(model));
+#endif
     fault(i, VL53L0X_ERROR_TIME_OUT, Stage::BOOT);
     return false;
   }
@@ -368,10 +399,17 @@ bool initialize(const Config &config) {
     pinMode(cfg.sensors[i].xshut_pin, OUTPUT_OPEN_DRAIN);
   }
   delayMicroseconds(2000);
+#if defined(AXI_BUP_I2C_ISOLATION) && AXI_BUP_I2C_ISOLATION
+  shutdown_diagnostic();
+#endif
   for (unsigned i = 0; i < 3; ++i) {
     if (!setup_one(i)) {
       for (unsigned j = 0; j < 3; ++j)
         isolate(j);
+#if defined(AXI_BUP_I2C_ISOLATION) && AXI_BUP_I2C_ISOLATION
+      delayMicroseconds(2000);
+      shutdown_diagnostic();
+#endif
       return false;
     }
   }

@@ -22,8 +22,9 @@ ADR's manual uPython firmware has a separate [architecture](fw_adr_architecture.
   and historical studies live in [ekf/](ekf/README.md).
 - **The motor driver is TI DRV8833, with open-loop PWM and no encoder feedback.**
   Pose feedback closes the navigation loop; nominal wheel rates do not measure speed.
-- **All floor tiles are white.** A debounced black entrance tape and a fresh
-  independent feature pose are required to confirm arrival at the end-cell center.
+- **All floor tiles are white.** Arrival requires a fresh independent feature
+  pose at the end-cell center and the executor's stopped/gyro/pose settling checks.
+  TCS acquisition and end-tape confirmation are disabled.
 - **One 86-second production motion budget applies per boot.** Pauses, cancellation, and new
   goals cannot extend it. Terminal GOAL, TIMEOUT, or HALTED requires a reset.
 
@@ -120,7 +121,7 @@ per-update decisions, arrival waits, and the task-to-motor command boundary.
 Every supported profile creates navigation tasks only after a start request;
 configuration/calibration remain available beforehand. `bup_task`
 is the one-shot HAL initialization owner. It stops at the first failing motor,
-settings, IMU/magnetometer, ToF, or TCS initialization/health step, latches FAILED,
+settings, IMU/magnetometer or ToF initialization/health step, latches FAILED,
 stops motor outputs, and logs ERROR without starting application services. It
 emits INFO milestones such as `tof: hw ready`. These are device initialization
 checks, not a measured electrical BIST. DRV8833 has no power-on feedback; its
@@ -139,7 +140,7 @@ The [snapshot HAL](../fw/autonomous/STM32_TINYRCP/src/hal/boot_sensor_sample.cpp
 owns polling and formatting; [tracing](tracing.md#bup-sensor-snapshot) defines
 units and ToF `Inf` semantics.
 The temporary trace-profile `AXI_BUP_IMU_DIAGNOSTIC=1` exception defers
-IMU/magnetometer failure so ToF and TCS diagnostics can run. Other HAL failures
+IMU/magnetometer failure so ToF diagnostics can run. Other HAL failures
 still halt sensor setup. When diagnostics finish, Sensors says `diagnostic`,
 Services stays `skipped`, BUP remains FAILED and motors are stopped. The
 application-start callback is never called in this mode, even with a healthy
@@ -175,20 +176,32 @@ The separate I2C isolation bench profile replaces production BUP with one
 selected startup case. Main/ToF controller preparation and IMU, ToF and TCS
 initialization are independent startup-owner HAL primitives. Cases can exclude
 inventories, the other controller, other sensors, motor outputs and settings.
-Results are logged before a final inventory; default TCS-only startup leaves
-all other initialization uncalled. All cases block the application callback and
+Results are logged before a final inventory; default case 1 calls the disabled
+TCS compatibility stub. Case 13 initializes both buses, IMU and ToFs, then polls
+raw acceleration, magnetic field and sequential ranges for 30 seconds without
+calling TCS. It checks sample progress, online state and zero bus/API timeouts.
+An out-of-range optical result is counted separately from a transport failure.
+All cases block the application callback and
 leave BUP FAILED. Case selection is a volatile RAM value restored on reset.
 See [building](building.md#i2c-initialization-isolation) for the case table and
 selection commands. This profile logically isolates initialization; attached
 sensor modules retain power/state across debugger resets.
 
-TCS register transfers use bounded STM32 HAL polling calls on the main
-controller, matching the IMU's transport ownership. They do not use Arduino
-Wire's interrupt transaction API. In the installed STM32 Arduino core, a
-master error callback can enable slave LISTEN mode after a TCS NACK, leaving
-physical lines idle while subsequent IMU polling calls return BUSY. Polling
-avoids that callback path. TCS identity and initialization failures still fail
-the normal hardware gate; unexpected identities are logged and rejected.
+TCS acquisition is compiled out by default (`AXI_TCS3472_ENABLE=0` in
+`hal/color_selection.hpp`). Normal bring-up requires the IMU/ToF HALs and skips
+color initialization; the sensor task and boot snapshot never poll TCS. Its
+compatibility hooks return false without bus access, and color prints Disabled.
+The generic address inventory still probes the bus, including reserved `0x29`;
+an ACK is not a TCS identity check. Explicit driver fixtures can opt into the
+retained polling driver with `AXI_TCS3472_ENABLE=1`. This uses bounded STM32 HAL
+polling rather than the Arduino Wire interrupt error path that previously put
+I2C1 into LISTEN after a NACK. Enabling the driver restores its identity/init
+failure gate but does not restore tape authority in navigation.
+The [live I2C report](validation/ths_i2c_isolation_2026-11-19.md) records the
+connected/disconnected comparison; the [pose-only validation](validation/ths_pose_only_2026-11-19.md)
+records sustained ToF/IMU results and the final cold start. These bench
+checks do not qualify repeated POR or navigation with the uncalibrated compass.
+
 Both navigation engines bootstrap from the feature task. Initial ambiguity does
 not cause autonomous scanning or motion. Motor task readiness and selected EKF
 initialization stages have a two-second timeout. No goal is selected at boot.
@@ -354,7 +367,7 @@ flowchart TB
     fs["FeatureSnapshot mailbox / length 1"]
     fusion["loc_fusion / sole EKF owner"]
     pose["PoseSnapshot mailbox / length 1"]
-    path["path_exec / route, goal and end-tape state"]
+    path["path_exec / route and goal-pose state"]
     target["Stop-target mailbox / length 1"]
     cmd["WheelCommand mailbox / length 1"]
     pwm["motor_pwm / rate ramp, PWM and terminal enforcement"]
@@ -364,7 +377,7 @@ flowchart TB
     key["loc_key / debounced start request"]
     bup["bup_task / HAL init and fail-stop"]
   end
-  hw["MPU9250 + MAG or LSM303DLHC MAG+ACCEL / VL53L0X x3 / TCS34725 HAL"] --> sensor
+  hw["MPU9250 + MAG or LSM303DLHC MAG+ACCEL / VL53L0X x3 HAL; color disabled"] --> sensor
   sensor --> frame --> feature --> fs --> path
   sensor -->|"Only after fusion starts"| events --> fusion --> pose
   pose -.->|"Explicit EKF mode"| path
@@ -384,7 +397,7 @@ flowchart TB
 | --- | --- | --- | --- |
 | `bup_task` | 1 | 1024 | Sole HAL initialization owner; fail-stop; deletes itself |
 | `boot_log` | 2 | 512 | Early USB serial drain; waits after telemetry sink attachment |
-| `loc_sensor` | 2 | 1024 | 10 ms loop; IMU/MAG, 50 ms ToF polling, TCS conversion polling |
+| `loc_sensor` | 2 | 1024 | 10 ms loop; IMU/MAG and 50 ms ToF polling; color acquisition disabled |
 | `feature_nav` | 1 | 2048 | 50 ms; measured pose, heading, bounded hypotheses and stop estimate |
 | `path_exec` | 2 | 2048 | 20 ms; goal/route/end-cell state and nominal twist producer |
 | `loc_fusion` | 3 | 2048 | Event FIFO; publishes pose nominally every 20 ms |
@@ -482,7 +495,7 @@ stateDiagram-v2
       InitializingEKF --> StartingMotor: initial EKF snapshot published
       StartingMotor: STARTING_MOTOR; wait for IDLE snapshot
       StartingMotor --> Ready: motor reports IDLE
-      Ready: READY; accept goals, execute A* or latched RHR, enforce tape guards
+      Ready: READY; accept goals, execute A* or latched RHR, enforce fresh goal-pose and settling guards
       Ready --> Ready: goal replacement or cancel; deadline retained
       Resolving --> StartupFault: invalid resolver configuration
       Resolving --> StartupFault: required service startup fails
@@ -732,7 +745,7 @@ validation records current ambiguities separately. The host `--startup-only` fix
 matcher independently.
 
 The path task latches `FallbackReason::FEATURE_CONTRADICTION`. With an active
-goal before the final tape approach, it cancels A*, clears the stop target,
+goal before the final center approach, it cancels A*, clears the stop target,
 commands zero, and starts the existing RHR coast/decision sequence. RHR uses
 fresh raw ranges, body gyro and motor snapshots; it does not use the rejected
 feature pose or switch control to the EKF. FEATURE matching and the frozen EKF
@@ -783,7 +796,7 @@ The native lifecycle harness can force this same RHR controller with
 `--force-rhr`. Its `ROBOT_LIFECYCLE_TEST` hook bypasses the initial unique-pose
 requirement, records `FallbackReason::FORCED_TEST`, and reaches READY through
 normal motor initialization. A queued goal starts RHR's coast/decision sequence
-without waiting for feature contradictions. Sensor, motor, end-tape, halt and
+without waiting for feature contradictions. Sensor, motor, goal-pose, halt and
 shared-deadline guards continue to apply. FEATURE keeps observing; only a later
 qualified feature resolution can bind a map and start the EKF observer. Simulator
 truth never seeds either. This hook is compiled only into the native lifecycle
@@ -975,8 +988,8 @@ with failed turn cells excluded; RHR restarts its reactive decision process at
 the opening. Normal turn guards still prove the actual next turn. The original
 86-second run deadline is unchanged. Each relocation is bounded to 20 seconds,
 with at most three attempts and no repeated correction destination until a new
-goal/cancellation or terminal/end-cue reset. Terminal states, cancellation and
-end-tape proof take priority. `RELOCATE_TURN` diagnostics identify temporary
+goal/cancellation or terminal reset. Terminal states, cancellation and
+goal-pose confirmation takes priority. `RELOCATE_TURN` diagnostics identify temporary
 travel without representing it as goal completion. Both relocation state and
 turn-guard state have independent 128-byte test bounds and use no heap.
 
@@ -1022,35 +1035,26 @@ The 2026-11-04 campaign investigation (internal record)
 records the subsequent resolver/gyro/tape/settling fixes, 65-test pass, both
 five-run campaign passes and the real interactive baseline.
 
-## End-tape completion and terminal authority
+## Pose-only completion and terminal authority
 
-TCS supplies raw distinct integrations, not a startup tile, quadrant, marker ID,
-or EKF position fix. `hal_color_classify()` returns false and the current board
-hook supplies no color references. The tape detector needs three white samples
-to arm, then three black samples to emit one event. Hysteresis uses separate
-clear-channel thresholds; saturation, repeated sequences and gaps are rejected.
-Continuous fresh black acquisitions reconfirm the same event identity and
-entry timestamp while updating its observation timestamp. White/gray,
-saturation or acquisition gaps revoke continuity; reacquisition on black alone
-does not invent an entry. Replayed sequences never refresh evidence.
-Starting on black does not create an entrance. Thresholds default to zero and
-must be calibrated at the installed height, illumination, gain and integration.
+TCS acquisition and end-tape confirmation are disabled. Optical events neither
+pause navigation nor authorize a goal. `end_tape_seen` and
+`end_tape_unresolved` remain false for telemetry compatibility. The retained
+tape detector and entrance-association utility have explicit legacy fixtures;
+the navigation task does not invoke them.
 
-`EndCellGate` binds a fresh event to the explicit goal only when a fresh feature
-pose puts the optical footprint near a known-open entrance, facing inward. Default
-matching windows are 80 mm before / 30 mm after the edge and 60 mm laterally.
-A fresh cue that cannot be associated pauses the goal rather than guessing.
-A transient missing pose leaves that cue pending within the 150 ms freshness
-window of its latest actual tape observation and the 100 ms pose/cue timestamp
-agreement bound. Only continuous fresh black acquisitions can refresh that
-observation; stored events cannot refresh themselves.
-The task retries association while stopped. A geometrically rejected or
-expired cue is consumed and cannot be replayed at a later location.
-A valid cue cancels the preceding route or RHR fallback and replans a measured
-final approach using FEATURE pose. Tape alone does not halt successfully.
-Completion requires the tape latch, executor settle evidence, and a fresh robot
-center within 12 mm of the mapped goal center. Sensor body offsets matter.
-Without tape, coordinate arrival pauses and the deadline continues.
+`EndCellGate::pose_at_center()` requires a valid commanded goal and a finite,
+tracking independent FEATURE pose, acquired at/after the goal request, no more
+than 150 ms old and never future-dated. Its robot center must lie within 12 mm
+of the mapped goal center. A coordinate match with stale/untracked pose cannot
+complete the run. This pose gate follows `PathExecutor::DONE`, preserving the
+executor's gyro, stopped-output, pose and dwell requirements. The 86-second
+budget and terminal motor authority are unchanged.
+
+If RHR fallback obtains a fresh pose at the goal center, navigation stops the
+fallback and replans through the executor for final settling. It does not
+issue GOAL directly from the pose observation. The EKF math, fusion behavior,
+compass qualification and turn-clearance gates are unchanged.
 
 The first active navigation command, including a zero paused/turn command, arms
 one absolute 86-second budget. Startup idle stops do not arm it. Cancel or a new
@@ -1175,7 +1179,7 @@ current bounds and cross-field rules. See [building.md](building.md) for generat
 | --- | --- |
 | 200–210 | FEATURE limits and confirmation/contradiction counts; captured at navigation start |
 | 220–232 | RHR speeds, clearances, freshness and timing; captured at navigation start |
-| 240–241 | Raw black/white tape thresholds; atomically published together, detector reset by its sole sensor owner on change |
+| 240–241 | Retained raw black/white thresholds; unused while color acquisition is disabled |
 | 250 | Body-Z gyro zero correction; atomic publication, applied before tilt qualification and IMU publication |
 | 300–316 | Open-loop motor polarity, PWM cap, wheel-rate ceiling, slew, per-wheel/per-direction gains and offsets, task period, command timeout and timing bounds; consumed by the motor owner |
 | 100–106, 110–116, 120–126, 130–136 | Retained legacy color-reference slots; storage/calibration only, never mapped floor navigation |
@@ -1312,14 +1316,15 @@ After bring-up succeeds and sensors publish, the harness enters board READY.
 Five seconds later its key adapter calls `navigation_start(...FEATURE...)`.
 Once navigation reports its own READY state, a separate goal adapter queues the
 configured end cell. This preserves the firmware distinction between starting
-localization and commanding a goal. The physical all-white field has black tape
-5–25 mm before each known-open end-cell edge; distinct 24 ms TCS integrations
-feed the production tape detector and entrance association.
+localization and commanding a goal. The simulated optical surface may include
+tape, but the current sensor task
+does not acquire color and completion uses the independent goal pose.
 
-A successful goal run requires a confirmed tape event, `RunState::GOAL`,
+A successful goal run requires `RunState::GOAL`,
 navigation `DONE`, motor `GOAL_REACHED`, no collision, ground truth within 25 mm
 of the configured cell center, zero PWM, and near-zero wheel speeds after a
-further 500 ms of physics. Coordinate arrival alone never passes. A 110-second simulation
+further 500 ms of physics. A position estimate alone does not bypass executor
+settling or physical stop checks. A 110-second simulation
 watchdog bounds unresolved startup. The run itself uses the production 86-second
 deadline. These are simulated checks, not a board qualification.
 

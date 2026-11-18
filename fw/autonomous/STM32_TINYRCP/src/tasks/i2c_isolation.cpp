@@ -2,13 +2,18 @@
 #include "bup/i2c_isolation.hpp"
 #if AXI_BUP_I2C_ISOLATION
 #include "hal/i2c_diagnostics.hpp"
+#include "hal/color_selection.hpp"
 #include "hal/imu_hal.hpp"
 #include "hal/lsm303dlhc_config.hpp"
+#include "hal/lsm303dlhc_hal.hpp"
 #include "hal/sensors_config.hpp"
+#include "hal/vl53l0x_hal.hpp"
 #include "localization/hal_sensors.hpp"
 #include "logging/log.hpp"
 #include "motor_control/hal_motor.hpp"
 #include "remote/board_store.hpp"
+#include "platform/hal_platform.hpp"
+#include "platform/rtos.hpp"
 #include <Wire.h>
 
 extern "C" {
@@ -31,7 +36,8 @@ void run_i2c_isolation() {
                                       "normal order with inventories",
                                       "TCS without setClock",
                                       "IMU only",
-                                      "ToF only"};
+                                      "ToF only",
+                                      "IMU + ToF 30s soak; no TCS"};
   const auto selected = ths_i2c_isolation_case;
   if (selected >= sizeof(names) / sizeof(names[0])) {
     robot_log::write(robot_log::Level::ERROR, "i2c.iso", "invalid case=%lu",
@@ -45,6 +51,51 @@ void run_i2c_isolation() {
                      result ? "PASS" : "FAIL");
     return result;
   };
+  if (selected == 13) {
+    bool healthy = step("inventories", hal_board_sensor_buses_init());
+    if (healthy)
+      healthy = step("IMU", hal_board_imu_init());
+    if (healthy)
+      healthy = step("ToF devices", hal_board_tof_init());
+    unsigned accel_count = 0, mag_count = 0;
+    const int64_t until = hal_time_us() + 30000000;
+    while (healthy && hal_time_us() < until) {
+      loc::ImuSample acceleration{};
+      loc::MagSample magnetic{};
+      int64_t stamp = 0;
+      accel_count += lsm303dlhc::read_acceleration(&acceleration, &stamp);
+      mag_count += imu::read_magnetic_native(&magnetic, &stamp);
+      for (unsigned i = 0; i < 3; ++i) {
+        const auto id = static_cast<loc::TofId>(i);
+        float distance = 0;
+        (void)tof::read(id, &distance, &stamp);
+        const auto stats = tof::statistics(id);
+        healthy = healthy && stats.online && !stats.api_errors && !stats.timeouts;
+      }
+      healthy = healthy && imu::statistics().online &&
+                imu::statistics().magnetometer_online &&
+                !imu::statistics().bus_errors;
+      vTaskDelay(pdMS_TO_TICKS(2) ? pdMS_TO_TICKS(2) : 1);
+    }
+    robot_log::write(robot_log::Level::INFO, "i2c.iso", "accel=%u mag=%u",
+                     accel_count, mag_count);
+    healthy = healthy && accel_count >= 100 && mag_count >= 100;
+    for (unsigned i = 0; i < 3; ++i) {
+      const auto stats = tof::statistics(static_cast<loc::TofId>(i));
+      robot_log::write(robot_log::Level::INFO, "i2c.iso",
+                       "ToF id=%u valid=%lu rejected=%lu errors=%lu timeouts=%lu",
+                       i, static_cast<unsigned long>(stats.valid),
+                       static_cast<unsigned long>(stats.rejected),
+                       static_cast<unsigned long>(stats.api_errors),
+                       static_cast<unsigned long>(stats.timeouts));
+      healthy = healthy && stats.online && !stats.api_errors && !stats.timeouts &&
+                stats.valid + stats.rejected >= 50;
+    }
+    step("30s sensor soak", healthy);
+    robot_log::write(robot_log::Level::INFO, "i2c.iso",
+                     "case=13 complete; services blocked");
+    return;
+  }
   if (selected == 12) {
     if (step("ToF controller", hal_board_tof_bus_init()))
       step("ToF devices", hal_board_tof_init());
@@ -87,7 +138,8 @@ void run_i2c_isolation() {
     const i2c_diagnostics::Binding bindings[] = {
         {board::lsm303dlhc::kAccelAddress7bit, "LSM303DLHC accel"},
         {board::lsm303dlhc::kMagAddress7bit, "LSM303DLHC mag"},
-        {kTcs34725Address7bit, "TCS3472 color"}};
+        {kTcs34725Address7bit,
+         AXI_TCS3472_ENABLE ? "TCS3472 color" : "Color disabled"}};
     i2c_diagnostics::scan(Wire.getHandle(), "main", "after isolated init",
                           bindings, 3);
   }

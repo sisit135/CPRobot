@@ -100,7 +100,7 @@ def run_one(exe, case, mode, seed, timeout):
         errors.append('run budget mismatch')
     passed = bool(code == 0 and final and final[1] == 'PASS' and final[6] == 'GOAL')
     if passed:
-        if any(metrics.get(k) != '1' for k in ('tape', 'zero_pwm', 'stopped', 'motor_goal')) or metrics.get('collision') != '0':
+        if any(metrics.get(k) != '1' for k in ('zero_pwm', 'stopped', 'motor_goal')) or metrics.get('collision') != '0':
             errors.append('physical goal/safe-stop evidence mismatch')
         if float(metrics.get('end_error_m', 'inf')) > .025001 or float(metrics.get('goal_from_key_s', '-1')) < 0:
             errors.append('goal distance or timing mismatch')
