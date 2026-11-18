@@ -171,9 +171,11 @@ and [telemetry start/key](../fw/autonomous/STM32_TINYRCP/src/telemetry/adapter.c
 ## Selectable motion sensor HAL
 
 The sourcing rationale for the LSM303DLHC alternative is the MPU9250's EOL and
-difficulty obtaining parts. Existing profiles retain MPU9250/AK8963; the new
-profile selects LSM303DLHC MAG + ACCEL exclusively. Build flags and commands
-live in the [build guide](building.md#mutually-exclusive-ths-sensor-backends).
+difficulty obtaining parts. The base profile retains MPU9250/AK8963; the LSM,
+trace and production profiles select LSM303DLHC MAG + ACCEL exclusively.
+Trace and production inherit the LSM profile's backend flag and MPU library
+exclusion. Build flags and commands live in the
+[build guide](building.md#mutually-exclusive-ths-sensor-backends).
 The LSM303DLHC contains no gyro. Its HAL provides real acceleration and magnetic
 measurements, then adapts magnetic heading changes to the existing planar
 yaw-rate input. FEATURE, RHR and the frozen EKF algorithms are unchanged; the

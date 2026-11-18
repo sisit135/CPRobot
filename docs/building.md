@@ -581,9 +581,10 @@ pio run -d fw/autonomous/STM32_TINYRCP -e blackpill_f411ce_cmsis
 pio run -d fw/autonomous/STM32_TINYRCP -e blackpill_f411ce_telemetry
 pio run -d fw/autonomous/STM32_TINYRCP -e blackpill_f411ce_remote
 pio run -d fw/autonomous/STM32_TINYRCP -e blackpill_f411ce_trace
+pio run -d fw/autonomous/STM32_TINYRCP -e blackpill_f411ce_prod
 ```
 
-The `_trace` profile enables all vendor messages (ST ToF, MPU callbacks and
+The `_trace` profile enables vendor/HAL messages (ST ToF, LSM303DLHC and
 LittleFS). Every profile defaults to TRACE with USB CDC serial diagnostics configured
 before the bring-up task. The interactive builder also exposes `_trace` as
 option 9 (`--component ths-trace`).
@@ -598,9 +599,11 @@ Other profiles keep the normal IMU failure gate.
 
 ### Mutually exclusive THS sensor backends
 
-Existing profiles select MPU9250/AK8963. The LSM303DLHC profile replaces both
-with MAG + ACCEL, without a gyro. Initialize the pinned ST driver and its common
-BSP headers before building:
+The base profile selects MPU9250/AK8963. The LSM303DLHC, `_trace` and `_prod`
+profiles select LSM303DLHC MAG + ACCEL exclusively, without a gyro. Both trace
+and production inherit the LSM profile's selection flag and MPU library
+exclusion. Initialize the pinned ST driver and its common BSP headers before
+building:
 
 ```sh
 git submodule update --init third_party/stm32-lsm303dlhc third_party/stm32-bsp-common
@@ -608,9 +611,9 @@ pio run -d fw/autonomous/STM32_TINYRCP -e blackpill_f411ce_lsm303dlhc
 ```
 
 `AXI_IMU_LSM303DLHC=1` selects the new backend and defaults
-`AXI_IMU_MPU9250` to `0`; existing builds default to the reverse. Both build
-configuration and preprocessing reject selecting both, neither, or nonboolean
-values. The PlatformIO source filter excludes the inactive HAL and excludes
+`AXI_IMU_MPU9250` to `0`; builds without that flag default to the reverse.
+Both build configuration and preprocessing reject selecting both, neither, or
+nonboolean values. The PlatformIO source filter excludes the inactive HAL and excludes
 `LibDriver_MPU9250` from LSM builds. Only LSM builds compile ST's linked vendor C.
 The sensor-free open-loop demo excludes both backends.
 
