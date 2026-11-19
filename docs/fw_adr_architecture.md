@@ -171,6 +171,7 @@ PID remains controlled by `PID_BYPASS` as described above.
 | Rx | Right beam on S3, independently, while armed |
 | L1 / R1 | Raise / lower pitch on S1, while armed |
 | L2 / R2 | Previous / next step size: 1°, 2°, 5°, 15°, 30°, 60°, wrapping |
+| N4 | One outward shield flap extension on both beams, while armed |
 | Ly / Ry | Existing left/right wheel requests in default tank mode |
 
 L2/R2 work with fresh connected input even before arming. Each selection changes
@@ -188,7 +189,7 @@ Lx and Rx retain their existing independent signs. Each axis affects only its
 own beam. The optional arcade drive configuration also uses Rx for turning,
 sharing that axis with the right beam; default tank mode uses Ly/Ry for driving.
 N1 starts the shot sequence below; N2 toggles its release-angle mode once per
-press. Stick clicks and N3/N4 remain unused; the immediate-grip hotkey is deferred.
+press. N4 extends the beam-mounted shield plates outward. Stick clicks and N3 remain unused; the immediate-grip hotkey is deferred.
 
 The beams attach directly to their servo outputs. Their current neutral
 calibration is 90° each, pointing forward and parallel; native command limits
@@ -196,7 +197,7 @@ remain 0°..180°. Calibration lives in `GRIP1_NEUTRAL_DEG`,
 `GRIP2_NEUTRAL_DEG`, axis signs and angle limits near the top of `main.py`.
 Both servo rotating faces point in the same direction, so both geometry mount
 signs are +1. No shared closure variable or software synchronization is used.
-Changing one beam never issues a movement command for the other.
+Manual movement of one beam never commands the other; N4 explicitly requests a paired shield extension.
 
 Pitch is measured from +Z (straight up), positive toward the front, with
 the mount's rotating face pointing forward and envelope −45°..+135°:
@@ -222,6 +223,34 @@ N1 explicitly authorizes the timed shot sequence below. Idle cycles, a held
 input, step selection, stop/disconnect and re-arming issue no additional servo
 angle commands. Re-arming preserves the last commanded poses.
 
+### N4 outward shield flap extension
+
+
+The plates on the beams act as a shield. Each fresh N4 press targets both beams 90° outward from their configured
+forward-parallel neutral, independently of the selected L2/R2 step. Both servo
+shafts face the same direction, with mount signs +1, so outward extension uses
+opposite deltas: left S2 = 90° + 90° = 180°; right S3 = 90° − 90° = 0°.
+This direction follows the operator's hardware correction: the original 0°/180°
+targets caused interference. The disabled BeamGuard model still retains its
+previous orientation assumptions. Stick sign settings do not affect these
+absolute macro targets.
+
+`Manipulators.flap_extend` checks both issued references before the first write,
+then uses the existing clamped `ServoMotion.command` path for S2 followed by S3.
+Each beam receives at most one `cpi.mbot2.servo_add`; a beam already at its target
+receives no write. S1 stays at its latest target. There is no ramp, feedback,
+queue, repeated movement while held, automatic retraction or arrival guarantee.
+A native failure drops the remaining operation without retry or rollback.
+BeamGuard checks remain disabled.
+
+N4 must be released for neutral/Start arming. Stop, stale or disconnected input
+cannot queue an extension. Concurrent manual servo input takes precedence;
+concurrent N1/N4 macro requests consume their button edges without dispatching
+a macro. Holding a conflicting button does not defer the operation. N4 during
+a pending shot faults that shot and consumes the extension request; release and
+press again to extend. The LCD lists `N4:flap`, and command logs identify the
+extension without claiming physical completion.
+
 ### Fire-and-forget dispatch and interference protection
 
 There is no servo feedback API in the selected runtime. All three servo paths
@@ -232,7 +261,11 @@ only a new user gesture can retry. An initialization write error likewise waits
 for explicit user input before trying that reference again. A servo exception
 does not stop the other beam, pitch or wheels.
 
-`BeamGuard` uses these dimensions:
+**Temporary beam-check bypass:** per-beam sweep checks are commented out for
+manual beam moves and N4 shield extension. Both references and angle clamps
+remain required. The retained launch-release preflight still checks its sweeps.
+
+The retained `BeamGuard` model uses these dimensions:
 
 | Parameter | Value |
 | --- | --- |
@@ -247,7 +280,7 @@ pivot and is surrounded by a conservative radius-5 mm capsule. The two
 centerlines must remain at least 20 mm apart: both beam half-thicknesses plus
 10 mm free space. Capsule endcaps conservatively cover the beam corners.
 
-Before dispatching a beam increment, the guard checks its entire commanded
+When enabled, before dispatching a beam increment the guard checks its entire commanded
 sweep against the other beam at its latest issued angle. Samples are at most
 1° apart, with an additional displacement bound
 `2 * length * sin(sample_interval / 4)` to cover the motion between samples.

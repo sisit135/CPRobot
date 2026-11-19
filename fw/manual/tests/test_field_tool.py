@@ -161,6 +161,108 @@ class ManipulatorTest(unittest.TestCase):
         self.assertEqual(3, len(self.hw.servos))
         self.assertEqual([], self.hw.adds)
 
+    def test_flap_extends_outward_once_from_latest_pose_and_ignores_step(self):
+        manip = self.dispatch.manipulators
+        self.assertEqual('N4', adr.FLAP_KEY)
+        manip.grip_left.command(150)
+        manip.grip_right.command(30)
+        self.hw.adds.clear()
+        with patch.object(manip.guard, 'allows', side_effect=AssertionError('guard called')), \
+             patch.object(manip.guard, 'allows_pair', side_effect=AssertionError('guard called'), create=True):
+            self.step(flap=True)
+            for _ in range(20):
+                self.step(flap=True)
+        # Hardware correction: the original 0/180 targets drove the beams inward.
+        self.assertEqual([(30, 's2'), (-30, 's3')], self.hw.adds)
+        self.assertEqual({'s2': 180, 's3': 0, 's1': 45}, self.hw.angles)
+        self.step()
+        self.step(flap=True)  # At the target: no zero-delta writes.
+        self.assertEqual(2, len(self.hw.adds))
+        self.step(grip_left=-1)
+        self.step(flap=True)
+        self.assertEqual([(-1, 's2'), (1, 's2')], self.hw.adds[-2:])
+
+
+    def test_flap_clamps_targets_and_preflights_both_references(self):
+        manip = self.dispatch.manipulators
+        manip.grip_left.high, manip.grip_right.low = 170, 10
+        self.step(flap=True)
+        self.assertEqual([(80, 's2'), (-80, 's3')], self.hw.adds)
+        self.step()
+        manip.grip_left.command(90)
+        manip.grip_right.command(90)
+        manip.grip_right.initialized = False
+        self.hw.adds.clear()
+        self.step(flap=True)
+        self.assertEqual([], self.hw.adds)
+        self.assertEqual((90, 90), (manip.grip_left.position, manip.grip_right.position))
+
+
+    def test_flap_write_failure_drops_remaining_commands_without_retry(self):
+        for failed_port in ('s2', 's3'):
+            with self.subTest(failed_port=failed_port):
+                self.setUp()
+                records, attempts = [], []
+                manip = self.dispatch.manipulators
+                manip.logger = SimpleNamespace(emit=lambda *args: records.append(args))
+                write = self.hw.servo_add
+                def failing(delta, port):
+                    attempts.append((delta, port))
+                    if port == failed_port:
+                        raise OSError('write unavailable')
+                    write(delta, port)
+                with patch.object(self.hw, 'servo_add', side_effect=failing):
+                    self.step(flap=True)
+                    for _ in range(20):
+                        self.step(flap=True)
+                    for _ in range(20):
+                        self.step()
+                self.assertEqual([(90, 's2')] + ([(-90, 's3')] if failed_port == 's3' else []), attempts)
+                self.assertEqual((90 if failed_port == 's2' else 180, 90),
+                                 (manip.grip_left.position, manip.grip_right.position))
+                self.assertEqual(('WARN', 'flap'), records[-1][:2])
+
+
+    def test_flap_never_queues_while_disarmed_or_on_stop(self):
+        for cause in ('estop', 'disconnect', 'stale'):
+            with self.subTest(cause=cause):
+                self.setUp()
+                self.now += 20
+                r = adr.DriveRequest(self.now, connected=cause != 'disconnect',
+                                     estop=cause == 'estop', flap=True)
+                self.dispatch.step(r, False, self.now + (201 if cause == 'stale' else 0), .02)
+                self.assertFalse(self.dispatch.armed)
+                self.step(flap=True)
+                self.step(flap=True, arm=True)
+                self.assertFalse(self.dispatch.armed)
+                self.step()
+                self.step(arm=True)
+                self.assertTrue(self.dispatch.armed)
+                self.assertEqual([], self.hw.adds)
+                self.step(flap=True)
+                self.assertEqual([(90, 's2'), (-90, 's3')], self.hw.adds)
+
+
+    def test_flap_macro_and_manual_conflicts_consume_edges(self):
+        for values in ({'shoot': True},
+                       {'grip_left': 1}, {'grip_right': -1}, {'pitch': 1}):
+            with self.subTest(values=values):
+                self.setUp()
+                self.step(flap=True, **values)
+                self.assertEqual('IDLE', self.dispatch.launcher.state)
+                expected = ([(1, 's2')] if 'grip_left' in values else
+                            [(-1, 's3')] if 'grip_right' in values else
+                            [(1, 's1')] if 'pitch' in values else [])
+                self.assertEqual(expected, self.hw.adds)
+                self.step(flap=True)
+                self.assertEqual(expected, self.hw.adds)  # No delayed macro.
+                self.step()
+                self.hw.adds.clear()
+                self.step(flap=True)
+                self.assertEqual((180, 0), (self.hw.angles['s2'], self.hw.angles['s3']))
+                self.assertEqual(['s2', 's3'], [port for _, port in self.hw.adds])
+
+
     def test_beams_move_independently_once_until_centered(self):
         manip = self.dispatch.manipulators
         for _ in range(10):
@@ -255,29 +357,30 @@ class ManipulatorTest(unittest.TestCase):
                 self.assertFalse(d.armed)
                 self.assertEqual([], hw.servos)
 
-    def test_clearance_rejects_whole_step_using_latest_successful_other_pose(self):
+    def test_manual_beams_bypass_beamguard_but_still_clamp_and_require_fresh_input(self):
         records = []
         manip = self.dispatch.manipulators
         manip.grip_right.logger = SimpleNamespace(emit=lambda *args: records.append(args))
         self.step(step_previous=True)  # 60 degrees.
         self.step()
-        self.step(grip_left=1, grip_right=-1, pitch=1, left=10, right=20)
-        self.assertEqual([(60, 's2'), (60, 's1')], self.hw.adds)
-        self.assertEqual((150, 90), (manip.grip_left.position, manip.grip_right.position))
+        with patch.object(manip.guard, 'allows', side_effect=AssertionError('guard called')):
+            self.step(grip_left=1, grip_right=-1, pitch=1, left=10, right=20)
+        self.assertEqual([(60, 's2'), (-60, 's3'), (60, 's1')], self.hw.adds)
+        self.assertEqual((150, 30), (manip.grip_left.position, manip.grip_right.position))
         self.assertEqual((10, 20), self.hw.power)
         self.assertTrue(self.dispatch.armed)
-        self.assertEqual(('WARN', 'servo'), records[0][:2])
-        self.assertIn('10 mm clearance', records[0][2])
+        self.assertEqual([], records)
         for _ in range(10):
             self.step(grip_left=1, grip_right=-1, pitch=1)
-        self.assertEqual(1, len(records))
-        self.assertEqual(2, len(self.hw.adds))
-        self.step()
-        self.step(grip_left=-1)
+        self.assertEqual([], records)
+        self.assertEqual(3, len(self.hw.adds))
         self.step()
         self.step(grip_right=-1)
-        self.assertEqual(30, manip.grip_right.position)
-        self.assertEqual((-60, 's3'), self.hw.adds[-1])
+        self.assertEqual(0, manip.grip_right.position)
+        self.assertEqual((-30, 's3'), self.hw.adds[-1])
+        self.step()
+        self.step(grip_right=-1)
+        self.assertEqual(4, len(self.hw.adds))
 
 #     def test_catapult_immediate_full_power_hold_reverse_and_release(self):
 #         self.step(crank=1)
@@ -407,9 +510,10 @@ class ManipulatorTest(unittest.TestCase):
             r = hw.sample()
             self.assertEqual((0, 0, None), (r.grip_left, r.grip_right, r.pitch))
             self.assertTrue(r.shoot and r.release_mode)
+            self.assertTrue(r.flap)
             self.assertTrue(r.step_previous and r.step_next)
-            self.assertTrue({'L1', 'R1', 'L2', 'R2', 'N1', 'N2'}.issubset(queried))
-            self.assertTrue(set(queried).isdisjoint({'N3', 'N4', 'L_Thumb', 'R_Thumb', 'Up', 'Down'}))
+            self.assertTrue({'L1', 'R1', 'L2', 'R2', 'N1', 'N2', 'N4'}.issubset(queried))
+            self.assertTrue(set(queried).isdisjoint({'N3', 'L_Thumb', 'R_Thumb', 'Up', 'Down'}))
 
     def test_native_pid_targets_are_bounded_without_host_slew(self):
         self.step(left=20, right=-20)
@@ -796,7 +900,7 @@ class LauncherTest(unittest.TestCase):
         self.assertTrue(all(t >= 0 for _, t in self.launch.events))
 
     def test_dispatcher_abort_on_stop_staleness_manual_override_and_shutdown(self):
-        for cause in ('stop', 'stale', 'manual'):
+        for cause in ('stop', 'stale', 'manual', 'flap'):
             with self.subTest(cause=cause):
                 self.setUp()
                 d = adr.Dispatcher(self.hw, lambda a, b: a - b)
@@ -805,7 +909,7 @@ class LauncherTest(unittest.TestCase):
                 d.step(adr.DriveRequest(1020, connected=True, shoot=True), False, 1020, .02)
                 self.assertTrue(self.launch.active())
                 writes = len(self.hw.adds)
-                r = adr.DriveRequest(1040, connected=True, estop=cause == 'stop', pitch=1 if cause == 'manual' else 0)
+                r = adr.DriveRequest(1040, connected=True, estop=cause == 'stop', pitch=1 if cause == 'manual' else 0, flap=cause == 'flap')
                 d.step(r, cause == 'stop', 1241 if cause == 'stale' else 1040, .02)
                 self.assertEqual('FAULT', self.launch.state)
                 self.assertEqual(writes, len(self.hw.adds))
@@ -1143,6 +1247,7 @@ class FirmwareBootTest(unittest.TestCase):
         with patch('builtins.print'):
             self.logger.pump()
             self.assertIn('N1:shoot N2:0deg', frames[-1][0])
+            self.assertIn('N4:flap', frames[-1][0])
             self.logger.set_launcher('RUN', False)
             self.assertEqual(1, len(frames))
             self.logger.last_flush = None

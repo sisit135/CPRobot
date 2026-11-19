@@ -91,6 +91,8 @@ LAUNCH_RELEASE_DEG = (90, 90)       # Independent beam/latch release targets
 LAUNCH_SERVICE_MS = 1              # Requested supervision cadence, not guaranteed
 SHOOT_KEY = "N1"
 RELEASE_MODE_KEY = "N2"           # Vertical 0 / last manually commanded pitch
+FLAP_KEY = "N4"                   # One paired outward shield extension
+FLAP_OUTWARD_DEG = 90.0           # From forward-parallel neutral, each beam points out
 CRANKER_PORT = "m1"                 # Zero-output safety writes only while disabled
 # CRANKER_POWER = 100                # Initial magnitude, percent
 # CRANKER_POWER_STEP = 10
@@ -299,7 +301,7 @@ class KernelLog:
         try:
             # Match the working sample: replace one indexed label in one call.
             text = ("WAITING\nFOR\nGAMEPAD" if waiting else
-                    "GAMEPAD READY\nStep: %d deg L2-/R2+\nN1:shoot N2:%s\nShot: %s\nLy/Ry: drive\nLx/Rx: beams\nL1/R1: pitch\nStart:arm Select/B:stop" %
+                    "GAMEPAD READY\nStep: %d deg L2-/R2+\nN1:shoot N2:%s N4:flap\nShot: %s\nLy/Ry: drive\nLx/Rx: beams\nL1/R1: pitch\nStart:arm Select/B:stop" %
                     (servo_step, "0deg" if launcher[1] else "manual", launcher[0]) if mode == "ready" else
                     "\n".join(self.rows))
             self.screen.show_label(text,
@@ -359,7 +361,7 @@ class DriveRequest:
     def __init__(self, stamp, left=0.0, right=0.0, connected=False,
                  deadman=False, arm=False, estop=False,
                  grip_left=None, grip_right=None, pitch=None, crank=0, power_adjust=0,
-                 step_previous=False, step_next=False, shoot=False, release_mode=False):
+                 step_previous=False, step_next=False, shoot=False, release_mode=False, flap=False):
         self.stamp = stamp
         self.left = left
         self.right = right
@@ -376,6 +378,7 @@ class DriveRequest:
         self.step_next = step_next
         self.shoot = shoot
         self.release_mode = release_mode
+        self.flap = flap
 
 
 class WorkerState:
@@ -499,7 +502,7 @@ class CyberPiHardware:
                             grip_right=grip_right, pitch=pitch,
                             step_previous=bool(key(SERVO_STEP_PREVIOUS_KEY)),
                             step_next=bool(key(SERVO_STEP_NEXT_KEY)),
-                            shoot=bool(key(SHOOT_KEY)), release_mode=bool(key(RELEASE_MODE_KEY)))
+                            shoot=bool(key(SHOOT_KEY)), release_mode=bool(key(RELEASE_MODE_KEY)), flap=bool(key(FLAP_KEY)))
 
     def local_stop(self):
         return bool(self.cpi.controller.is_press("b")) or bool(
@@ -932,12 +935,10 @@ class Manipulators:
         self.last_manual_pitch = PITCH_HOME_DEG
 
     def _left_allowed(self, target):
-        return self.grip_right.initialized and self.guard.allows(
-            True, self.grip_left.position, target, self.grip_right.position)
+        return self.grip_right.initialized
 
     def _right_allowed(self, target):
-        return self.grip_left.initialized and self.guard.allows(
-            False, self.grip_right.position, target, self.grip_left.position)
+        return self.grip_left.initialized
 
     def select_step(self, previous, next_step):
         if not previous and not next_step:
@@ -972,6 +973,28 @@ class Manipulators:
         return (all(servo.initialized for servo in self.servos) and
                 self.guard.allows(True, self.grip_left.position, left, self.grip_right.position) and
                 self.guard.allows(False, self.grip_right.position, right, left))
+
+
+    def flap_extend(self):
+        """One outward target per beam; same-facing shafts need opposite deltas."""
+        left, right = self.grip_left, self.grip_right
+        if not left.initialized or not right.initialized:
+            if self.logger is not None:
+                self.logger.emit("WARN", "flap", "extension dropped; references unavailable")
+            return False
+        # Hardware-corrected direction: left increases, right decreases from neutral.
+        # ServoMotion clamps each whole target. BeamGuard remains disabled.
+        targets = (GRIP1_NEUTRAL_DEG + FLAP_OUTWARD_DEG / GRIP1_MOUNT_SIGN,
+                   GRIP2_NEUTRAL_DEG - FLAP_OUTWARD_DEG / GRIP2_MOUNT_SIGN)
+        if not left.command(targets[0]) or not right.command(targets[1]):
+            if self.logger is not None:
+                self.logger.emit("WARN", "flap", "extension dispatch incomplete; dropped without retry")
+            return False
+        if self.logger is not None:
+            self.logger.emit("INFO", "flap", "outward commanded %d/%d deg; arrival unmeasured" %
+                             (left.position, right.position))
+        return True
+
 
 
 def motion_distance(seconds, acceleration, speed, initial=0.0):
@@ -1246,6 +1269,7 @@ class Dispatcher:
 #         self.cranker = Cranker()
         self.armed = False
         self.arm_released = False
+        self.flap_released = False
         self.request = None
         self.left_target = 0.0
         self.right_target = 0.0
@@ -1260,6 +1284,7 @@ class Dispatcher:
         if disarm:
             self.armed = False
             self.arm_released = False
+            self.flap_released = False
         self.reason = reason
         self.left_target = self.right_target = 0.0
 #         self.cranker.cancel()
@@ -1301,6 +1326,8 @@ class Dispatcher:
             #return
         self.manipulators.select_step(r.step_previous, r.step_next)
         shoot = self.launcher.inputs(r.shoot, r.release_mode)
+        flap = bool(r.flap and self.flap_released)
+        self.flap_released = not r.flap
         # A fresh release + press after every fault prevents reconnect auto-resume.
         arm_pressed = r.arm and self.arm_released
         self.arm_released = not r.arm
@@ -1308,7 +1335,7 @@ class Dispatcher:
             # Legacy crank/power requests are ignored while catapult is disabled.
             # neutral = r.left == 0 and r.right == 0 and not r.crank and not r.power_adjust
             neutral = r.left == 0 and r.right == 0
-            if arm_pressed and neutral and not r.grip_left and not r.grip_right and not r.pitch and not r.shoot:
+            if arm_pressed and neutral and not r.grip_left and not r.grip_right and not r.pitch and not r.shoot and not r.flap:
                 self.armed = True
                 self.arm_released = False
                 self.reason = "armed"
@@ -1318,14 +1345,14 @@ class Dispatcher:
                 self.halt("waiting for neutral + Start", disarm=False)
                 return
         manual = bool(r.grip_left or r.grip_right or r.pitch)
-        if arm_pressed and not manual and not r.shoot and r.left == 0 and r.right == 0:
+        if arm_pressed and not manual and not r.shoot and not r.flap and r.left == 0 and r.right == 0:
             self.launcher.reset_fault()
-        if self.launcher.active() and manual:
+        if self.launcher.active() and (manual or r.flap):
             self.launcher.fault("manual servo input interrupted shot")
             manual_interrupted = True
         else:
             manual_interrupted = False
-        if shoot and not manual:
+        if shoot and not manual and not r.flap:
             self.launcher.start()
         self.service_launch(now)
         # Send bounded RPM/power targets; optional host ramp stays parked.
@@ -1341,6 +1368,8 @@ class Dispatcher:
                                  "onboard PID speed control active")
         if not self.launcher.active() and not manual_interrupted:
             self.manipulators.update(r.grip_left, r.grip_right, r.pitch, now, dt)
+            if flap and not manual and not r.shoot:
+                self.manipulators.flap_extend()
 #         previous_power = self.cranker.power
 #         power = self.cranker.update(r.crank, r.power_adjust)
 #         if self.logger is not None and self.cranker.power != previous_power:
@@ -1512,7 +1541,8 @@ def main():
                 "% power" if PID_BYPASS else "RPM"))
     logger.emit("INFO", "manip", "%s/%s independent beams, neutral %d/%d; %s pitch -45..135" %
                 (GRIP1_PORT, GRIP2_PORT, GRIP1_NEUTRAL_DEG, GRIP2_NEUTRAL_DEG, PITCH_PORT))
-    logger.emit("INFO", "controls", "Lx/Rx beams; L1/R1 pitch; L2/R2 step 1,2,5,15,30,60 deg; clearance 10 mm")
+    logger.emit("INFO", "controls", "Lx/Rx beams; L1/R1 pitch; L2/R2 step 1,2,5,15,30,60 deg; BeamGuard disabled")
+    logger.emit("INFO", "flap", "N4 outward extension; same-facing shafts, S2 180 / S3 0 deg; one bounded move per beam")
     logger.emit("INFO", "launch", "N1 shoot; N2 vertical/manual release; neutral Start resets shot fault; calibration required")
     logger.emit("INFO", "pitch", "MECDS-150 manufacturer: 6 V; peak stall 1.61809725 Nm; no-load 5.5116 rad/s; not operating guarantees")
     state = WorkerState()
