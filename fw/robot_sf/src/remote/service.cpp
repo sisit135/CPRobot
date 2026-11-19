@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
-#include "proto_buffer.hpp"
+#include "remote/protocol/proto_buffer.hpp"
 #include "remote/config.hpp"
 #include "remote/source_blob.hpp"
-#include "remote_config.h"
+#include "remote/protocol/remote_config.h"
 #include <algorithm>
 namespace remote {
 std::size_t handle(Store &store, const remote_request &request, bool idle,

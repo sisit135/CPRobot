@@ -1,5 +1,9 @@
 # THS firmware architecture
 
+> On `core_fw`, telemetry transports and field tools have been removed. THS
+> keeps local flash settings, USB/RTT diagnostics and the debounced LOC key;
+> ADR uses its local gamepad. Transport descriptions below are historical.
+
 **THS** is the STM32 autonomous robot firmware. It runs on the STM32F411CE
 Black Pill with STM32duino FreeRTOS and shares its portable C++ core with native
 tests. This page owns the THS layers, startup, RTOS tasks, navigation, motor

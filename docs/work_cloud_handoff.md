@@ -1,5 +1,9 @@
 # CPRobot conversation handoff — 2026-11-02
 
+> On `core_fw`, telemetry transports and field tools have been removed. THS
+> keeps local flash settings, USB/RTT diagnostics and the debounced LOC key;
+> ADR uses its local gamepad. Transport descriptions below are historical.
+
 This note transfers the useful engineering context from the local Codex
 conversation. It does not transfer the conversation itself, source changes,
 tool credentials, or local build artifacts. No cloud task has been created.

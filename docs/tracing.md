@@ -1,5 +1,9 @@
 # STM32 tracing and log collection
 
+> On `core_fw`, telemetry transports and field tools have been removed. THS
+> keeps local flash settings, USB/RTT diagnostics and the debounced LOC key;
+> ADR uses its local gamepad. Transport descriptions below are historical.
+
 This page describes the THS STM32 deferred logger, its sinks, and the current
 collector paths. Component ownership is documented in
 [THS firmware architecture](fw_ths_architecture.md) and

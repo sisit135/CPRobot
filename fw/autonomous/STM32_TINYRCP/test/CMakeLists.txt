@@ -64,7 +64,7 @@ add_executable(robot_openloop_demo_tests test_openloop_demo.cpp
 target_include_directories(robot_openloop_demo_tests PRIVATE fakes ../include
     ../../../robot_sf/include)
 target_compile_definitions(robot_openloop_demo_tests PRIVATE AXI_OPENLOOP_DEMO=1
-    AXI_LOC_KEY_PIN=PB1 AXI_BUP_IMU_DIAGNOSTIC=1 AXI_TELEMETRY_SPI_ENABLE)
+    AXI_LOC_KEY_PIN=PB1 AXI_BUP_IMU_DIAGNOSTIC=1)
 target_compile_options(robot_openloop_demo_tests PRIVATE -UNDEBUG -Wall -Wextra -Wpedantic)
 foreach(mode success bup_pending bup_failed init_fault driver_fault timing_fault)
     add_test(NAME robot_openloop_demo_${mode} COMMAND robot_openloop_demo_tests ${mode})
@@ -278,7 +278,16 @@ target_include_directories(robot_remote_config_tests PRIVATE ../include)
 target_link_libraries(robot_remote_config_tests PRIVATE robot_core)
 target_compile_options(robot_remote_config_tests PRIVATE -UNDEBUG -Wall -Wextra -Wpedantic)
 add_test(NAME robot_remote_config COMMAND robot_remote_config_tests)
-add_test(NAME robot_schema_generation COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../../../../host/tools/generate_schema.py --check)
-add_test(NAME robot_schema_contract COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../../../../host/tools/test_generate_schema.py)
+add_test(NAME robot_schema_generation COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../../../../fw/robot_sf/tools/generate_schema.py --check)
+add_test(NAME robot_schema_contract COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../../../../fw/robot_sf/tools/test_generate_schema.py)
 
 add_subdirectory(lifecycle)
+
+add_executable(robot_local_start_tests test_local_start.cpp
+    ../src/main.cpp ../src/tasks/bup_tasks.cpp ../src/tasks/local_start.cpp)
+target_link_libraries(robot_local_start_tests PRIVATE robot_core robot_fake_rtos)
+target_compile_definitions(robot_local_start_tests PRIVATE AXI_LOC_KEY_PIN=PB1)
+target_compile_options(robot_local_start_tests PRIVATE -UNDEBUG -Wall -Wextra -Wpedantic)
+foreach(mode key retry)
+    add_test(NAME robot_local_start_${mode} COMMAND robot_local_start_tests ${mode})
+endforeach()

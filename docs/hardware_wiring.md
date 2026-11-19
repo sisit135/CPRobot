@@ -1,5 +1,9 @@
 # Hardware wiring references
 
+> On `core_fw`, telemetry transports and field tools have been removed. THS
+> keeps local flash settings, USB/RTT diagnostics and the debounced LOC key;
+> ADR uses its local gamepad. Transport descriptions below are historical.
+
 This page collects pin and connector assignments found in the repository. A
 value described as an example or placeholder is not evidence of the assembled
 robot's wiring. Confirm every example against the board variant, schematics,

@@ -29,28 +29,21 @@ sudo install -d -o "$(id -un)" -g "$(id -gn)" /home/cp_robot_build
 python3 build_local.py
 ```
 
-The menu includes THS, ESP32-C6, LuatOS CORE ESP32-C3, Android, native firmware tests, the lifecycle
-GUI, standalone navigation, the THS CMSIS and vendor-tracing profiles, and all standard components.
-The all option excludes the optional GUI, CMSIS and vendor-tracing profiles. ADR is MicroPython
-and has no compilation step. Builds never flash hardware or launch the GUI.
+The menu includes THS, native firmware tests, the lifecycle GUI, standalone navigation, and THS CMSIS/vendor-tracing profiles. ADR is MicroPython and has no compilation step. Builds never flash hardware or launch the GUI.
 Failed builds return to the menu; all-component builds report failures and
 continue through the remaining components.
 
 `source/` links to the repository. `workspace/` contains staged PlatformIO
-and Android project scaffolds: source/dependency folders are symlinks, while
+project scaffolds: source/dependency folders are symlinks, while
 small build configuration files and the Gradle wrapper are copied locally.
 Configuration copies and target defaults refresh each invocation; ESP-IDF `sdkconfig.<environment>` is
 seeded once and subsequent generated configuration stays local. Recreate that
 local file explicitly if changing the checked-in SDK configuration. Native CMake
 builds read through `source/` and write to `build/`. PlatformIO build/library
-directories, tool caches, Gradle module outputs and temporary files also stay
-under the selected local root. Existing PlatformIO/Gradle package caches are not
+directories, tool caches and temporary files also stay
+under the selected local root. Existing PlatformIO package caches are not
 copied; the first build may download dependencies again. `PIO`, `CMAKE`, `CTEST`,
 and `BUILD_JOBS` can select installed tools and parallelism.
-
-The bridge scaffold links an existing source certificate/key pair. If neither exists,
-the canonical certificate helper generates a local pair; keep that local root
-to preserve the device identity across builds. Never transfer its private key.
 
 Source edits are immediately visible without copying the source tree. SMB read
 latency and missing-include lookup stalls can still occur through symlinks; this
@@ -60,8 +53,6 @@ Use one builder at a time per local root, and a separate root per source checkou
 For noninteractive use or to inspect commands without compiling:
 
 ```sh
-python3 build_local.py --component c6 --jobs 4
-python3 build_local.py --component c3 --jobs 4
 python3 build_local.py --root /tmp/cprobot-build-preview --component all --dry-run
 ```
 
@@ -578,8 +569,6 @@ configuration selects C++17 and `stm32duino/STM32duino FreeRTOS@^10.3.3`.
 ```sh
 pio run -d fw/autonomous/STM32_TINYRCP -e blackpill_f411ce
 pio run -d fw/autonomous/STM32_TINYRCP -e blackpill_f411ce_cmsis
-pio run -d fw/autonomous/STM32_TINYRCP -e blackpill_f411ce_telemetry
-pio run -d fw/autonomous/STM32_TINYRCP -e blackpill_f411ce_remote
 pio run -d fw/autonomous/STM32_TINYRCP -e blackpill_f411ce_trace
 pio run -d fw/autonomous/STM32_TINYRCP -e blackpill_f411ce_prod
 ```
@@ -803,11 +792,9 @@ opens the port are not replayed. USB CDC logging does not change the firmware
 upload protocol; the default remains ST-Link. USB D−/D+ use PA11/PA12.
 
 Choose the profile required by the change. These commands compile/link only.
-Remote configuration, LittleFS, and SPI service support are required in every
-production profile; the explicit open-loop demo above excludes them.
-`blackpill_f411ce` is the default; the `_telemetry` and `_remote` names
-are compatibility aliases with the same required services. Navigation waits
-for the local key or a start command, allowing configuration before motion.
+Local settings and LittleFS support are required in every production profile;
+the explicit open-loop demo above excludes them. `blackpill_f411ce` is the default.
+Navigation waits for the local key, allowing RTT configuration before motion.
 Review [hardware wiring](hardware_wiring.md) before any separate flash operation.
 On an SMB checkout, PlatformIO library installation can fail while copying
 file permissions. Keep its build and dependency directories on a local
@@ -815,7 +802,7 @@ filesystem; the source tree can remain mounted:
 
 ```sh
 PLATFORMIO_BUILD_DIR=/tmp/ths-build PLATFORMIO_LIBDEPS_DIR=/tmp/ths-libdeps \
-  pio run -d fw/autonomous/STM32_TINYRCP -e blackpill_f411ce_telemetry
+  pio run -d fw/autonomous/STM32_TINYRCP -e blackpill_f411ce
 ```
 
 The source script `fw/autonomous/STM32_TINYRCP/scripts/platformio_sources.py`
@@ -906,7 +893,7 @@ The VS Code attach profile enables Cortex-Debug RTT channel 0, displayed in a
 terminal labelled **THS logs**. Press F5 to continue the CPU after attaching;
 new records arrive while it runs. The host needs only the existing ST-Link SWD
 connection (PA13/PA14 and ground), with no SWO wire or native USB CDC connection.
-The optional USB CDC and SPI telemetry sinks remain available in parallel.
+The USB CDC sink remains available in parallel.
 
 This is RAM-based RTT serviced by the OpenOCD GDB server, not ETM instruction
 trace, ITM/SWO output or breakpoint-based semihosting. It requires no debug
@@ -970,23 +957,6 @@ Use the same optimization and floating-point ABI when comparing STM32 profiles.
 Numerical agreement does not establish board timing or speedup; see
 [CMSIS backend details](ekf/cmsis_dsp.md).
 
-## Android field toolkit
-
-Requires JDK 17, Android SDK Platform 36 and Build Tools 35. The project is a
-standalone Gradle Android app; no AOSP source-tree toolset is required. Onboarding
-uses app-local adapted views and has no setupdesign/setupcompat library modules. The project uses
-compileSdk/targetSdk 36; AGP 8.7.3 emits a compatibility warning for compileSdk 36.
-
-```sh
-cd generic_field_tool/android
-./gradlew :protocol:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
-```
-
-On an SMB checkout, Gradle output file-mode operations can fail. Build from a
-fresh local copy under `/tmp` in that case. Keep machine-local Gradle caches,
-Android Studio state, and `local.properties` out of version control. Rebuild
-before relying on the retained APK under `android/artifacts/`.
-
 ## ADR USB serial CLI
 
 For automatic port detection and upload of the current ADR source, run:
@@ -1020,7 +990,7 @@ python3 -m venv /tmp/cprobot-adr-usb
 /tmp/cprobot-adr-usb/bin/pip install -r fw/manual/tools/requirements.txt
 python3 -B fw/manual/tests/test_cyberpi_cli.py
 python3 -B fw/manual/tests/test_upload_script.py
-python3 -B fw/manual/tests/test_field_tool.py
+python3 -B fw/manual/tests/test_control.py
 /tmp/cprobot-adr-usb/bin/python fw/manual/tools/cyberpi_cli.py ports
 /tmp/cprobot-adr-usb/bin/python fw/manual/tools/cyberpi_cli.py stub-info
 /tmp/cprobot-adr-usb/bin/python fw/manual/tools/cyberpi_cli.py -p /dev/ttyUSB0 info
@@ -1055,113 +1025,13 @@ node fw/manual/tools/dump_uploader_vectors.cjs /path/to/meoser.js > /tmp/adr-upl
 cmp fw/manual/tests/uploader_golden.json /tmp/adr-uploader-golden.json
 ```
 
-## Manual robot field-tool provider
 
-The firmware-owned provider in `fw/manual/field_tool_provider` is an independent
-Android library project. It depends on the generic transport ABI and protocol
-module; the generic app does not compile or include this provider.
-Requires the Android prerequisites above and Python 3 with protobuf for codec
-generation. Only `fw/manual/main.py` is deployed to CyberPi.
+## Firmware settings generation
+
+Requires Python protobuf and `protoc`. Generated assets belong to the portable firmware.
 
 ```sh
-python3 fw/manual/field_tool_provider/tools/generate_codec.py
-python3 fw/manual/field_tool_provider/tools/generate_codec.py --check
-python3 -B fw/manual/tests/test_field_tool.py
-generic_field_tool/android/gradlew -p fw/manual/field_tool_provider testDebugUnitTest lintDebug dexProvider
+python3 fw/robot_sf/tools/generate_schema.py
+python3 fw/robot_sf/tools/generate_schema.py --check
+python3 fw/robot_sf/tools/test_generate_schema.py
 ```
-
-For firmware-only boot/optional-telemetry changes, the host suite above needs
-only standard Python (no protobuf or Android SDK). Its active cases include native
-speed API calls, independent atomic beam moves, L2/R2 step selection and LCD
-feedback, pitch clamping, swept beam clearance using last commanded poses,
-fire-and-forget servo dispatch without getters/retries, boot zero ordering, stop/freshness rules,
-disabled legacy catapult/field-tool runtime, the timestamped pitch/grip shot
-scheduler and a simulated stuck display call. Shot fixtures use synthetic
-calibration and do not qualify physical release accuracy.
-Upload `fw/manual/main.py` through the existing CyberPi upload-mode
-workflow; select the host/USB console to inspect `[ADL boot]` progress markers.
-The current ADR commissioning profile comments out field-tool and catapult
-runtime wiring and uses onboard PID through `mbot2.drive_speed`, bounded by
-`MAX_RPM`. Neutral-stick Start arms; no deadman hold is required.
-To bypass PID, set `PID_BYPASS = True` near the top of `fw/manual/main.py`
-before upload; this selects `drive_power` and the separate `MAX_DRIVE_POWER`
-percent limit (default 100%). `False` retains onboard PID and `MAX_RPM`.
-N1 requests a shot; N2 selects vertical (+Z, 0°) or last-manual-angle release.
-The current automatic shot profile is inhibited: fill `LAUNCH_MECHANICS` travel
-limits and `LAUNCH_CALIBRATION` from physical measurements before deployment.
-Keep the fixed `PITCH_*` MECDS-150 manufacturer specifications unchanged. See
-[launcher architecture and calibration meanings](fw_adr_architecture.md#n1-shoot-sequence)
-for required values, estimated-state limits and acceptance still needed.
-Restoring the field tool requires restoring its commented implementation and
-wiring, not toggling a runtime flag. These markers do not diagnose errors before the file begins executing.
-
-`dexProvider` writes `build/outputs/provider/adl-provider.zip`, containing only
-provider DEX bytecode. The app supplies the ABI and protobuf runtime.
-On SMB, stage both Android project sources and the provider on a local filesystem,
-then point the independent provider at that Android tree:
-
-```sh
-/tmp/cprobot-fieldtool-build/gradlew -p /tmp/cprobot-adl-provider-build \
-  -PfieldToolAndroidDir=/tmp/cprobot-fieldtool-build testDebugUnitTest lintDebug dexProvider
-```
-
-These checks validate host contracts and build artifacts. Live Android DEX
-execution, CyberPi Bluetooth timing and physical robot behavior require devices.
-
-## ESP32 multiboard bridge
-
-PlatformIO pins `espressif32@6.10.0` / ESP-IDF 5.4.0. The shared project is
-`generic_field_tool/esp32_multiboard`; `esp32c6` selects `esp32-c6-devkitc-1`
-(8 MB), and `luatos_esp32c3` selects `airm2m_core_esp32c3` (4 MB, DIO).
-Shared NimBLE/WLAN settings live in `sdkconfig.defaults`; target flash defaults
-live in `sdkconfig.defaults.esp32c3` and `.esp32c6`.
-Use that project configuration rather than substituting the separately installed
-ESP-IDF SDK listed in `AGENTS.md`.
-
-```sh
-sh fw/telemetry_bridge/tools/generate_cert.sh
-pio run -d generic_field_tool/esp32_multiboard -e esp32c6
-pio run -d generic_field_tool/esp32_multiboard -e luatos_esp32c3
-```
-
-The certificate and key are embedded at build time. Protect
-`generic_field_tool/esp32_multiboard/certs/server.key`; transfer only `server.crt` to hosts.
-Bridge host checks run from the repository root with:
-
-```sh
-bash generic_field_tool/tests/run.sh
-sh fw/telemetry_bridge/tests/run.sh
-```
-
-See [bridge setup](../fw/telemetry_bridge/README.md) for provisioning and operation.
-
-## Protobuf generation
-
-Run the relevant generators after changing schemas:
-
-```sh
-bash fw/regenerate_protobufs.sh
-python3 host/tools/generate_schema.py --check
-python3 host/tools/generate_python.py
-```
-
-The first generates the catalog, descriptors/source pages, and bounded
-EmbeddedProto headers together. The second checks that generated schema assets
-are current without modifying them; the third regenerates optional Python gRPC
-gateway stubs. To regenerate only descriptors/catalog/source pages, run
-`python3 host/tools/generate_schema.py`.
-
-`proto/flash_settings.json` is the allowlist for stable flash keys, types, bounds,
-factory values, source references, and runtime bindings. The generator produces
-`proto/flash_settings.proto`, the C++ catalog/bindings, Android `robot.desc`, and
-firmware schema/source blobs. It also keeps the bridge's proto mirrors current.
-Generated compile-time checks detect factory-default drift in FEATURE/RHR
-and open-loop motor configuration headers. Native tests check descriptor/catalog agreement, malformed manifests,
-all field pages, chunk bounds, flash round trips, and power-cut recovery.
-
-The EmbeddedProto helper reuses `third_party/EmbeddedProto` without changing
-vendor sources and stages its tools in `/tmp/cprobot-embeddedproto-tools`.
-Override `EMBEDDEDPROTO_VENV` for persistent storage or `EMBEDDEDPROTO_DIR` for
-another source checkout. It handles stale launchers and SMB mode/symlink issues.
-`protoc` and the Python protobuf runtime must have compatible versions.
-The HAL vendor target links the existing EmbeddedProto runtime.

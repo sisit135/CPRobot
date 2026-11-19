@@ -7,9 +7,6 @@
 		{
 			"name": "STM32_TINYRCP",
 			"path": "fw/autonomous/STM32_TINYRCP"
-		},
-		{
-			"path": "generic_field_tool/esp32_multiboard"
 		}
 	],
 	"settings": {}

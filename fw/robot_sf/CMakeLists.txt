@@ -12,8 +12,7 @@ option(AXI_PLATFORM_V2 "Use the 135 x 110 mm v2 platform geometry (v1 deprecated
 add_library(robot_remote src/remote/config.cpp src/remote/codec.cpp src/remote/service.cpp
     src/remote/at_cli.cpp)
 target_include_directories(robot_remote PUBLIC include include/motor_control
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../generic_field_tool/common"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../generic_field_tool/esp32_multiboard/generated")
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/remote/protocol")
 target_compile_definitions(robot_remote PUBLIC AXI_PLATFORM_V2=$<BOOL:${AXI_PLATFORM_V2}>)
 target_link_libraries(robot_remote PUBLIC robot_littlefs robot_embedded_proto)
 target_compile_options(robot_remote PRIVATE -Wall -Wextra -Wpedantic)

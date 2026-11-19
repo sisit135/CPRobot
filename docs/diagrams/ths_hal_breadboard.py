@@ -28,7 +28,7 @@ def validate_sources():
     expected_sensors = {'MAIN_SDA':'PB7', 'MAIN_SCL':'PB6', 'TOF_SDA':'PB3',
                         'TOF_SCL':'PB10', 'TOF_LEFT_XSHUT':'PA1',
                         'TOF_FRONT_XSHUT':'PA2', 'TOF_RIGHT_XSHUT':'PA3'}
-    expected_flags = {'SPI_CS':'PA4', 'SPI_READY':'PB0', 'LOC_KEY':'PB1'}
+    expected_flags = {'LOC_KEY':'PB1'}
     for name, pin in expected_motors.items():
         found = re.search(r'\b'+name+r'\s*=\s*(P[A-Z]\d+)\b', motors)
         if not found or found[1] != pin:
@@ -44,8 +44,7 @@ def validate_sources():
         if not found or set(found) != {pin}:
             raise ValueError(f'Stale profile drawing: {name} must be {pin}')
         assignments[name] = pin
-    for name, pin in {'SPI1_SCK':'PA5', 'SPI1_MISO':'PA6', 'SPI1_MOSI':'PA7',
-                      'USB_DM':'PA11', 'USB_DP':'PA12',
+    for name, pin in {'USB_DM':'PA11', 'USB_DP':'PA12',
                       'SWDIO':'PA13', 'SWCLK':'PA14'}.items():
         assignments[name] = pin
     if len(set(assignments.values())) != len(assignments):

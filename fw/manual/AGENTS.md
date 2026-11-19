@@ -12,7 +12,7 @@ The python script is presumably running on a MicroPython-base system.
   selected API and keep RPM and percent limits distinct. RWD wiring is E1/EM1 =
   left rear, E2/EM2 = right rear, in that argument order. Speed targets are RPM;
   motor power is regulated by the vendor firmware. The optional host slew ramp,
-  catapult and field-tool runtime remain commented out. Do not
+  catapult runtime remain commented out. Field-tool support is removed. Do not
   invent method names or infer on-device support from the PC online-mode package.
   If a required API is absent from the samples, verify it against official
   extension/docs and the actual firmware before integrating it.

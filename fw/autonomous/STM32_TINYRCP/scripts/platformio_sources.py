@@ -86,8 +86,7 @@ def configure(env):
     if any(not path.is_file() for path in required_remote):
         raise RuntimeError("Required remote configuration sources/assets are missing; regenerate schemas and restore littlefs")
     env.Append(CPPPATH=[str(embedded), str(littlefs),
-                        str(fw.parent / "generic_field_tool/common"),
-                        str(fw.parent / "generic_field_tool/esp32_multiboard/generated")])
+                        str(core / "include/remote/protocol")])
     env.BuildSources("$BUILD_DIR/embedded_proto", str(embedded),
                      src_filter=["+<Fields.cpp>", "+<MessageInterface.cpp>", "+<ReadBufferSection.cpp>"])
     env.BuildSources("$BUILD_DIR/remote", str(remote), src_filter=["+<*.cpp>"])

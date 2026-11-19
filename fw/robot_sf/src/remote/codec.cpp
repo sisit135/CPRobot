@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "remote/codec.h"
-#include "proto_buffer.hpp"
-#include "remote_config.h"
+#include "remote/protocol/proto_buffer.hpp"
+#include "remote/protocol/remote_config.h"
 extern "C" int remote_decode(const uint8_t *data, size_t size,
                              remote_request *out) {
   if (!out)

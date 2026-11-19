@@ -1,5 +1,9 @@
 # ADR firmware architecture
 
+> On `core_fw`, telemetry transports and field tools have been removed. THS
+> keeps local flash settings, USB/RTT diagnostics and the debounced LOC key;
+> ADR uses its local gamepad. Transport descriptions below are historical.
+
 **ADR** is the manual robot's CyberPi/mBot2 upload-mode MicroPython application
 in [`fw/manual/main.py`](../fw/manual/main.py). The single uploaded file uses
 `cyberpi`, `gamepad`, `mbot2`, `time`, `math` and `_thread`; no third-party Python runtime

@@ -12,9 +12,7 @@
 #include "remote/board_store.hpp"
 #include "remote/settings.hpp"
 #include "robot_application.h"
-#ifdef AXI_TELEMETRY_SPI_ENABLE
-#include "telemetry/adapter.hpp"
-#endif
+#include "navigation/local_start.hpp"
 extern "C" bool robot_application_start() {
   // Called by bring-up only after HAL initialization succeeds.
   if (!remote::board_store())
@@ -23,13 +21,7 @@ extern "C" bool robot_application_start() {
   hal_navigation_config(&config);
   if (!loc::localization_sensors_start())
     return false;
-#ifdef AXI_TELEMETRY_SPI_ENABLE
-  return telemetry::start(config);
-#else
-  return nav::navigation_start(config, nav::NavigationEngine::FEATURE,
-                               remote::feature_settings(),
-                               remote::fallback_settings());
-#endif
+  return nav::local_start_service(config);
 }
 #endif // !AXI_OPENLOOP_DEMO
 void setup() {

@@ -14,7 +14,7 @@ namespace robot_log {
 
 enum class Level : uint8_t { ERROR = 0, WARN, INFO, DEBUG, TRACE };
 // UART is the legacy serial sink bit; STM32 profiles route Serial via USB CDC.
-enum Sink : uint8_t { UART = 1u << 0, TELEMETRY = 1u << 1, RTT = 1u << 2 };
+enum Sink : uint8_t { UART = 1u << 0, RTT = 1u << 2 };
 
 /** A fixed-size record keeps logging deterministic and allocation-free. */
 struct Record {
@@ -27,7 +27,7 @@ struct Record {
 using SinkCallback = bool (*)(const Record &record, void *context);
 
 /** Configure TRACE and start early serial draining before bring-up.
- * Telemetry takes over deferred draining once its sink is attached. */
+ * The logger task owns deferred draining throughout runtime. */
 bool start();
 
 /** Configure the minimum accepted level and enabled sink mask at runtime. */
@@ -46,8 +46,7 @@ bool write(Level level, const char *source, const char *format, ...);
 bool writev(Level level, const char *source, const char *format,
             va_list arguments);
 
-/** Dequeue and deliver up to max_records from the early serial task or telemetry
- * vTask after its sink is attached. */
+/** Dequeue and deliver up to max_records from the logger task. */
 size_t drain(size_t max_records = 1);
 uint32_t dropped();
 

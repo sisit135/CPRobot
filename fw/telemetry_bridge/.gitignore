@@ -1,5 +1,0 @@
-tests/wire_test
-**/__pycache__/
-esp32c6/.pio/
-.generated/
-generated_src/

@@ -17,9 +17,6 @@
 #include "navigation/navigation.hpp"
 #include "platform/hal_platform.hpp"
 #include <Wire.h>
-#ifdef AXI_TELEMETRY_SPI_ENABLE
-#include "telemetry/adapter.hpp"
-#endif
 namespace {
 using namespace board::sensors;
 const i2c_diagnostics::Binding main_bindings[] = {
@@ -203,11 +200,7 @@ const loc::ColorReference *hal_color_references(std::size_t *count) {
                   // IDs.
 }
 void hal_log_pose(const loc::PoseSnapshot &pose) {
-#ifdef AXI_TELEMETRY_SPI_ENABLE
-  telemetry::submit(pose);
-#else
   (void)pose;
-#endif
 }
 
 void hal_navigation_config(nav::ResolverConfig *) {

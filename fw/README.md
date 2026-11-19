@@ -10,8 +10,8 @@ See the [project overview](../docs/architecture.md),
 [build guidelines](../docs/building.md), [hardware wiring](../docs/hardware_wiring.md),
 and [frozen EKF references](../docs/ekf/README.md).
 
-The [ESP32-C6 bridge and Android toolkit](../generic_field_tool/README.md) use
-BLE and WLAN/TLS.
+`core_fw` excludes field tools and telemetry bridges. Firmware settings schemas
+and their generator live in `robot_sf/proto` and `robot_sf/tools`.
 
 ## Licensing
 

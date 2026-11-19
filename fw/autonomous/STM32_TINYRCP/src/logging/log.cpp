@@ -18,13 +18,13 @@ Record ring[kCapacity];
 volatile size_t head = 0, tail = 0, count = 0;
 volatile uint32_t lost = 0;
 volatile uint8_t threshold = static_cast<uint8_t>(Level::TRACE);
-volatile uint8_t active_sinks = TELEMETRY;
+volatile uint8_t active_sinks = UART;
 SinkCallback callbacks[3]{};
 void *contexts[3]{};
 bool started = false;
 
 int index(Sink sink) {
-  return sink == UART ? 0 : sink == TELEMETRY ? 1 : sink == RTT ? 2 : -1;
+  return sink == UART ? 0 : sink == RTT ? 2 : -1;
 }
 bool put(const Record &record) {
   taskENTER_CRITICAL();
@@ -78,7 +78,7 @@ void rtt_sink(const Record &record) {
 #ifdef AXI_LOG_RTT_ENABLE
   char line[128];
   const size_t size = format_line(record, line, sizeof line);
-  // Serialize the brief handoff between boot_log and the SPI drain task.
+  // Serialize brief RTT writes with local settings replies.
   taskENTER_CRITICAL();
   (void)hal_log_rtt_write(line, size);
   taskEXIT_CRITICAL();
@@ -88,12 +88,7 @@ void rtt_sink(const Record &record) {
 }
 void early_log_task(void *) {
   for (;;) {
-    bool telemetry_ready;
-    taskENTER_CRITICAL();
-    telemetry_ready = callbacks[1] != nullptr;
-    taskEXIT_CRITICAL();
-    if (!telemetry_ready)
-      (void)drain(kCapacity);
+    (void)drain(kCapacity);
     vTaskDelay(pdMS_TO_TICKS(1) ? pdMS_TO_TICKS(1) : 1);
   }
 }
@@ -105,7 +100,7 @@ bool start() {
 #ifdef AXI_LOG_SERIAL_ENABLE
   Serial.begin(115200);
 #endif
-  uint8_t sinks = UART | TELEMETRY;
+  uint8_t sinks = UART;
 #ifdef AXI_LOG_RTT_ENABLE
   sinks |= RTT;
 #endif
@@ -118,7 +113,7 @@ bool start() {
 
 void configure(Level minimum, uint8_t sinks) {
   threshold = static_cast<uint8_t>(minimum);
-  active_sinks = sinks & (UART | TELEMETRY | RTT);
+  active_sinks = sinks & (UART | RTT);
 }
 Level minimum_level() { return static_cast<Level>(threshold); }
 uint8_t enabled_sinks() { return active_sinks; }
@@ -171,8 +166,6 @@ size_t drain(size_t maximum) {
       else
         serial_sink(record);
     }
-    if ((sinks & TELEMETRY) && callbacks[1])
-      (void)callbacks[1](record, contexts[1]);
     ++delivered;
   }
   return delivered;

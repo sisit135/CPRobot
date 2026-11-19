@@ -6,13 +6,12 @@ manufacturer firmware dumps.
 
 ## Software: GNU GPL version 3
 
-Project-owned firmware, tests, host software and generic field-tool software are
+Project-owned firmware, tests and development software are
 licensed under **GNU General Public License version 3 only**
 (`SPDX-License-Identifier: GPL-3.0-only`). The full text is in [LICENSE.software](LICENSE.software).
 
-This covers original software in `fw/`, `host/`, and `generic_field_tool/`,
-including their tests, scripts, firmware-owned providers and generators, together
-with project-owned protocol/schema sources in `proto/` and root build helpers.
+This covers original software in `fw/`, including tests, scripts, firmware
+settings schemas and generators, together with root build helpers.
 Third-party code, manufacturer dumps and hardware designs are exceptions as
 specified below. Generated files retain any applicable source and generator
 notices; this policy does not remove those notices.
@@ -63,8 +62,7 @@ See [the manufacturer-material notice](LICENSE.dumps).
 Third-party code, libraries, vendor drivers, adapted UI resources and other
 third-party assets retain their original licenses and notices, including when
 located within a GPL-covered software directory. Consult
-[third-party notes](third_party/README.md) and component notices such as the
-[Android notices](generic_field_tool/android/THIRD_PARTY_NOTICES.md).
+[third-party notes](third_party/README.md) and retained component notices.
 
 The root GPL text is the software license, not a blanket license for every file.
 Documentation and assets outside the hardware and software scopes above retain

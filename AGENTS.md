@@ -8,10 +8,10 @@
 
 ## Architecture and operation
 
-- Read [docs/architecture.md](docs/architecture.md) for the project overview and component boundaries. Keep component layers, initialization, task ownership, operation, and source evidence in [THS firmware architecture](docs/fw_ths_architecture.md), [ADR firmware architecture](docs/fw_adr_architecture.md), or [field-tool architecture](docs/field_tool_architecture.md), according to scope.
+- Read [docs/architecture.md](docs/architecture.md) for the project overview and component boundaries. Keep component layers, initialization, task ownership, operation, and source evidence in [THS firmware architecture](docs/fw_ths_architecture.md), [ADR firmware architecture](docs/fw_adr_architecture.md), according to scope.
 - EKF development is currently frozen; references live in [docs/ekf](docs/ekf/README.md). Preserve EKF behavior unless explicitly asked to change it.
-- THS targets STM32F411CE; the field-tool bridge targets ESP32-C6 and LuatOS CORE ESP32-C3 with BLE/WLAN. ADR is the manual robot uPython firmware in `fw/manual`. Do not reintroduce UNO R4 or NAN targets.
-- The generic field tool must remain platform agnostic and schema driven. Keep robot-specific transport providers, codecs, schemas and generators under the owning `fw/` component. Do not add target-specific provider modules, entry classes or command catalogs to the generic Android project; load those through the generic provider interface.
+- THS targets STM32F411CE. ADR is the manual robot uPython firmware in `fw/manual`. Do not reintroduce UNO R4 or NAN targets.
+- This core firmware branch excludes telemetry transports and field tools. Keep firmware settings schemas and generators under their owning `fw/` component.
 
 ## Workspace memory
 

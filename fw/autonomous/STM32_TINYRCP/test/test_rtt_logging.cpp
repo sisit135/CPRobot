@@ -44,7 +44,7 @@ int main() {
 
   assert(robot_log::start());
   assert(robot_log::enabled_sinks() & robot_log::RTT);
-  unsigned serial = 0, telemetry = 0;
+  unsigned serial = 0;
   robot_log::set_sink(
       robot_log::UART,
       [](const robot_log::Record &, void *p) {
@@ -52,30 +52,23 @@ int main() {
         return true;
       },
       &serial);
-  robot_log::set_sink(
-      robot_log::TELEMETRY,
-      [](const robot_log::Record &, void *p) {
-        ++*static_cast<unsigned *>(p);
-        return false; // Missing telemetry host must not affect RTT.
-      },
-      &telemetry);
   assert(robot_log::write(robot_log::Level::ERROR, "bup", "test failure"));
   assert(robot_log::drain() == 1);
   assert(host_read().find("0 bup: test failure\n") != std::string::npos);
-  assert(serial == 1 && telemetry == 1);
+  assert(serial == 1);
 
   // A full RTT ring cannot prevent delivery to the existing sinks.
   assert(hal_log_rtt_write(fill.data(), fill.size()));
   assert(robot_log::write(robot_log::Level::INFO, "test", "still delivered"));
   assert(robot_log::drain() == 1);
-  assert(serial == 2 && telemetry == 2);
+  assert(serial == 2);
   assert(hal_log_rtt_dropped() == 4);
   assert(host_read() == fill);
 
   robot_log::configure(robot_log::Level::TRACE, robot_log::UART);
   assert(robot_log::write(robot_log::Level::INFO, "test", "RTT disabled"));
   assert(robot_log::drain() == 1 && host_read().empty());
-  assert(serial == 3 && telemetry == 2);
+  assert(serial == 3);
 
   unsigned custom_rtt = 0;
   assert(robot_log::set_sink(
@@ -88,5 +81,5 @@ int main() {
   robot_log::configure(robot_log::Level::INFO, robot_log::RTT);
   assert(robot_log::write(robot_log::Level::INFO, "test", "custom sink"));
   assert(robot_log::drain() == 1 && custom_rtt == 1);
-  assert(serial == 3 && telemetry == 2 && host_read().empty());
+  assert(serial == 3 && host_read().empty());
 }
